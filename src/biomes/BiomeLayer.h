@@ -1,9 +1,8 @@
 #pragma once
 
-#include "defs.h"
+#include "../defs.h"
 
-#define BIOMESHIFT 9
-#define BIOMESIZE 512
+
 
 
 class BiomeLayer
@@ -14,16 +13,17 @@ public:
 
 	void generate(double amplitude, double offset, double scale, double xOffset, double yOffset, long seed);
 	void setClamp(double min, double max);
+	bool isReady() const;
+	double getValue(int i, int k) const;
 
-	bool isReady();
 
-	void outputDebugFile(char *filename);
+	void outputDebugFile(char *filename) const;
 
 private:
 
-	double clamp(double value);
+	double clamp(double value) const;
 
-	double mData[BIOMESIZE*BIOMESIZE];
+	double *mData;
 	long mSeed;
 	double mClampMin;
 	double mClampMax;

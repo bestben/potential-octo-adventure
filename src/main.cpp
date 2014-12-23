@@ -1,12 +1,18 @@
 #include <QApplication>
 
 #include "gamewindow.h"
+#include "biomes/ChunkGenerator.h"
 
 #include <iostream>
 #include <QScreen>
 #include <QtOpenGL/QGLFormat>
 
+
+
 int main(int argc, char* argv[]) {
+
+	ChunkGenerator chunk;
+
     try {
         QApplication app(argc, argv);
 

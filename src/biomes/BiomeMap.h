@@ -1,6 +1,8 @@
 #pragma once
 
-#include <unordered_set>
+#include <QtCore/QHash>
+#include "BiomeLayer.h"
+#include <memory>
 
 class BiomeLayer;
 
@@ -8,9 +10,14 @@ class BiomeMap
 {
 public:
 	BiomeMap();
+	BiomeMap(int i, int j);
+	BiomeLayer& getLayer(const QString& layerName);
+	int getGroundLevel(int i, int k) const;
+	int getVoxelType(int i, int j, int k) const;
 	~BiomeMap();
 
 private:
-	std::unordered_set < std::string, BiomeLayer* > mLayers;
+	QHash <QString, std::shared_ptr<BiomeLayer>> mLayers;
+	double *mTunnels;
 };
 
