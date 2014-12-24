@@ -17,7 +17,7 @@ public:
 	double getValue(int i, int k) const;
 
 
-	void outputDebugFile(char *filename) const;
+	void outputDebugFile(const char *filename) const;
 
 private:
 

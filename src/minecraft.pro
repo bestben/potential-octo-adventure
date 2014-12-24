@@ -6,7 +6,8 @@ SOURCES += \
     biomes/BiomeLayer.cpp \
     biomes/BiomeMap.cpp \
     biomes/main.cpp \
-    biomes/OpenSimplexNoise.cpp
+    biomes/OpenSimplexNoise.cpp \
+    biomes/ChunkGenerator.cpp
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -31,4 +32,6 @@ HEADERS += \
     biomes/BiomeLayer.h \
     biomes/BiomeMap.h \
     biomes/defs.h \
-    biomes/OpenSimplexNoise.hpp
+    biomes/OpenSimplexNoise.hpp \
+    defs.h \
+    biomes/ChunkGenerator.h

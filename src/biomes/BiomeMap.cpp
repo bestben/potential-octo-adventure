@@ -14,32 +14,28 @@ BiomeMap::BiomeMap(int i, int k) : mLayers()
 	BiomeLayer *rainfall = new BiomeLayer();
 
 	rainfall->generate(255.0, 0.0, 0.05, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 0);
-	rainfall->outputDebugFile("rainfall.raw");
 	mLayers.insert(QString("rainfall"), std::shared_ptr<BiomeLayer>(rainfall));
 
 
 	// Temperature can varie betwenn -20°C and 30°C
 	BiomeLayer *temperature = new BiomeLayer();
 	temperature->generate(60.0, -20.0, 0.005, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 1);
-	temperature->outputDebugFile("temperature.raw");
 	mLayers.insert(QString("temperature"), std::shared_ptr<BiomeLayer>(temperature));
 
 	BiomeLayer *heightmap = new BiomeLayer();
 	heightmap->generate(20.0, (double)GROUND_LEVEL, 0.05, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 2);
-	heightmap->outputDebugFile("heightmap.raw");
 	mLayers.insert(QString("heightmap"), std::shared_ptr<BiomeLayer>(heightmap));
 
 	BiomeLayer *mountains = new BiomeLayer();
-	heightmap->generate(60.0, 0.0, 0.05, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 2);
-	heightmap->outputDebugFile("mountains.raw");
+	mountains->generate(60.0, 0.0, 0.05, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 2);
 	mLayers.insert(QString("mountains"), std::shared_ptr<BiomeLayer>(mountains));
 
 	OpenSimplexNoise tunnelNoise(-1);
-
+	double mScale = 0.05;
 	for (int x = 0; x < CHUNK_SIZE; ++x) {
 		for (int y = 0; y < CHUNK_SIZE*7; ++y) {
 			for (int z = 0; z < CHUNK_SIZE; ++z) {
-				mTunnels[z*CHUNK_SIZE*CHUNK_SIZE*7 + y*CHUNK_SIZE + x] = 50.0*(tunnelNoise.value(x + (i * CHUNK_SIZE), y, z + (k * CHUNK_SIZE))+1.0);
+				mTunnels[z*CHUNK_SIZE*CHUNK_SIZE * 7 + y*CHUNK_SIZE + x] = 50.0*(tunnelNoise.value((x + (i * CHUNK_SIZE))*mScale, y*mScale, (z + (k * CHUNK_SIZE))*mScale) + 1.0);
 			}
 		}
 	}
@@ -68,5 +64,13 @@ int BiomeMap::getGroundLevel(int i, int k) const {
 
 int BiomeMap::getVoxelType(int i, int j, int k) const{
 	// TODO: Use other layers
-	return (mTunnels[k*CHUNK_SIZE*CHUNK_SIZE*7 + j*CHUNK_SIZE + i] > 50.0 && k<=getGroundLevel(i,k)) ? 1 : 0;
+	return (mTunnels[k*CHUNK_SIZE*CHUNK_SIZE*7 + j*CHUNK_SIZE + i] > 50.0 && j<=getGroundLevel(i,k)) ? 1 : 0;
+}
+
+
+void BiomeMap::outputDebug() const {
+	
+	for (auto it = mLayers.begin(); it != mLayers.end(); ++it) {
+		it.value().get()->outputDebugFile((it.key()+".raw").toUtf8().constData());
+	}
 }

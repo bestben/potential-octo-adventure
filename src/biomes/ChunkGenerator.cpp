@@ -15,7 +15,7 @@ ChunkGenerator::ChunkGenerator() : mMaps()
 
 	QTime t;
 	t.start();
-
+	
 	#pragma omp parallel for
 	for (int i = 0; i < 5; i++) {
 		for (int j = 0; j < 7; j++) {
@@ -24,10 +24,23 @@ ChunkGenerator::ChunkGenerator() : mMaps()
 			}
 		}
 	}
+	
 
 	std::ofstream log("log.txt");
 	log << "Generation en " << t.elapsed() << "ms" << std::endl;
 	log.close();
+
+	std::ofstream out("chunk.data");
+
+	for (int i = 0; i < 5; i++) {
+		for (int j = 0; j < 7; j++) {
+			for (int k = 0; k < 5; k++) {
+				out.write((const char*)data[i * 5 * 7 + j * 5 + k], CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*sizeof(Voxel));
+			}
+		}
+	}
+	
+	out.close();
 
 	//delete data;
 }
@@ -50,7 +63,7 @@ void ChunkGenerator::generateChunk(Voxel* data, int i, int j, int k) {
 		mMaps.insert(index, std::shared_ptr<BiomeMap>(map));
 	}
 
-	
+	map->outputDebug();
 	for (int x = 0; x < CHUNK_SIZE; ++x) {
 		for (int y = 0; y < CHUNK_SIZE; ++y) { // Hauteur
 			int currentHeight = y + j*CHUNK_SIZE;

@@ -52,7 +52,7 @@ double BiomeLayer::getValue(int i, int k) const{
 }
 
 
-void BiomeLayer::outputDebugFile(char *filename) const{
+void BiomeLayer::outputDebugFile(const char *filename) const{
 
 	short *data = new short[CHUNK_SIZE*CHUNK_SIZE];
 

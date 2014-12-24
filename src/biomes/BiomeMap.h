@@ -14,6 +14,7 @@ public:
 	BiomeLayer& getLayer(const QString& layerName);
 	int getGroundLevel(int i, int k) const;
 	int getVoxelType(int i, int j, int k) const;
+	void outputDebug() const;
 	~BiomeMap();
 
 private:
