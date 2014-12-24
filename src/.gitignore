@@ -2,3 +2,8 @@
 
 *.sln
 *.vcxproj*
+
+
+*.raw
+*.data
+log.txt
