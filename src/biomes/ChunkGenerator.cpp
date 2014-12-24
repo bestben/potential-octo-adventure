@@ -3,17 +3,24 @@
 #include <QtCore/QTime>
 #include <iostream>
 #include <fstream>
+#include "omp.h"
 
 ChunkGenerator::ChunkGenerator() : mMaps()
 {
-	Voxel* data = new Voxel[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
+
+	Voxel** data = new Voxel*[5*7*5];
+	for (int i = 0; i < 5 * 5 * 7; ++i)
+		data[i] = new Voxel[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
+	
 
 	QTime t;
 	t.start();
-	for (int i = -2; i < 3; i++) {
+
+	#pragma omp parallel for
+	for (int i = 0; i < 5; i++) {
 		for (int j = 0; j < 7; j++) {
-			for (int k = -2; k < 3; k++) {
-				generateChunk(data, i, j, k);
+			for (int k = 0; k < 5; k++) {
+				generateChunk(data[i*5*7 + j*5 + k], i, j, k);
 			}
 		}
 	}
@@ -22,7 +29,7 @@ ChunkGenerator::ChunkGenerator() : mMaps()
 	log << "Generation en " << t.elapsed() << "ms" << std::endl;
 	log.close();
 
-	delete data;
+	//delete data;
 }
 
 
@@ -43,11 +50,12 @@ void ChunkGenerator::generateChunk(Voxel* data, int i, int j, int k) {
 		mMaps.insert(index, std::shared_ptr<BiomeMap>(map));
 	}
 
-	for (int z = 0; z < CHUNK_SIZE; ++z) {
-		for (int x = 0; x < CHUNK_SIZE; ++x) {
-			for (int y = 0; y < CHUNK_SIZE; ++y) { // Hauteur
-				int currentHeight = y + j*CHUNK_SIZE;
-				data[z*CHUNK_SIZE*CHUNK_SIZE + y*CHUNK_SIZE + x] = (Voxel) map->getVoxelType(x,y,currentHeight);
+	
+	for (int x = 0; x < CHUNK_SIZE; ++x) {
+		for (int y = 0; y < CHUNK_SIZE; ++y) { // Hauteur
+			int currentHeight = y + j*CHUNK_SIZE;
+			for (int z = 0; z < CHUNK_SIZE; ++z) {
+				data[z*CHUNK_SIZE*CHUNK_SIZE + y*CHUNK_SIZE + x] = (Voxel) map->getVoxelType(x,currentHeight,z);
 			}
 
 		}

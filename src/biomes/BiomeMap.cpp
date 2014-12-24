@@ -39,7 +39,7 @@ BiomeMap::BiomeMap(int i, int k) : mLayers()
 	for (int x = 0; x < CHUNK_SIZE; ++x) {
 		for (int y = 0; y < CHUNK_SIZE*7; ++y) {
 			for (int z = 0; z < CHUNK_SIZE; ++z) {
-				mTunnels[z*CHUNK_SIZE*CHUNK_SIZE + y*CHUNK_SIZE + x] = 50.0*(tunnelNoise.value(x + (i * CHUNK_SIZE), y, z + (k * CHUNK_SIZE))+1.0);
+				mTunnels[z*CHUNK_SIZE*CHUNK_SIZE*7 + y*CHUNK_SIZE + x] = 50.0*(tunnelNoise.value(x + (i * CHUNK_SIZE), y, z + (k * CHUNK_SIZE))+1.0);
 			}
 		}
 	}
@@ -68,5 +68,5 @@ int BiomeMap::getGroundLevel(int i, int k) const {
 
 int BiomeMap::getVoxelType(int i, int j, int k) const{
 	// TODO: Use other layers
-	return (mTunnels[k*CHUNK_SIZE*CHUNK_SIZE + j*CHUNK_SIZE + i] > 50.0 && k<=getGroundLevel(i,k)) ? 1 : 0;
+	return (mTunnels[k*CHUNK_SIZE*CHUNK_SIZE*7 + j*CHUNK_SIZE + i] > 50.0 && k<=getGroundLevel(i,k)) ? 1 : 0;
 }
