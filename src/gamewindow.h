@@ -8,6 +8,8 @@
 #include <QtGui/QOpenGLWindow>
 #include <QtGui/QOpenGLFunctions_3_3_Core>
 
+#include "chunkmanager.h"
+
 class QOpenGLTexture;
 class QOpenGLDebugLogger;
 class QOpenGLDebugMessage;
@@ -65,4 +67,6 @@ private:
     QTime m_deltaTimer;
     int m_lastDeltas[FPS_FRAME_NUMBER];
     bool m_isInitialized;
+
+    ChunkManager m_chunkManager;
 };

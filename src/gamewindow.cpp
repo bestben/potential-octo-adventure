@@ -16,6 +16,7 @@ GameWindow::~GameWindow() {
 #ifdef QT_DEBUG
     delete m_logger;
 #endif
+    m_chunkManager.destroy(this);
 }
 
 void GameWindow::handleLoggedMessage(const QOpenGLDebugMessage& message) {
@@ -35,13 +36,15 @@ void GameWindow::initializeGL() {
     const qreal retinaScale = devicePixelRatio();
     glViewport(0, 0, width() * retinaScale, height() * retinaScale);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CW);
+
+    m_chunkManager.initialize(this);
     
     m_isInitialized = true;
 }
@@ -59,6 +62,9 @@ void GameWindow::paintGL() {
 
     // On met à jour la position de la caméra
     m_camera.update(m_lastDelta);
+
+    m_chunkManager.update(this);
+    m_chunkManager.draw(this);
 
     // On demande une nouvelle frame
     QCoreApplication::postEvent(this, new QEvent(QEvent::UpdateRequest));

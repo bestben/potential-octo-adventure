@@ -1,0 +1,21 @@
+#version 330
+
+uniform sampler2D atlas;
+uniform int tileCount;
+uniform int tileSize;
+
+out vec3 out_color;
+
+in vec3 ex_pos;
+flat in int ex_voxel;
+in vec3 ex_normal;
+
+void main() {    
+    vec2 tileOffset = vec2(ex_voxel % tileCount, (ex_voxel%256) / tileCount);
+    tileOffset = tileOffset / tileSize;
+    
+    vec2 tileUV = vec2(dot(ex_normal.zxy, ex_pos), dot(ex_normal.yzx, ex_pos));
+    vec2 texCoord = tileOffset + fract(tileUV) / tileSize;
+    
+    out_color = texture2D(atlas, texCoord).rgb;
+}
