@@ -2,7 +2,8 @@
 SOURCES += \
     main.cpp \
     camera.cpp \
-    gamewindow.cpp
+    gamewindow.cpp \
+    chunkmanager.cpp
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -23,4 +24,5 @@ RESOURCES += \
 
 HEADERS += \
     camera.h \
-    gamewindow.h
+    gamewindow.h \
+    chunkmanager.h
