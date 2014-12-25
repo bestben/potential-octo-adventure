@@ -1,4 +1,9 @@
 <RCC>
     <qresource prefix="/">
+        <file alias="render.vs">shaders/render.vs</file>
+        <file alias="render.ps">shaders/render.ps</file>
+
+        <file alias="atlas.png">textures/atlas.png</file>
+        
     </qresource>
 </RCC>

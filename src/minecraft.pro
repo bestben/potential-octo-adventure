@@ -5,6 +5,8 @@ SOURCES += \
     gamewindow.cpp \
     biomes/BiomeLayer.cpp \
     biomes/BiomeMap.cpp \
+    chunkmanager.cpp \
+    meshgenerator.cpp
     biomes/main.cpp \
     biomes/OpenSimplexNoise.cpp \
     biomes/ChunkGenerator.cpp
@@ -32,6 +34,9 @@ HEADERS += \
     biomes/BiomeLayer.h \
     biomes/BiomeMap.h \
     biomes/defs.h \
+    chunkmanager.h \
+    meshgenerator.h \
+    chunk.h
     biomes/OpenSimplexNoise.hpp \
     defs.h \
     biomes/ChunkGenerator.h
