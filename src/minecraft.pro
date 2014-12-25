@@ -3,7 +3,8 @@ SOURCES += \
     main.cpp \
     camera.cpp \
     gamewindow.cpp \
-    chunkmanager.cpp
+    chunkmanager.cpp \
+    meshgenerator.cpp
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -25,4 +26,6 @@ RESOURCES += \
 HEADERS += \
     camera.h \
     gamewindow.h \
-    chunkmanager.h
+    chunkmanager.h \
+    meshgenerator.h \
+    chunk.h

@@ -5,6 +5,8 @@
 #include <iostream>
 
 #include <QtGui/QOpenGLVertexArrayObject>
+#include <QtGui/QOpenGLShaderProgram>
+#include <QtGui/QOpenGLTexture>
 
 ChunkManager::ChunkManager() : m_isInit{false}, m_chunkBuffers{nullptr},
                             m_oglBuffers{nullptr}, m_currentChunkI{-1},
@@ -43,7 +45,24 @@ ChunkManager::~ChunkManager() {
 }
 
 void ChunkManager::initialize(GameWindow* gl) {
-    // TODO rajouter les shader et les textures
+
+    m_program = new QOpenGLShaderProgram(gl);
+    m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/render.vs"));
+    m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/render.ps"));
+    m_program->link();
+    m_posAttr = m_program->attributeLocation("position");
+    m_matrixUniform = m_program->uniformLocation("viewProj");
+    m_chunkPosUniform = m_program->uniformLocation("chunkPosition");
+
+    m_program->bind();
+    m_program->setUniformValue("atlas", 0);
+    m_program->setUniformValue("tileCount", 16);
+    m_program->setUniformValue("tileSize", 16);
+    m_program->release();
+
+    m_atlas = new QOpenGLTexture(QImage(":/atlas.png"));
+    m_atlas->setMagnificationFilter(QOpenGLTexture::Nearest);
+
     GLuint vbos[VBO_NUMBER];
     gl->glGenBuffers(VBO_NUMBER, vbos);
 
@@ -51,12 +70,14 @@ void ChunkManager::initialize(GameWindow* gl) {
     for (int i = 0; i < VBO_NUMBER; ++i) {
         Buffer* buffer = m_oglBuffers + i;
         buffer->count = 0;
-        buffer->draw = false;
+        buffer->draw = true;
         buffer->vao = new QOpenGLVertexArrayObject(gl);
         buffer->vao->create();
         buffer->vao->bind();
         buffer->vbo = vbos[i];
         gl->glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+        gl->glEnableVertexAttribArray(m_posAttr);
+        gl->glVertexAttribIPointer(m_posAttr, 1, GL_UNSIGNED_INT, 0, 0);
         buffer->vao->release();
     }
 
@@ -76,16 +97,26 @@ void ChunkManager::destroy(GameWindow* gl) {
     // On supprime les tableaux
     delete[] m_oglBuffers;
     m_oglBuffers = nullptr;
+    // On supprime l'atlas et le shader
+    delete m_atlas;
+    m_atlas = nullptr;
+    delete m_program;
+    m_program = nullptr;
 }
 
 void ChunkManager::update(GameWindow* gl) {
     if (m_isInit) {
-        QVector3D camPos = gl->getCamera().getPosition();
-        int chunkI = floor(camPos.x() / CHUNK_SIZE);
-        int chunkJ = floor(camPos.y() / CHUNK_SIZE);
-        int chunkK = floor(camPos.z() / CHUNK_SIZE);
+        // On débloque l'accès aux données (en cas d'oublie d'un appel à unlockChunkData)
+        for (int i = 0; i < CHUNK_NUMBER; ++i) {
+            m_inUseChunkData[i].store(false);
+        }
 
-        // On nettoie les chunk inutiles
+        QVector3D camPos = gl->getCamera().getPosition();
+        int chunkI = floor(camPos.x() / (CHUNK_SIZE * CHUNK_SCALE));
+        int chunkJ = floor(camPos.y() / (CHUNK_SIZE * CHUNK_SCALE));
+        int chunkK = floor(camPos.z() / (CHUNK_SIZE * CHUNK_SCALE));
+
+        // On nettoie les chunks inutiles
         if (!m_generationIsRunning) {
             for (auto it = m_ChunkMap.begin(); it != m_ChunkMap.end();) {
                 if ((it->second.chunkBufferIndex == -1) && (it->second.vboIndex == -1)) {
@@ -96,7 +127,7 @@ void ChunkManager::update(GameWindow* gl) {
             }
         }
         // Si on change de chunk on lance la génération
-        if ((chunkI != m_currentChunkI) || (chunkJ != m_currentChunkJ)) {
+        if ((chunkI != m_currentChunkI) || (chunkK != m_currentChunkK)) {
             m_currentChunkI = chunkI;
             m_currentChunkJ = chunkJ;
             m_currentChunkK = chunkK;
@@ -107,25 +138,34 @@ void ChunkManager::update(GameWindow* gl) {
         }
         if (m_canUploadMesh) {
             m_canUploadMesh = false;
-            /*gl->glBindBuffer(GL_ARRAY_BUFFER, m_oglBuffers[m_vboToUpload].vbo);
-            gl->glBufferData(GL_ARRAY_BUFFER, m_countToUpload, m_tempVertexData, GL_DYNAMIC_DRAW);
-            gl->glBindBuffer(GL_ARRAY_BUFFER, 0);*/
-
-            m_canGenerateMesh = true;
+            m_oglBuffers[m_vboToUpload].count = m_countToUpload;
+            gl->glBindBuffer(GL_ARRAY_BUFFER, m_oglBuffers[m_vboToUpload].vbo);
+            gl->glBufferData(GL_ARRAY_BUFFER, m_countToUpload * sizeof(GLuint), m_tempVertexData, GL_DYNAMIC_DRAW);
+            gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
+        m_canGenerateMesh = true;
     }
 }
 
 void ChunkManager::draw(GameWindow* gl) {
     if (m_isInit) {
-        // TODO rajouter les shader et les textures
+        m_program->bind();
 
-        for (int i = 0; i < VBO_NUMBER; ++i) {
-            if (!m_availableBuffer[i]) {
-                Buffer* buffer = m_oglBuffers + i;
+        QMatrix4x4 mat = gl->getCamera().getViewProjMatrix();
+        QMatrix4x4 scale;
+        scale.scale(CHUNK_SCALE, CHUNK_SCALE, CHUNK_SCALE);
+        m_program->setUniformValue(m_matrixUniform, mat * scale);
+        m_atlas->bind(0);
+
+        for (auto& it : m_ChunkMap) {
+            Chunk& chunk = it.second;
+            if (chunk.vboIndex != -1) {
+                Buffer* buffer = m_oglBuffers + chunk.vboIndex;
                 if (buffer->draw) {
                     buffer->vao->bind();
+                    m_program->setUniformValue(m_chunkPosUniform, QVector3D(chunk.i * CHUNK_SIZE, chunk.j * CHUNK_SIZE, chunk.k * CHUNK_SIZE));
                     gl->glDrawArrays(GL_TRIANGLES, 0, buffer->count);
+                    buffer->vao->release();
                 }
             }
         }
@@ -191,7 +231,7 @@ void ChunkManager::run() {
             }
             Chunk& chunk = it.second;
             if ((std::abs(chunk.i - m_currentChunkI) > VIEW_SIZE) ||
-                (std::abs(chunk.j - m_currentChunkJ) > VIEW_SIZE)) {
+                (std::abs(chunk.k - m_currentChunkK) > VIEW_SIZE)) {
                 if (chunk.chunkBufferIndex != -1) {
                     m_availableChunkData[chunk.chunkBufferIndex].store(false);
                     m_toInvalidateChunkData.push_back(it.first);
@@ -216,11 +256,14 @@ void ChunkManager::run() {
                     auto it = m_ChunkMap.find(tuple);
                     if (it != m_ChunkMap.end()) {
                         Chunk& chunk = it->second;
+                        chunk.i = i;
+                        chunk.j = j;
+                        chunk.k = k;
                         if (chunk.chunkBufferIndex == -1) {
-                            m_toGenerateChunkData.push_back(it->first);
+                            m_toGenerateChunkData.push_back(tuple);
                         }
                         if (chunk.vboIndex == -1) {
-                            m_toGenerateBuffer.push_back(it->first);
+                            m_toGenerateBuffer.push_back(tuple);
                         }
                     } else {
                         Chunk chunk;
@@ -265,9 +308,13 @@ void ChunkManager::run() {
             if (bufferIndex != -1) {
                 newChunk.chunkBufferIndex = bufferIndex;
                 m_availableChunkData[bufferIndex].store(false);
+
                 // TODO Générer le nouveau chunk
             } else {
                 // Plus assez de blocs libres
+                #ifdef QT_DEBUG
+                std::cout << "Plus assez de blocs libre pour charger un chunk" << std::endl;
+                #endif
                 break;
             }
         }
@@ -276,11 +323,12 @@ void ChunkManager::run() {
         }
         // On transforme tous les chunks en meshs.
         while (m_toGenerateBuffer.size() > 0) {
-            while (m_canGenerateMesh.load() == false) {
+            while (m_canGenerateMesh == false) {
                 if (m_needRegen) {
                     break;
                 }
             }
+            m_canGenerateMesh = false;
             if (m_needRegen) {
                 break;
             }
@@ -288,30 +336,37 @@ void ChunkManager::run() {
             std::tuple<int, int, int> newChunkPos = m_toGenerateBuffer.back();
             m_toGenerateBuffer.pop_back();
             Chunk& newChunk = getChunk(std::get<0>(newChunkPos), std::get<1>(newChunkPos), std::get<2>(newChunkPos));
+            if (newChunk.chunkBufferIndex !=-1) {
+                Voxel* data = m_chunkBuffers + (newChunk.chunkBufferIndex * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
 
-            Voxel* data = m_chunkBuffers + (newChunk.chunkBufferIndex * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
+                if (m_toInvalidateBuffer.size() > 0) {
+                    // Le chunk à supprimer
+                    std::tuple<int, int, int> oldChunkPos = m_toInvalidateBuffer.back();
+                    m_toInvalidateBuffer.pop_back();
+                    Chunk& oldChunk = getChunk(std::get<0>(oldChunkPos), std::get<1>(oldChunkPos), std::get<2>(oldChunkPos));
+                    m_vboToUpload = oldChunk.vboIndex;
+                    oldChunk.vboIndex = -1;
+                } else {
+                    m_vboToUpload = seekFreeBuffer();
+                }
+                if (m_vboToUpload != -1) {
+                    newChunk.vboIndex = m_vboToUpload;
 
-            if (m_toInvalidateBuffer.size() > 0) {
-                // Le chunk à supprimer
-                std::tuple<int, int, int> oldChunkPos = m_toInvalidateBuffer.back();
-                m_toInvalidateBuffer.pop_back();
-                Chunk& oldChunk = getChunk(std::get<0>(oldChunkPos), std::get<1>(oldChunkPos), std::get<2>(oldChunkPos));
-                m_vboToUpload = oldChunk.vboIndex;
-                oldChunk.vboIndex = -1;
+                    m_countToUpload = m_meshGenerator.generate(data, m_tempVertexData);
+
+                    m_availableBuffer[m_vboToUpload].store(false);
+                    m_canUploadMesh = true;
+                } else {
+                    // Plus assez de vbo libres
+                    #ifdef QT_DEBUG
+                    std::cout << "Plus assez de vbo libre pour charger un chunk" << std::endl;
+                    #endif
+                    break;
+                }
             } else {
-                m_vboToUpload = seekFreeBuffer();
-            }
-            if (m_vboToUpload != -1) {
-                newChunk.vboIndex = m_vboToUpload;
-
-                // TODO Générer le nouveau buffer
-                //m_tempVertexData =
-
-                m_availableBuffer[m_vboToUpload].store(false);
-                m_canUploadMesh.store(true);
-            } else {
-                // Plus assez de vbo libres
-                break;
+                #ifdef QT_DEBUG
+                std::cout << "Impossible de generer un mesh à partir d'un chunk non charge" << std::endl;
+                #endif
             }
         }
         m_generationIsRunning.store(false);

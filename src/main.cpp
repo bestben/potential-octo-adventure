@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
         format.setOption(QSurfaceFormat::DebugContext);
         #endif
         format.setDepthBufferSize(24);
-        format.setSwapInterval(0);
+        format.setSwapInterval(1); // A changer pour caper à 60FPS
         format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
 
         GameWindow mainWindow;
@@ -33,6 +33,9 @@ int main(int argc, char* argv[]) {
         QScreen* screen = app.primaryScreen();
         QRect rec = screen->geometry();
         mainWindow.resize(rec.size().width(), rec.size().height() - 100);
+        #ifdef QT_DEBUG
+        mainWindow.resize(rec.size().width(), rec.size().height() / 2);
+        #endif
         mainWindow.show();
 
         return app.exec();

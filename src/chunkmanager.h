@@ -1,5 +1,4 @@
-#ifndef CHUNKMANAGER_H
-#define CHUNKMANAGER_H
+#pragma once
 
 #include <QtGui/QOpenGLFunctions>
 #include <atomic>
@@ -7,27 +6,13 @@
 #include <tuple>
 #include <QThread>
 
-#define CHUNK_NUMBER 700
-#define VBO_NUMBER 700
-#define CHUNK_SIZE 31
-#define VIEW_SIZE 4
-using Voxel = unsigned char;
+#include "chunk.h"
+#include "meshgenerator.h"
 
 class QOpenGLVertexArrayObject;
+class QOpenGLShaderProgram;
+class QOpenGLTexture;
 class GameWindow;
-
-struct Chunk {
-    // Les coordonées du chunk
-    int i;
-    int j;
-    int k;
-
-    bool visible;
-    float distanceFromCamera;
-
-    int chunkBufferIndex;
-    int vboIndex;
-};
 
 struct Buffer {
     QOpenGLVertexArrayObject* vao;
@@ -68,6 +53,16 @@ private:
 
     bool m_isInit;
 
+    MeshGenerator m_meshGenerator;
+    // Le shader affichant un chunk
+    QOpenGLShaderProgram* m_program;
+    // L'atlas de textures
+    QOpenGLTexture* m_atlas;
+
+    int m_posAttr;
+    int m_matrixUniform;
+    int m_chunkPosUniform;
+
     // Le tableau contenant tous les voxels des chunks
     Voxel* m_chunkBuffers;
     std::atomic<bool>* m_availableChunkData;
@@ -104,5 +99,3 @@ private:
     std::atomic<bool> m_canGenerateMesh;
     std::atomic<bool> m_canUploadMesh;
 };
-
-#endif // CHUNKMANAGER_H
