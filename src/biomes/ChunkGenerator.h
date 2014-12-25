@@ -1,6 +1,7 @@
 #pragma once
-#include "../defs.h"
+#include "../chunk.h"
 #include <memory>
+#include <fstream>
 
 class BiomeMap;
 
@@ -13,6 +14,7 @@ public:
 
 private:
 	QHash<MapIndex, std::shared_ptr<BiomeMap>> mMaps;
+	std::ofstream mLog;
 
 };
 

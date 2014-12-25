@@ -17,19 +17,23 @@ BiomeMap::BiomeMap(int i, int k) : mLayers()
 	mLayers.insert(QString("rainfall"), std::shared_ptr<BiomeLayer>(rainfall));
 
 
-	// Temperature can varie betwenn -20�C and 30�C
+	// Temperature can varie betwenn -20°C and 30°C
 	BiomeLayer *temperature = new BiomeLayer();
 	temperature->generate(60.0, -20.0, 0.005, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 1);
 	mLayers.insert(QString("temperature"), std::shared_ptr<BiomeLayer>(temperature));
 
+	// Variation du sol
 	BiomeLayer *heightmap = new BiomeLayer();
 	heightmap->generate(20.0, (double)GROUND_LEVEL, 0.05, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 2);
 	mLayers.insert(QString("heightmap"), std::shared_ptr<BiomeLayer>(heightmap));
 
+	// Montagnes
 	BiomeLayer *mountains = new BiomeLayer();
 	mountains->generate(60.0, 0.0, 0.05, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 2);
 	mLayers.insert(QString("mountains"), std::shared_ptr<BiomeLayer>(mountains));
 
+	// Tunnels
+	// Générés avec un bruit 3D
 	OpenSimplexNoise tunnelNoise(-1);
 	double mScale = 0.05;
 	for (int x = 0; x < CHUNK_SIZE; ++x) {
@@ -59,12 +63,20 @@ int BiomeMap::getGroundLevel(int i, int k) const {
 	auto& height = *mLayers[QString("heightmap")];
 	auto& mountains = *mLayers[QString("mountains")];
 
-	return (int)(height.getValue(i, k) + mountains.getValue(i, k));
+	return (int)(height.getValue(i, k) + mountains.getValue(i, k) + 0.5);
 }
 
-int BiomeMap::getVoxelType(int i, int j, int k) const{
+Voxel BiomeMap::getVoxelType(int i, int j, int k) const {
 	// TODO: Use other layers
-	return (mTunnels[k*CHUNK_SIZE*CHUNK_SIZE*7 + j*CHUNK_SIZE + i] > 50.0 && j<=getGroundLevel(i,k)) ? 1 : 0;
+	// TODO: Bias tunnels density near surface towards 100 to avoid holes in the ground
+	if (mTunnels[k*CHUNK_SIZE*CHUNK_SIZE * 7 + j*CHUNK_SIZE + i] > 50.0){
+		if (j <= getGroundLevel(i, k)) {
+			return 1;
+		}
+			
+	}
+
+	return 0;
 }
 
 

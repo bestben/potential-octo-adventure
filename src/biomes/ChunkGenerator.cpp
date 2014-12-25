@@ -1,59 +1,28 @@
 #include "ChunkGenerator.h"
 #include "BiomeMap.h"
-#include <QtCore/QTime>
-#include <iostream>
 #include <fstream>
-#include "omp.h"
+#include <iostream>
 
-ChunkGenerator::ChunkGenerator() : mMaps()
+ChunkGenerator::ChunkGenerator() : mMaps(), mLog("log.txt", std::ios_base::out)
 {
 
-	Voxel** data = new Voxel*[5*7*5];
-	for (int i = 0; i < 5 * 5 * 7; ++i)
-		data[i] = new Voxel[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
-	
-
-	QTime t;
-	t.start();
-	
-	#pragma omp parallel for
-	for (int i = 0; i < 5; i++) {
-		for (int j = 0; j < 7; j++) {
-			for (int k = 0; k < 5; k++) {
-				generateChunk(data[i*5*7 + j*5 + k], i, j, k);
-			}
-		}
-	}
-	
-
-	std::ofstream log("log.txt");
-	log << "Generation en " << t.elapsed() << "ms" << std::endl;
-	log.close();
-
-	std::ofstream out("chunk.data");
-
-	for (int i = 0; i < 5; i++) {
-		for (int j = 0; j < 7; j++) {
-			for (int k = 0; k < 5; k++) {
-				out.write((const char*)data[i * 5 * 7 + j * 5 + k], CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*sizeof(Voxel));
-			}
-		}
-	}
-	
-	out.close();
-
-	//delete data;
 }
 
 
 ChunkGenerator::~ChunkGenerator()
 {
+	mLog.close();
 }
 
 void ChunkGenerator::generateChunk(Voxel* data, int i, int j, int k) {
+	// mLog << "Generating chunk [" << i << "," << j << "," << k << "]" << std::endl;
+	
 	MapIndex index;
 	index.a = i;
 	index.b = k;
+
+	// On cache les maps générées pour le futur
+	// TODO: Eviter de garder trop de maps en cache
 
 	BiomeMap *map;
 	if (mMaps.contains(index)) {
@@ -63,12 +32,11 @@ void ChunkGenerator::generateChunk(Voxel* data, int i, int j, int k) {
 		mMaps.insert(index, std::shared_ptr<BiomeMap>(map));
 	}
 
-	map->outputDebug();
 	for (int x = 0; x < CHUNK_SIZE; ++x) {
 		for (int y = 0; y < CHUNK_SIZE; ++y) { // Hauteur
 			int currentHeight = y + j*CHUNK_SIZE;
 			for (int z = 0; z < CHUNK_SIZE; ++z) {
-				data[z*CHUNK_SIZE*CHUNK_SIZE + y*CHUNK_SIZE + x] = (Voxel) map->getVoxelType(x,currentHeight,z);
+				data[z*CHUNK_SIZE*CHUNK_SIZE + y*CHUNK_SIZE + x] = map->getVoxelType(x,currentHeight,z);
 			}
 
 		}

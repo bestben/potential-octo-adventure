@@ -8,6 +8,7 @@
 
 #include "chunk.h"
 #include "meshgenerator.h"
+#include "biomes/ChunkGenerator.h"
 
 class QOpenGLVertexArrayObject;
 class QOpenGLShaderProgram;
@@ -98,4 +99,6 @@ private:
 
     std::atomic<bool> m_canGenerateMesh;
     std::atomic<bool> m_canUploadMesh;
+
+	ChunkGenerator m_ChunkGenerator;
 };

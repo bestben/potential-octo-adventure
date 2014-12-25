@@ -11,8 +11,6 @@
 
 int main(int argc, char* argv[]) {
 
-	ChunkGenerator chunk;
-
     try {
         QApplication app(argc, argv);
 

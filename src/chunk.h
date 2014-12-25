@@ -1,5 +1,8 @@
 #pragma once
 
+#include <QtCore/qhash.h>
+#include <QtCore/QString>
+
 #define CHUNK_NUMBER 700
 #define VBO_NUMBER 700
 
@@ -8,10 +11,9 @@
 
 #define VIEW_SIZE 4
 
-using Voxel = unsigned char;
 
 struct Chunk {
-    // Les coordonées du chunk
+    // Les coordonnées du chunk
     int i;
     int j;
     int k;
@@ -22,4 +24,30 @@ struct Chunk {
     int chunkBufferIndex;
     int vboIndex;
 };
+
+#define GROUND_LEVEL 128
+
+typedef unsigned int uint;
+typedef unsigned char Voxel;
+
+// TODO: Enum voxel types
+
+struct MapIndex
+{
+	int a;
+	int b;
+};
+
+inline uint qHash(MapIndex key) {
+	QString str = "";
+	str += key.a;
+	str += "-";
+	str += key.b;
+	return qHash(str);
+}
+
+inline bool operator==(MapIndex lhs, MapIndex rhs){
+	return (lhs.a == rhs.a) && (lhs.b == rhs.b);
+}
+
 

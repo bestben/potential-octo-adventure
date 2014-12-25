@@ -10,7 +10,7 @@
 
 ChunkManager::ChunkManager() : m_isInit{false}, m_chunkBuffers{nullptr},
                             m_oglBuffers{nullptr}, m_currentChunkI{-1},
-                            m_currentChunkJ{-1}, m_currentChunkK{-1} {
+							m_currentChunkJ{ -1 }, m_currentChunkK{ -1 }, m_ChunkGenerator(){
     m_chunkBuffers = new Voxel[CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
     memset(m_chunkBuffers, 1, CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
 
@@ -49,7 +49,10 @@ void ChunkManager::initialize(GameWindow* gl) {
     m_program = new QOpenGLShaderProgram(gl);
     m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/render.vs"));
     m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/render.ps"));
-    m_program->link();
+	if (!m_program->link()) {
+		// TODO(antoine): Remove Force crash
+		abort();
+	}
     m_posAttr = m_program->attributeLocation("position");
     m_matrixUniform = m_program->uniformLocation("viewProj");
     m_chunkPosUniform = m_program->uniformLocation("chunkPosition");
@@ -308,8 +311,12 @@ void ChunkManager::run() {
             if (bufferIndex != -1) {
                 newChunk.chunkBufferIndex = bufferIndex;
                 m_availableChunkData[bufferIndex].store(false);
-
+				
                 // TODO Générer le nouveau chunk
+				
+				Voxel* data = m_chunkBuffers + (newChunk.chunkBufferIndex * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
+				m_ChunkGenerator.generateChunk(data, newChunk.i, newChunk.j, newChunk.k);
+				
             } else {
                 // Plus assez de blocs libres
                 #ifdef QT_DEBUG

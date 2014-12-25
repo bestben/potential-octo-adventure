@@ -1,12 +1,12 @@
 #version 330
 
-in uint position;
+in int position;
 
 uniform vec3 chunkPosition;
 uniform mat4 viewProj;
 
 out vec3 ex_pos;
-out flat uint ex_voxel;
+flat out int ex_voxel;
 out vec3 ex_normal;
 
 uniform vec3 normals[6] = {
@@ -19,11 +19,11 @@ uniform vec3 normals[6] = {
 };
 
 void main() {
-    uint normalIndex = ((position & 0x03800000) >> 23);
+    int normalIndex = ((position & 0x03800000) >> 23);
     ex_voxel = ((position & 0x007F8000) >> 15);
-    uint posX = ((position & 0x00007C00) >> 10);
-    uint posY = ((position & 0x000003E0) >> 5);
-    uint posZ = (position & 0x0000001F);
+    int posX = ((position & 0x00007C00) >> 10);
+    int posY = ((position & 0x000003E0) >> 5);
+    int posZ = (position & 0x0000001F);
     
     vec3 tp = vec3(posX, posY, posZ);
     
