@@ -1,17 +1,14 @@
 #include "meshgenerator.h"
 
-MeshGenerator::MeshGenerator()
-{
-
+MeshGenerator::MeshGenerator() {
+    m_mask = new int[CHUNK_SIZE * CHUNK_SIZE];
 }
 
-MeshGenerator::~MeshGenerator()
-{
-
+MeshGenerator::~MeshGenerator() {
+    delete[] m_mask;
 }
 
 int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
-    int* mask = new int[CHUNK_SIZE * CHUNK_SIZE];
     int vertexCount = 0;
 
     for (int axis = 0; axis < 3; ++axis) {
@@ -19,7 +16,7 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
         const int v = (axis + 2) % 3;
 
         int x[3] = {0}, q[3] = {0};
-        memset(mask, 0, CHUNK_SIZE * CHUNK_SIZE * sizeof(int));
+        memset(m_mask, 0, CHUNK_SIZE * CHUNK_SIZE * sizeof(int));
 
         // Calcule du mask
         q[axis] = 1;
@@ -34,11 +31,11 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
                             x[2] + q[2]) : 0;
                     const bool ba = static_cast<bool>(a);
                     if (ba == static_cast<bool>(b))
-                        mask[counter] = 0;
+                        m_mask[counter] = 0;
                     else if (ba)
-                        mask[counter] = a;
+                        m_mask[counter] = a;
                     else
-                        mask[counter] = -b;
+                        m_mask[counter] = -b;
                 }
             }
             ++x[axis];
@@ -47,10 +44,10 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
             counter = 0;
             for (int j = 0; j < CHUNK_SIZE; ++j) {
                 for (int i = 0; i < CHUNK_SIZE;) {
-                    int c = mask[counter];
+                    int c = m_mask[counter];
                     if (c) {
                         // Calcule de la largeur
-                        for (width = 1; c == mask[counter + width] &&
+                        for (width = 1; c == m_mask[counter + width] &&
                              i + width < CHUNK_SIZE; ++width) {
                         }
 
@@ -58,7 +55,7 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
                         bool done = false;
                         for (height = 1; j + height < CHUNK_SIZE; ++height) {
                             for (int k = 0; k < width; ++k)
-                                if (c != mask[counter + k + height * CHUNK_SIZE]) {
+                                if (c != m_mask[counter + k + height * CHUNK_SIZE]) {
                                     done = true;
                                     break;
                                 }
@@ -92,7 +89,7 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
 
                         for (int b = 0; b < width; ++b)
                             for (int a = 0; a < height; ++a)
-                                mask[counter + b + a * CHUNK_SIZE] = 0;
+                                m_mask[counter + b + a * CHUNK_SIZE] = 0;
 
                         i += width; counter += width;
                     } else {
@@ -103,7 +100,6 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
             }
         }
     }
-    delete[] mask;
     return vertexCount;
 }
 
