@@ -3,6 +3,9 @@
 #include <cmath>
 #include <QKeyEvent>
 
+#include "physic/body.h"
+#include "gamewindow.h"
+
 static const float pi = 4 * std::atan(1);
 
 float degToRad(float x) {
@@ -13,9 +16,9 @@ float radToDeg(float x) {
     return x * 180.0f / pi;
 }
 
-Camera::Camera() : m_speed{100.0f}, m_phi{degToRad(-33.0f)}, m_theta{degToRad(-10.0f)},
-                    m_thetaMax{degToRad(75.0f)}, m_sensi{0.5f}, m_fov{60.0f}, m_near{1.0f},
-                    m_far{5000.0f}, m_width{1.0f}, m_height{1.0f}, m_position{200.0f, 200.0f, 200.0f},
+Camera::Camera() : m_speed{1000.0f}, m_phi{degToRad(-33.0f)}, m_theta{degToRad(-10.0f)},
+                    m_thetaMax{degToRad(75.0f)}, m_sensi{0.5f}, m_fov{60.0f}, m_near{0.25f},
+                    m_far{2500.0f}, m_width{1.0f}, m_height{1.0f},
                     m_direction{Direction::NONE}, m_mousePressed{false}, m_isViewMatrixDirty{true}, m_isProjMatrixDirty{false} {
     m_tang = (float)std::tan(m_fov * pi  / 180.0f);
     m_nh = m_near * m_tang;
@@ -23,36 +26,42 @@ Camera::Camera() : m_speed{100.0f}, m_phi{degToRad(-33.0f)}, m_theta{degToRad(-1
     m_fh = m_far * m_tang;
     m_fw = m_fh * m_width / m_height;
 
-    setCamDef(m_position, m_position + frontDir(), QVector3D(0.0f, 1.0f, 0.0f));
+}
+
+void Camera::init(GameWindow* gl) {
+    int bodyID = gl->getPhysicManager().allocBody();
+    m_body = gl->getPhysicManager().getBody(bodyID);
+
+    m_body->position = QVector3D(200.0f, 200.0f, 200.0f);
+    setCamDef(m_body->position, m_body->position + frontDir(), QVector3D(0.0f, 1.0f, 0.0f));
 }
 
 void Camera::update(int dt) {
     // On translate la caméra
     float mul = (dt / 1000.0f) * m_speed;
     QVector3D dir = getDirection();
-    QVector3D move = dir * mul;
-    move = move + m_position;
+    QVector3D move = dir * m_speed;
 
-    setPosition(move);
-
-    QVector3D viewDir = frontDir();
-    viewDir.normalize();
-    setCamDef(m_position, viewDir, QVector3D(0.0f, 1.0f, 0.0f));
+    m_body->force = move;
 }
 
-void Camera::setPosition(const QVector3D& v) {
-    m_lastPosition = m_position;
-    m_position = v;
+void Camera::postUpdate() {
+    QVector3D viewDir = frontDir();
+    viewDir.normalize();
+
+    setCamDef(m_body->position, viewDir, QVector3D(0.0f, 1.0f, 0.0f));
 
     m_isViewMatrixDirty = true;
 }
 
-QVector3D Camera::getLastPosition() const {
-    return m_lastPosition;
+void Camera::setPosition(const QVector3D& v) {
+    m_body->position = v;
+
+    m_isViewMatrixDirty = true;
 }
 
 QVector3D Camera::getPosition() const {
-    return m_position;
+    return m_body->position;
 }
 
 QVector3D Camera::getDirection() {
@@ -98,7 +107,7 @@ QVector3D Camera::getDirection() {
         return d;
         break;
     }
-    return {};
+    return {0.0f, 0.0f, 0.0f};
 }
 
 const QMatrix4x4& Camera::getViewMatrix() {
@@ -106,10 +115,10 @@ const QMatrix4x4& Camera::getViewMatrix() {
     if (m_isViewMatrixDirty) {
         QVector3D front = frontDir();
         front.normalize();
-        QVector3D to = m_position + front;
+        QVector3D to = m_body->position + front;
 
         m_viewMatrix.setToIdentity();
-        m_viewMatrix.lookAt(m_position, to, QVector3D(0.0, 1.0, 0.0));
+        m_viewMatrix.lookAt(m_body->position, to, QVector3D(0.0, 1.0, 0.0));
         m_isViewMatrixDirty = false;
     }
     return m_viewMatrix;
@@ -244,6 +253,11 @@ bool Camera::boxInFrustum(int x, int y, int z, int size) {
  }
 
 void Camera::keyPressEvent(QKeyEvent* event) {
+
+    if (event->key() == Qt::Key_Space) {
+        m_body->jump = true;
+    }
+
     Direction mod = Direction::NONE;
     if (event->key() == Qt::Key_Z) {
         mod = Direction::UP;

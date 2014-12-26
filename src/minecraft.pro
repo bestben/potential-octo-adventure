@@ -8,7 +8,8 @@ SOURCES += \
     chunkmanager.cpp \
     meshgenerator.cpp \
     biomes/OpenSimplexNoise.cpp \
-    biomes/ChunkGenerator.cpp
+    biomes/ChunkGenerator.cpp \
+    physic/physicmanager.cpp
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -37,4 +38,6 @@ HEADERS += \
     chunk.h \
     biomes/OpenSimplexNoise.hpp \
     defs.h \
-    biomes/ChunkGenerator.h
+    biomes/ChunkGenerator.h \
+    physic/body.h \
+    physic/physicmanager.h

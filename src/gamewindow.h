@@ -9,6 +9,7 @@
 #include <QtGui/QOpenGLFunctions_3_3_Core>
 
 #include "chunkmanager.h"
+#include "physic/physicmanager.h"
 
 class QOpenGLTexture;
 class QOpenGLDebugLogger;
@@ -57,6 +58,9 @@ public:
      */
     float getFPS() const;
 
+    ChunkManager& getChunkManager();
+    PhysicManager& getPhysicManager();
+
 private:
     Camera m_camera;
     QOpenGLDebugLogger* m_logger;
@@ -69,4 +73,7 @@ private:
     bool m_isInitialized;
 
     ChunkManager m_chunkManager;
+    PhysicManager m_physicManager;
+
+    bool m_hasPhysic;
 };

@@ -10,7 +10,6 @@
 
 
 int main(int argc, char* argv[]) {
-
     try {
         QApplication app(argc, argv);
 

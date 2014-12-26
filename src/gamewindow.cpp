@@ -10,6 +10,8 @@ GameWindow::GameWindow() : m_isInitialized{false}, m_lastDelta{0}, m_currentDelt
     m_deltaTimer.start();
 
     memset(m_lastDeltas, 0, FPS_FRAME_NUMBER * sizeof(int));
+
+    m_hasPhysic = false;
 }
 
 GameWindow::~GameWindow() {
@@ -44,6 +46,7 @@ void GameWindow::initializeGL() {
     glCullFace(GL_BACK);
     glFrontFace(GL_CW);
 
+    m_camera.init(this);
     m_chunkManager.initialize(this);
     
     m_isInitialized = true;
@@ -62,6 +65,9 @@ void GameWindow::paintGL() {
 
     // On met à jour la position de la caméra
     m_camera.update(m_lastDelta);
+    m_physicManager.update(this, m_lastDelta);
+
+    m_camera.postUpdate();
 
     m_chunkManager.update(this);
     m_chunkManager.draw(this);
@@ -81,6 +87,9 @@ Camera& GameWindow::getCamera() {
 void GameWindow::keyPressEvent(QKeyEvent* event) {
     if (event->key() == Qt::Key_Escape) {
         QCoreApplication::quit();
+    } else if(event->key() == Qt::Key_P) {
+        m_hasPhysic = !m_hasPhysic;
+        m_physicManager.setGravity(m_hasPhysic);
     }
     m_camera.keyPressEvent(event);
 }
@@ -119,4 +128,12 @@ float GameWindow::getFPS() const {
 
 QOpenGLContext* GameWindow::getContext() const {
     return context();
+}
+
+ChunkManager& GameWindow::getChunkManager() {
+    return m_chunkManager;
+}
+
+PhysicManager& GameWindow::getPhysicManager() {
+    return m_physicManager;
 }

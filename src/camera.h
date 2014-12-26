@@ -20,6 +20,9 @@ enum Direction {
 
 };
 
+struct Body;
+class GameWindow;
+
 /**
  * @brief Classe représentant une caméra pouvant naviguer dans un espace en 3D.
  */
@@ -27,11 +30,17 @@ class Camera {
 public:
     Camera();
 
+    void init(GameWindow* gl);
+
     /**
      * @brief Met à jour la caméra.
      * @param dt La durée écoulée depuis la dernière mise à jour.
      */
     void update(int dt);
+    /**
+     * @brief Fonction de mise à jour après le calcule de la physique.
+     */
+    void postUpdate();
     /**
      * @brief Modifie la position de la caméra.
      * @param v La nouvelle position de la caméra.
@@ -41,10 +50,6 @@ public:
      * Renvoie la position de la camera.
      */
     QVector3D getPosition() const;
-    /**
-     * Renvoie la position précédante de la camera.
-     */
-    QVector3D getLastPosition() const;
     /**
      * Renvoie la direction de DEPLACEMENT de la caméra.
      * NOTE : La direction de déplacement peut être différente de la direction
@@ -100,8 +105,7 @@ private:
     float m_tang;
     float m_nw,m_nh,m_fw,m_fh;
 
-    QVector3D m_position; // La position de la caméra
-    QVector3D m_lastPosition;
+    Body* m_body;
     Direction m_direction; // La direction de déplacement de la caméra
 
     bool m_mousePressed; // Le clique droit est-il appuyé ?
