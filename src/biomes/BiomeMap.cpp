@@ -1,57 +1,148 @@
 #include "BiomeMap.h"
-#include "BiomeLayer.h"
 #include <QtCore/QString>
-#include "OpenSimplexNoise.hpp"
 #include <fstream>
+#include "../libnoise/noise.h"
 
+using namespace noise;
 
-BiomeMap::BiomeMap(int x, int y) : mTunnelNoise(42)
+BiomeMap::BiomeMap(int mapX, int mapY)
 {
-	mMapX = x;
-	mMapY = y;
+	mMapX = mapX;
+	mMapY = mapY;
+	
 
 	double xOffset = mMapX*BIOMEMAP_SIZE;
-	double yOffset = mMapY*BIOMEMAP_SIZE;
+	double zOffset = mMapY*BIOMEMAP_SIZE;
 
+	mTunnelNoise.SetSeed(42);
+	mTunnelNoise.SetFrequency(0.05);
+	mTunnelNoise.SetOctaveCount(1);
+	mTunnelNoise.SetNoiseQuality(NoiseQuality::QUALITY_FAST);
 
-	// Pluie
-	mRainfall = new BiomeLayer(1.0, 0.0, 0.05, xOffset, yOffset, 0);
-
-	// Temperatur entre -20°C et 30°C
-	mTemperature = new BiomeLayer(60.0, -20.0, 0.005, xOffset, yOffset, 1);
-
-	// Variation du sol
-	mHeightmap = new BiomeLayer(40.0, 0.0, 0.025, xOffset, yOffset, 2);
+	// Variation des biomes
+	module::Voronoi biomeSelectorNoise;
+	biomeSelectorNoise.SetSeed(1337);
+	biomeSelectorNoise.SetDisplacement(BIOMES_COUNT);
+	biomeSelectorNoise.SetFrequency(0.01);
+	module::ScaleBias biasBiomeSelector;
+	biasBiomeSelector.SetSourceModule(0, biomeSelectorNoise);
+	biasBiomeSelector.SetScale(0.5);
+	biasBiomeSelector.SetBias(BIOMES_COUNT*0.5);
 
 	// Montagnes
-	mMountains = new BiomeLayer(1.0, 0.0, 0.005, xOffset, yOffset, 3);
+	mMountains = new double[BIOMEMAP_SIZE*BIOMEMAP_SIZE];
+	module::Perlin moutainsNoise;
+	moutainsNoise.SetNoiseQuality(noise::NoiseQuality::QUALITY_FAST);
+	moutainsNoise.SetSeed(0);
+	moutainsNoise.SetOctaveCount(4);
+	moutainsNoise.SetFrequency(0.025);
+	module::ScaleBias biasMoutains;
+	biasMoutains.SetSourceModule(0,moutainsNoise);
+	biasMoutains.SetScale(30);
+	biasMoutains.SetBias(30);
 
-	// Plateau, falaises
-	mSharpHills = new BiomeLayer(5.0, 0.0, 0.05, xOffset, yOffset, 4);
+	for (int z = 0; z < BIOMEMAP_SIZE; ++z) {
+		for (int x = 0; x < BIOMEMAP_SIZE; ++x) {
+			mMountains[z*BIOMEMAP_SIZE + x] = biasMoutains.GetValue((x + xOffset), 0.0, (z + zOffset));
+		}
+	}
 
-	// Couche de terre avant la roche en sous-sol
-	mDirtLayer = new BiomeLayer(20.0, 0.0, 0.05, xOffset, yOffset, 5);
+	//Flatlands
+	mFlatlands = new double[BIOMEMAP_SIZE*BIOMEMAP_SIZE];
+	module::Perlin flatNoise;
+	flatNoise.SetNoiseQuality(noise::NoiseQuality::QUALITY_FAST);
+	flatNoise.SetSeed(1);
+	flatNoise.SetOctaveCount(3);
+	flatNoise.SetFrequency(0.01);
+	module::ScaleBias biasFlatlands;
+	biasFlatlands.SetSourceModule(0, flatNoise);
+	biasFlatlands.SetScale(5);
+	biasFlatlands.SetBias(5);
+	for (int z = 0; z < BIOMEMAP_SIZE; ++z) {
+		for (int x = 0; x < BIOMEMAP_SIZE; ++x) {
+			mFlatlands[z*BIOMEMAP_SIZE + x] = biasFlatlands.GetValue((x + xOffset), 0.0, (z + zOffset));
+		}
+	}
+
+	// Biome selector
+	module::Select biomeSelector;
+	biomeSelector.SetSourceModule(0, biasFlatlands);
+	biomeSelector.SetSourceModule(1, biasMoutains);
+	biomeSelector.SetControlModule(biasBiomeSelector);
+	biomeSelector.SetBounds(3.0, 1000.0); // In bounds => 1 
+	biomeSelector.SetEdgeFalloff(20.0);
+
+	// Heightmap
+	mHeightmap = new double[BIOMEMAP_SIZE*BIOMEMAP_SIZE];
+	for (int z = 0; z < BIOMEMAP_SIZE; ++z) {
+		for (int x = 0; x < BIOMEMAP_SIZE; ++x) {
+			mHeightmap[z*BIOMEMAP_SIZE + x] = biomeSelector.GetValue((x + xOffset), 0.0, (z + zOffset));
+		}
+	}
+	
+	// Dirtlayer
+	mDirtLayer = new double[BIOMEMAP_SIZE*BIOMEMAP_SIZE];
+	module::Perlin dirtNoise;
+	dirtNoise.SetNoiseQuality(noise::NoiseQuality::QUALITY_FAST);
+	dirtNoise.SetSeed(5);
+	dirtNoise.SetOctaveCount(2);
+	dirtNoise.SetFrequency(0.05);
+	module::ScaleBias dirtFinalNoise;
+	dirtFinalNoise.SetSourceModule(0, dirtNoise);
+	dirtFinalNoise.SetScale(10);
+	dirtFinalNoise.SetBias(10);
+	for (int z = 0; z < BIOMEMAP_SIZE; ++z) {
+		for (int x = 0; x < BIOMEMAP_SIZE; ++x) {
+			mDirtLayer[z*BIOMEMAP_SIZE + x] = dirtFinalNoise.GetValue((x + xOffset), 0.0, (z + zOffset));
+		}
+	}
+
+	// Temperature
+	mTemperature = new double[BIOMEMAP_SIZE*BIOMEMAP_SIZE];
+	module::Perlin tempNoise;
+	tempNoise.SetNoiseQuality(noise::NoiseQuality::QUALITY_FAST);
+	tempNoise.SetSeed(5);
+	tempNoise.SetOctaveCount(2);
+	tempNoise.SetFrequency(0.005);
+	module::ScaleBias tempFinalNoise;
+	tempFinalNoise.SetSourceModule(0, tempNoise);
+	tempFinalNoise.SetScale(25);
+	tempFinalNoise.SetBias(5);
+	for (int z = 0; z < BIOMEMAP_SIZE; ++z) {
+		for (int x = 0; x < BIOMEMAP_SIZE; ++x) {
+			mTemperature[z*BIOMEMAP_SIZE + x] = tempFinalNoise.GetValue((x + xOffset), 0.0, (z + zOffset));
+		}
+	}
 
 }
 
-double BiomeMap::getTunnelValue(const Coords& chunkId, int x, int y, int z) {
 
+inline double BiomeMap::getValue(double* data, Coords chunkIdInMap, int i, int k) {
+
+	int x = i + chunkIdInMap.i*CHUNK_SIZE;
+	int z = k + chunkIdInMap.k*CHUNK_SIZE;
+
+	return data[z*BIOMEMAP_SIZE + x];
+}
+
+inline double BiomeMap::getTunnelValue(const Coords& chunkId, int x, int y, int z) {
+
+	
 	int i = chunkId.i*CHUNK_SIZE + x;
 	int j = chunkId.j*CHUNK_SIZE + y;
 	int k = chunkId.k*CHUNK_SIZE + z;
 
-	return (mTunnelNoise.value(i*0.05, j*0.05, k*0.05) + 1.0)*0.5; 
+	return (mTunnelNoise.GetValue(i, j, k)+1.0)*0.5;
 }
 
 
 BiomeMap::~BiomeMap()
 {
-	delete mHeightmap;
+	delete mFlatlands;
 	delete mMountains;
 	delete mTemperature;
-	delete mRainfall;
-	delete mSharpHills;
 	delete mDirtLayer;
+	delete mHeightmap;
 }
 
 
@@ -59,47 +150,54 @@ Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 
 	// Coordonnées relative de ce chunks dans la map que cet objet représente
 	Coords chunkIdInMap = chunkIdToChunkIdInMap(chunkId);
+	int voxelHeight = chunkId.j*CHUNK_SIZE + j;
 
 	Voxel result = Voxel::AIR;
 
-	int voxelHeight = chunkId.j*CHUNK_SIZE + j;
+	
 
 	if (voxelHeight == 0){
 		result = Voxel::ROCK;
 		return result;
 	}
 
-	double temperature = mTemperature->getValue(chunkIdInMap, i, k);
+	double temperature = getValue(mTemperature, chunkIdInMap, i, k);
+	Voxel replace = temperature > 20 ? Voxel::SAND : Voxel::GRAVEL;
+
 	// On veut des montagnes pas hautes dans les deserts
-	double biasDesert = 1.0 - clamp(range(temperature, 20.0, 30.0), 0.0, 1.0)*0.1;
+	double biasDesert = 1.0 - clamp(range(temperature, 20.0, 35.0), 0.0, 1.0);
 
 	// Calcul de la hauteur de la surface
 	double value = (double)GROUND_LEVEL;
-	value += mHeightmap->getValue(chunkIdInMap, i, k)*mMountains->getValue(chunkIdInMap, i, k);
+	value += getValue(mHeightmap, chunkIdInMap, i, k)*biasDesert;
 
-	double sharpHill = mSharpHills->getValue(chunkIdInMap, i, k);
+	/*double sharpHill = getValue(mSharpHills, chunkIdInMap, i, k);
 	if (sharpHill > 1.0) {
 		value += clamp(sharpHill*sharpHill, 0.0, 15.0);
-	}
+	}*/
 
-	value *= biasDesert;
+	//value *= biasDesert;
 
 	int terrainHeight = round(value);
 
-
-	double bias = clamp(range(voxelHeight-terrainHeight+5,0.0,20.0),0.0,1.0);
+	double bias = clamp(range(voxelHeight - GROUND_LEVEL - 12, 0.0, 20.0), -0.05, 1.0);
 
 	//double rain = mRainfall->getValue(chunkId, i, k);
-	double dirt = mDirtLayer->getValue(chunkIdInMap, i, k);
+	double dirt = getValue(mDirtLayer, chunkIdInMap, i, k);
 	
 
 	bool aboveGround = voxelHeight >= terrainHeight;
 	bool atGround = voxelHeight == terrainHeight;
-	bool inTunnel = (getTunnelValue(chunkId, i, j, k) + bias) > 0.3;
+	double tunnel = getTunnelValue(chunkId, i, j, k);
+	bool inTunnel = (tunnel + bias) > 0.2;
+	bool inTunnelBorder = (tunnel + bias) > 0.2 && (tunnel + bias) < 0.25;
 
 
 	int distanceFromSurface = voxelHeight - terrainHeight; // + : above, - : below
 	int distanceFromSeaLevel = voxelHeight - GROUND_LEVEL;
+	
+	/*if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT)
+		result = Voxel::WATER;*/
 
 	if (voxelHeight < 10  && !inTunnel)
 		return Voxel::LAVA;
@@ -115,22 +213,22 @@ Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 	//Surface
 	if (atGround && inTunnel)
 		result = Voxel::GRASS;
+	if (atGround && inTunnelBorder)
+		result = replace;
+
 
 	
-		
-
-	if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT)
-		result = Voxel::WATER;
 
 /*	if ((distanceFromSeaLevel == SEA_HEIGHT || distanceFromSeaLevel == SEA_HEIGHT-1) && result == Voxel::GRASS) {
 		result = Voxel::SAND;
 	}*/
-	if (temperature > 20){
+	
+	if (temperature > 18){
 		if (result == Voxel::GRASS || result == Voxel::DIRT) {
-			result = Voxel::SAND;
+			result = replace;
 		}
 		if (result == Voxel::WATER)
-			result = Voxel::SAND;
+			result = replace;
 
 		/*if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT)/2
 			result = Voxel::SAND;*/

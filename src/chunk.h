@@ -14,11 +14,16 @@
 #define BIOMEMAP_CHUNKS 8
 #define BIOMEMAP_SIZE CHUNK_SIZE*BIOMEMAP_CHUNKS
 
+#define BIOMES_COUNT 4
+
 #ifdef QT_DEBUG
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 #else
 #define Assert(Expression)
 #endif
+
+
+
 struct Chunk {
     // Les coordonnées du chunk
     int i;

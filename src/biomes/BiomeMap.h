@@ -1,16 +1,17 @@
 #pragma once
 
 #include <QtCore/QHash>
-#include "BiomeLayer.h"
 #include <memory>
 #include <fstream>
+#include "../chunk.h"
+#include "../libnoise/noise.h"
 
 class BiomeLayer;
 
 class BiomeMap
 {
 public:
-	BiomeMap(int x, int y);
+	BiomeMap(int mapX, int mapY);
 	Voxel getVoxelType(const Coords& chunkId, int i, int j, int k);
 	~BiomeMap();
 
@@ -19,16 +20,18 @@ private:
 	int mMapX;
 	int mMapY;
 
-	double getTunnelValue(const Coords& chunkId, int x, int y, int z);
+	noise::module::Perlin mTunnelNoise;
 
-	OpenSimplexNoise mTunnelNoise;
+	inline double getTunnelValue(const Coords& chunkId, int x, int y, int z);
 
-	BiomeLayer *mHeightmap;
-	BiomeLayer *mMountains;
-	BiomeLayer *mTemperature;
-	BiomeLayer *mRainfall;
-	BiomeLayer *mSharpHills;
-	BiomeLayer *mDirtLayer;	
+	inline double getValue(double* data, Coords chunkIdInMap, int i, int k);
+
+	double *mBiomeSelector;
+	double *mFlatlands;
+	double *mMountains;
+	double *mTemperature;
+	double *mDirtLayer;
+	double *mHeightmap;
 
 	std::ofstream mLog;
 };

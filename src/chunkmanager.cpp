@@ -133,7 +133,7 @@ void ChunkManager::update(GameWindow* gl) {
 
         // On nettoie les chunks inutiles
 		m_mutexChunkManagerList.lock();
-		for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end(); ++ite) {
+		for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end();) {
 			
 			auto it = *ite;
 			if ((std::abs(it->i - m_currentChunk.i) > VIEW_SIZE) ||
@@ -149,14 +149,12 @@ void ChunkManager::update(GameWindow* gl) {
 					m_availableBuffer[it->vboIndex] = true;
 					it->vboIndex = -1;
 				}
-			}
-
-			/*if ((it->chunkBufferIndex == -1) && (it->vboIndex == -1)) {
 				ite = m_ChunkMap.erase(ite);
-			}
-			else {
+			} else {
 				++ite;
-			}*/
+			}
+			// TODO: Save le chunk sur le DD pour réutilisation
+			//++ite;
         }
 		m_mutexChunkManagerList.unlock();
         
@@ -306,14 +304,19 @@ void ChunkManager::run() {
             m_toGenerateChunkData.pop_front();       
 
             int bufferIndex = seekFreeChunkData();
+			int vboIndex = seekFreeBuffer();
             
-            if (bufferIndex != -1) {
+			if (bufferIndex != -1 && vboIndex != -1) {
 				newChunk->chunkBufferIndex = bufferIndex;
+				newChunk->vboIndex = vboIndex;
+
 				m_availableChunkData[bufferIndex] = false;
-						
+				m_availableBuffer[vboIndex] = false;
+				m_mutexChunkManagerList.unlock();
                 // TODO Générer le nouveau chunk et le prendre du DD si déja présent
 				Voxel* data = getBufferAdress(bufferIndex);
 				m_ChunkGenerator.generateChunk(data, newChunk->i, newChunk->j, newChunk->k);
+				m_mutexChunkManagerList.lock();
 				m_toGenerateBuffer.push_back(newChunk);
 				
             } else {
@@ -335,9 +338,8 @@ void ChunkManager::run() {
 			m_toGenerateBuffer.pop_front();
 			
 			if (newChunk->chunkBufferIndex != -1) {
-                m_vboToUpload = seekFreeBuffer();
-                if (m_vboToUpload != -1) {
-					newChunk->vboIndex = m_vboToUpload;
+				if (newChunk->vboIndex != -1) {
+					m_vboToUpload = newChunk->vboIndex;
 					m_availableBuffer[m_vboToUpload] = false;
 					m_oglBuffers[m_vboToUpload].draw = false;
 					Voxel *data = getBufferAdress(newChunk->chunkBufferIndex);
