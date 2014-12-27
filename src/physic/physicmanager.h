@@ -6,6 +6,7 @@
 
 struct Body;
 class GameWindow;
+class QVector3D;
 
 class PhysicManager {
 public:
@@ -22,6 +23,8 @@ public:
     void setGravity(bool active);
 
 private:
+    bool collide(GameWindow* gl, Body* body, QVector3D& position, const QVector3D& delta);
+
     Body* m_bodies;
     std::vector<bool> m_freeBodies;
 

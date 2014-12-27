@@ -16,7 +16,7 @@ float radToDeg(float x) {
     return x * 180.0f / pi;
 }
 
-Camera::Camera() : m_speed{1000.0f}, m_phi{degToRad(-33.0f)}, m_theta{degToRad(-10.0f)},
+Camera::Camera() : m_speed{100.0f}, m_phi{degToRad(-33.0f)}, m_theta{degToRad(-10.0f)},
                     m_thetaMax{degToRad(75.0f)}, m_sensi{0.5f}, m_fov{60.0f}, m_near{0.25f},
                     m_far{2500.0f}, m_width{1.0f}, m_height{1.0f},
                     m_direction{Direction::NONE}, m_mousePressed{false}, m_isViewMatrixDirty{true}, m_isProjMatrixDirty{false} {
@@ -32,7 +32,7 @@ void Camera::init(GameWindow* gl) {
     int bodyID = gl->getPhysicManager().allocBody();
     m_body = gl->getPhysicManager().getBody(bodyID);
 
-    m_body->position = QVector3D(200.0f, 200.0f, 200.0f);
+    m_body->position = QVector3D(0.0f, 1085.0f, 0.0f);
     setCamDef(m_body->position, m_body->position + frontDir(), QVector3D(0.0f, 1.0f, 0.0f));
 }
 
@@ -115,10 +115,12 @@ const QMatrix4x4& Camera::getViewMatrix() {
     if (m_isViewMatrixDirty) {
         QVector3D front = frontDir();
         front.normalize();
-        QVector3D to = m_body->position + front;
+
+        QVector3D eyePos = m_body->position + QVector3D(0.0f, m_body->height, 0.0f);
+        QVector3D to = eyePos + front;
 
         m_viewMatrix.setToIdentity();
-        m_viewMatrix.lookAt(m_body->position, to, QVector3D(0.0, 1.0, 0.0));
+        m_viewMatrix.lookAt(eyePos, to, QVector3D(0.0, 1.0, 0.0));
         m_isViewMatrixDirty = false;
     }
     return m_viewMatrix;
