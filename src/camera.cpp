@@ -1,5 +1,5 @@
 #include "camera.h"
-
+#include "chunk.h"
 #include <cmath>
 #include <QKeyEvent>
 
@@ -32,7 +32,7 @@ void Camera::init(GameWindow* gl) {
     int bodyID = gl->getPhysicManager().allocBody();
     m_body = gl->getPhysicManager().getBody(bodyID);
 
-    m_body->position = QVector3D(0.0f, 1085.0f, 0.0f);
+    m_body->position = QVector3D(124.0f, CHUNK_SCALE*CHUNK_SIZE*5.5f, 124.0f );
     setCamDef(m_body->position, m_body->position + frontDir(), QVector3D(0.0f, 1.0f, 0.0f));
 }
 

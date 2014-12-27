@@ -5,6 +5,7 @@
 #include <vector>
 #include <tuple>
 #include <QThread>
+#include <QLinkedList>
 
 #include "chunk.h"
 #include "meshgenerator.h"
@@ -30,19 +31,16 @@ public:
     ChunkManager();
     ~ChunkManager();
 
-    void initialize(GameWindow* gl);
+	void initialize(GameWindow* gl);
     void update(GameWindow* gl);
     void draw(GameWindow* gl);
-    void destroy(GameWindow* gl);
+	void checkChunk(Coords tuple);
+	void requestChunks();
+	Voxel* getBufferAdress(int index);
+	void destroy(GameWindow* gl);
 
-    /**
-     * @brief Renvoie le pointeur sur les données d'un chunk.
-     * Les données sont bloquées tant que "unlockChunkData" n'est pas appelée.
-     * @return nullptr si le chunk n'est pas disponible.
-     */
-    Voxel* lockChunkData(int i, int j, int k);
-
-    void unlockChunkData(int i, int j, int k);
+	Chunk& getChunk(Coords pos);
+	Chunk& getChunk(int i, int j, int k);
 
     char getVoxel(int x, int y, int z);
 
@@ -50,7 +48,7 @@ protected:
     void run();
 
 private:
-    Chunk& getChunk(int i, int j, int k);
+    
     int seekFreeChunkData();
     int seekFreeBuffer();
 
@@ -74,11 +72,14 @@ private:
     // Le tableau des buffers opengl
     Buffer* m_oglBuffers;
 
-    std::map<std::tuple<int, int, int>, Chunk> m_ChunkMap;
+    //std::map<std::tuple<int, int, int>, Chunk> m_ChunkMap;
+	QHash<Coords, Chunk*> m_ChunkMap;
 
     int m_currentChunkI;
     int m_currentChunkJ;
     int m_currentChunkK;
+
+	Coords m_currentChunk;
 
     /////////////////////////
     /// Variables du second thread
@@ -89,11 +90,23 @@ private:
 
     std::atomic<bool>* m_availableBuffer;
 
+	QMutex m_mutexChunkManagerList;
+	/*
+	QLinkedList<Chunk*> m_toInvalidateChunkData;
+	
+	QLinkedList<Chunk*> m_toInvalidateBuffer;
+	*/
+	QLinkedList<Chunk*> m_toGenerateChunkData;
+	QLinkedList<Chunk*> m_toGenerateBuffer;
+	
+
+	/*
     std::vector<std::tuple<int, int, int>> m_toInvalidateChunkData;
     std::vector<std::tuple<int, int, int>> m_toGenerateChunkData;
 
     std::vector<std::tuple<int, int, int>> m_toInvalidateBuffer;
     std::vector<std::tuple<int, int, int>> m_toGenerateBuffer;
+	*/
 
     GLuint* m_tempVertexData;
     int m_vboToUpload;
@@ -103,4 +116,6 @@ private:
     std::atomic<bool> m_canUploadMesh;
 
 	ChunkGenerator m_ChunkGenerator;
+
+	bool m_FirstUpdate;
 };

@@ -11,39 +11,38 @@ ChunkGenerator::ChunkGenerator() : mMaps(), mLog("log.txt", std::ios_base::out)
 
 ChunkGenerator::~ChunkGenerator()
 {
+	for (auto* map : mMaps) {
+		delete map;
+	}
 	mLog.close();
 }
 
 void ChunkGenerator::generateChunk(Voxel* data, int i, int j, int k) {
-	// mLog << "Generating chunk [" << i << "," << j << "," << k << "]" << std::endl;
-	
-	MapIndex index;
-	index.a = i;
-	index.b = k;
+	Coords chunkId = { i, j, k };
+	generateChunk(data, chunkId);
+}
 
-	// On cache les maps générées pour le futur
-	// TODO: Eviter de garder trop de maps en cache
+void ChunkGenerator::generateChunk(Voxel* data, Coords chunkId) {
+	//mLog << "Generating chunk [" << chunkId.i << "," << chunkId.j << "," << chunkId.k << "]" << std::endl;
 
-	BiomeMap *map;
-	if (mMaps.contains(index)) {
-		map = mMaps[index].get();
-	} else {
-		map = new BiomeMap(index.a, index.b);
-		mMaps.insert(index, std::shared_ptr<BiomeMap>(map));
-	}
+	Coords mapCoords = chunkIdToMapId(chunkId);
 
-	for (int x = 0; x < CHUNK_SIZE; ++x) {
+	auto map = mMaps.find(mapCoords);
+	if (map == mMaps.end()) {
+		mMaps[mapCoords] = new BiomeMap(mapCoords.i, mapCoords.k);
+		map = mMaps.find(mapCoords);
+	}/* else {
+		mLog << "reusing cached map : " << mapCoords.i << " - " << mapCoords.k << std::endl;
+	}*/
+
+	for (int z = 0; z < CHUNK_SIZE; ++z) {
 		for (int y = 0; y < CHUNK_SIZE; ++y) { // Hauteur
-			int currentHeight = y + j*CHUNK_SIZE;
-			for (int z = 0; z < CHUNK_SIZE; ++z) {
-				data[z*CHUNK_SIZE*CHUNK_SIZE + y*CHUNK_SIZE + x] = map->getVoxelType(x,currentHeight,z);
+			for (int x = 0; x < CHUNK_SIZE; ++x) {
+				data[z*CHUNK_SIZE*CHUNK_SIZE + y*CHUNK_SIZE + x] = (*map)->getVoxelType(chunkId, x, y, z);
 			}
-
 		}
 
 	}
-
-
 
 
 }
