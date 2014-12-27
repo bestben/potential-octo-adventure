@@ -2,28 +2,35 @@
 #include "BiomeLayer.h"
 #include <QtCore/QString>
 #include "OpenSimplexNoise.hpp"
+#include <fstream>
 
 
-
-BiomeMap::BiomeMap() : mTunnelNoise(42)
+BiomeMap::BiomeMap(int x, int y) : mTunnelNoise(42)
 {
+	mMapX = x;
+	mMapY = y;
+
+	double xOffset = mMapX*BIOMEMAP_SIZE;
+	double yOffset = mMapY*BIOMEMAP_SIZE;
+
+
 	// Pluie
-	mRainfall = new BiomeLayer(1.0, 0.0, 0.05, 0.0, 0.0, 0);
+	mRainfall = new BiomeLayer(1.0, 0.0, 0.05, xOffset, yOffset, 0);
 
 	// Temperatur entre -20°C et 30°C
-	mTemperature = new BiomeLayer(60.0, -20.0, 0.005, 0.0, 0.0, 1);
+	mTemperature = new BiomeLayer(60.0, -20.0, 0.005, xOffset, yOffset, 1);
 
 	// Variation du sol
-	mHeightmap = new BiomeLayer(40.0, 0.0, 0.025, 0.0, 0.0, 2);
+	mHeightmap = new BiomeLayer(40.0, 0.0, 0.025, xOffset, yOffset, 2);
 
 	// Montagnes
-	mMountains = new BiomeLayer(1.0, 0.0, 0.005, 0.0, 0.0, 3);
+	mMountains = new BiomeLayer(1.0, 0.0, 0.005, xOffset, yOffset, 3);
 
 	// Plateau, falaises
-	mSharpHills = new BiomeLayer(5.0, 0.0, 0.05, 0.0, 0.0, 4);
+	mSharpHills = new BiomeLayer(5.0, 0.0, 0.05, xOffset, yOffset, 4);
 
 	// Couche de terre avant la roche en sous-sol
-	mDirtLayer = new BiomeLayer(20.0, 0.0, 0.05, 0.0, 0.0, 5);
+	mDirtLayer = new BiomeLayer(20.0, 0.0, 0.05, xOffset, yOffset, 5);
 
 }
 
@@ -49,8 +56,10 @@ BiomeMap::~BiomeMap()
 
 
 Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
-	// TODO: Use other layers
-	// TODO: Bias tunnels density near surface towards 100 to avoid holes in the ground
+
+	// Coordonnées relative de ce chunks dans la map que cet objet représente
+	Coords chunkIdInMap = chunkIdToChunkIdInMap(chunkId);
+
 	Voxel result = Voxel::AIR;
 
 	int voxelHeight = chunkId.j*CHUNK_SIZE + j;
@@ -60,15 +69,15 @@ Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 		return result;
 	}
 
-	double temperature = mTemperature->getValue(chunkId, i, k);
+	double temperature = mTemperature->getValue(chunkIdInMap, i, k);
 	// On veut des montagnes pas hautes dans les deserts
 	double biasDesert = 1.0 - clamp(range(temperature, 20.0, 30.0), 0.0, 1.0)*0.1;
 
 	// Calcul de la hauteur de la surface
 	double value = (double)GROUND_LEVEL;
-	value += mHeightmap->getValue(chunkId, i, k)*mMountains->getValue(chunkId, i, k);
+	value += mHeightmap->getValue(chunkIdInMap, i, k)*mMountains->getValue(chunkIdInMap, i, k);
 
-	double sharpHill = mSharpHills->getValue(chunkId, i, k);
+	double sharpHill = mSharpHills->getValue(chunkIdInMap, i, k);
 	if (sharpHill > 1.0) {
 		value += clamp(sharpHill*sharpHill, 0.0, 15.0);
 	}
@@ -81,7 +90,7 @@ Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 	double bias = clamp(range(voxelHeight-terrainHeight+5,0.0,20.0),0.0,1.0);
 
 	//double rain = mRainfall->getValue(chunkId, i, k);
-	double dirt = mDirtLayer->getValue(chunkId, i, k);
+	double dirt = mDirtLayer->getValue(chunkIdInMap, i, k);
 	
 
 	bool aboveGround = voxelHeight >= terrainHeight;

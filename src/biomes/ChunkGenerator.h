@@ -14,7 +14,7 @@ public:
 	void generateChunk(Voxel* data, Coords chunkId);
 
 private:
-	BiomeMap mMap;
+	QHash<Coords, BiomeMap*> mMaps;
 	std::ofstream mLog;
 
 };

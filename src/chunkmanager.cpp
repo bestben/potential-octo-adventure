@@ -9,8 +9,7 @@
 #include <QtGui/QOpenGLTexture>
 
 ChunkManager::ChunkManager() : m_isInit{false}, m_chunkBuffers{nullptr},
-                            m_oglBuffers{nullptr}, m_currentChunkI{-1},
-							m_currentChunkJ{ -1 }, m_currentChunkK{ -1 }, m_ChunkGenerator(){
+m_oglBuffers{ nullptr }, m_ChunkGenerator(), m_FirstUpdate{true}{
     m_chunkBuffers = new Voxel[CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
     memset(m_chunkBuffers, 1, CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
 
@@ -162,7 +161,7 @@ void ChunkManager::update(GameWindow* gl) {
 		m_mutexChunkManagerList.unlock();
         
         // Si on change de chunk on demande des nouveaux chunks
-		if ((chunkI != m_currentChunk.i) || (chunkK != m_currentChunk.k)) {
+		if ((chunkI != m_currentChunk.i) || (chunkK != m_currentChunk.k) || m_FirstUpdate) {
 
 			m_currentChunk = { chunkI, chunkJ, chunkK };
 
@@ -180,6 +179,8 @@ void ChunkManager::update(GameWindow* gl) {
         }
         m_canGenerateMesh = true;
 		m_mutexChunkManagerList.unlock();
+		
+		m_FirstUpdate = false;
     }
 }
 

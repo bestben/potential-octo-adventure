@@ -114,4 +114,6 @@ private:
     std::atomic<bool> m_canUploadMesh;
 
 	ChunkGenerator m_ChunkGenerator;
+
+	bool m_FirstUpdate;
 };

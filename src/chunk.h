@@ -7,11 +7,18 @@
 #define VBO_NUMBER 700
 
 #define CHUNK_SIZE 31
-#define CHUNK_SCALE 6
+#define CHUNK_SCALE 16
 
 #define VIEW_SIZE 4
 
+#define BIOMEMAP_CHUNKS 8
+#define BIOMEMAP_SIZE CHUNK_SIZE*BIOMEMAP_CHUNKS
 
+#ifdef QT_DEBUG
+#define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
+#else
+#define Assert(Expression)
+#endif
 struct Chunk {
     // Les coordonnées du chunk
     int i;
@@ -105,6 +112,14 @@ struct VoxelTextureMap
 
 #define FULL_BLOCK(name) VoxelTextures[(uint)Voxel::name] = { TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name };
 
+
+inline int div_floor(int x, int y) {
+	int q = x / y;
+	int r = x%y;
+	if ((r != 0) && ((r<0) != (y<0))) --q;
+	return q;
+}
+
 inline double lerp(double v0, double v1, double t) {
 	return (1 - t)*v0 + t*v1;
 }
@@ -115,4 +130,14 @@ inline double clamp(double value, double min, double max){
 
 inline double range(double value, double min, double max) {
 	return (value - min) / (max - min);
+}
+
+inline Coords chunkIdToChunkIdInMap(Coords chunkId) {
+	int i = chunkId.i % BIOMEMAP_CHUNKS;
+	int k = chunkId.k % BIOMEMAP_CHUNKS;
+	return{ i<0 ? i + BIOMEMAP_CHUNKS : i, chunkId.j, k<0 ? k + BIOMEMAP_CHUNKS  : k};
+}
+
+inline Coords chunkIdToMapId(Coords chunkId) {
+	return{ div_floor(chunkId.i, BIOMEMAP_CHUNKS), 0, div_floor(chunkId.k, BIOMEMAP_CHUNKS) };
 }
