@@ -27,6 +27,7 @@ struct Chunk {
 };
 
 #define GROUND_LEVEL 128
+#define SEA_HEIGHT 10
 
 typedef unsigned int uint;
 //typedef unsigned char Voxel;
@@ -67,7 +68,9 @@ enum class Voxel : unsigned char
 	SAND,
 	GRAVEL,
 	TRUNK,
+	WATER,
 	LAVA,
+	LEAVES,
 	COUNT // On ajoute un elmeent pour avoir la taille de l'enum
 };
 
@@ -84,6 +87,8 @@ enum class TextureID : uint
 	GRAVEL = 19,
 	TRUNK_SIDE = 20,
 	TRUNK_TOP = 21,
+	LEAVES = 52,
+	WATER = 223,
 	LAVA = 255,
 	ERROR_TEXTURE = 22
 };
@@ -98,6 +103,7 @@ struct VoxelTextureMap
 	TextureID back;
 };
 
+#define FULL_BLOCK(name) VoxelTextures[(uint)Voxel::name] = { TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name };
 
 inline double lerp(double v0, double v1, double t) {
 	return (1 - t)*v0 + t*v1;

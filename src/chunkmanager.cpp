@@ -69,7 +69,7 @@ void ChunkManager::initialize(GameWindow* gl) {
     m_program->setUniformValue("tileSize", 16);
 	m_program->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE));
 	// TODO: Utiliser la couleur du ciel à la place
-	m_program->setUniformValue("fogColor", QVector3D(.5f,.5f,.5f));
+	m_program->setUniformValue("fogColor", QVector4D(.5f,.5f,.5f,1.0f));
     m_program->release();
 
     m_atlas = new QOpenGLTexture(QImage(":/atlas.png"));

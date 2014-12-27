@@ -19,11 +19,13 @@ inline void initializeTextureMaps(){
 		TextureID::GRASS_SIDE
 	};
 
-	VoxelTextures[(uint)Voxel::DIRT] = { TextureID::DIRT, TextureID::DIRT, TextureID::DIRT, TextureID::DIRT, TextureID::DIRT, TextureID::DIRT};
-	VoxelTextures[(uint)Voxel::ROCK] = { TextureID::ROCK, TextureID::ROCK, TextureID::ROCK, TextureID::ROCK, TextureID::ROCK, TextureID::ROCK};
-	VoxelTextures[(uint)Voxel::SAND] = { TextureID::SAND, TextureID::SAND, TextureID::SAND, TextureID::SAND, TextureID::SAND, TextureID::SAND};
-	VoxelTextures[(uint)Voxel::GRAVEL] = { TextureID::GRAVEL, TextureID::GRAVEL, TextureID::GRAVEL, TextureID::GRAVEL, TextureID::GRAVEL, TextureID::GRAVEL};
-	VoxelTextures[(uint)Voxel::LAVA] = { TextureID::LAVA, TextureID::LAVA, TextureID::LAVA, TextureID::LAVA, TextureID::LAVA, TextureID::LAVA };
+	FULL_BLOCK(DIRT)
+	FULL_BLOCK(ROCK)
+	FULL_BLOCK(SAND)
+	FULL_BLOCK(GRAVEL)
+	FULL_BLOCK(LAVA)
+	FULL_BLOCK(WATER)
+	FULL_BLOCK(LEAVES)
 
 	VoxelTextures[(uint)Voxel::STONE] = {
 		TextureID::STONE_TOP,

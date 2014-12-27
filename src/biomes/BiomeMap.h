@@ -10,7 +10,6 @@ class BiomeMap
 {
 public:
 	BiomeMap();
-	int getGroundLevel(const Coords& chunkId, int i, int k);
 	Voxel getVoxelType(const Coords& chunkId, int i, int j, int k);
 	~BiomeMap();
 
@@ -25,5 +24,6 @@ private:
 	BiomeLayer *mTemperature;
 	BiomeLayer *mRainfall;
 	BiomeLayer *mSharpHills;
+	BiomeLayer *mDirtLayer;	
 };
 

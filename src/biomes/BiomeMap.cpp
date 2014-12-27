@@ -8,7 +8,7 @@
 BiomeMap::BiomeMap() : mTunnelNoise(42)
 {
 	// Pluie
-	mRainfall = new BiomeLayer(255.0, 0.0, 0.05, 0.0, 0.0, 0);
+	mRainfall = new BiomeLayer(1.0, 0.0, 0.05, 0.0, 0.0, 0);
 
 	// Temperatur entre -20°C et 30°C
 	mTemperature = new BiomeLayer(60.0, -20.0, 0.005, 0.0, 0.0, 1);
@@ -19,7 +19,12 @@ BiomeMap::BiomeMap() : mTunnelNoise(42)
 	// Montagnes
 	mMountains = new BiomeLayer(1.0, 0.0, 0.005, 0.0, 0.0, 3);
 
-	mSharpHills = new BiomeLayer(5.0, 0.0, 0.005, 0.0, 0.0, 4);
+	// Plateau, falaises
+	mSharpHills = new BiomeLayer(5.0, 0.0, 0.05, 0.0, 0.0, 4);
+
+	// Couche de terre avant la roche en sous-sol
+	mDirtLayer = new BiomeLayer(20.0, 0.0, 0.05, 0.0, 0.0, 5);
+
 }
 
 double BiomeMap::getTunnelValue(const Coords& chunkId, int x, int y, int z) {
@@ -39,46 +44,89 @@ BiomeMap::~BiomeMap()
 	delete mTemperature;
 	delete mRainfall;
 	delete mSharpHills;
-
+	delete mDirtLayer;
 }
 
-int BiomeMap::getGroundLevel(const Coords& chunkId, int i, int k) {
 
+Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
+	// TODO: Use other layers
+	// TODO: Bias tunnels density near surface towards 100 to avoid holes in the ground
+	Voxel result = Voxel::AIR;
+
+	int voxelHeight = chunkId.j*CHUNK_SIZE + j;
+
+	if (voxelHeight == 0){
+		result = Voxel::ROCK;
+		return result;
+	}
+
+	double temperature = mTemperature->getValue(chunkId, i, k);
+	// On veut des montagnes pas hautes dans les deserts
+	double biasDesert = 1.0 - clamp(range(temperature, 20.0, 30.0), 0.0, 1.0)*0.1;
+
+	// Calcul de la hauteur de la surface
 	double value = (double)GROUND_LEVEL;
 	value += mHeightmap->getValue(chunkId, i, k)*mMountains->getValue(chunkId, i, k);
 
 	double sharpHill = mSharpHills->getValue(chunkId, i, k);
 	if (sharpHill > 1.0) {
-		value += sharpHill*sharpHill;
+		value += clamp(sharpHill*sharpHill, 0.0, 15.0);
 	}
 
-	return (int)(value + 0.5); // Rounding
-}
+	value *= biasDesert;
 
-Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
-	// TODO: Use other layers
-	// TODO: Bias tunnels density near surface towards 100 to avoid holes in the ground
-
-	int voxelHeight = chunkId.j*CHUNK_SIZE + j;
-
-	if (voxelHeight == 0)
-		return Voxel::ROCK;
-
-	int terrainHeight = getGroundLevel(chunkId, i, k);
+	int terrainHeight = round(value);
 
 
 	double bias = clamp(range(voxelHeight-terrainHeight+5,0.0,20.0),0.0,1.0);
 
+	//double rain = mRainfall->getValue(chunkId, i, k);
+	double dirt = mDirtLayer->getValue(chunkId, i, k);
+	
 
-	if ((getTunnelValue(chunkId, i, j, k) + bias) > 0.3){
-		if (voxelHeight < terrainHeight) {
-			return Voxel::DIRT;
-		}
-		else if (voxelHeight == terrainHeight){
-			return Voxel::GRASS;
-		}
-	}
-	if (voxelHeight < 10)
+	bool aboveGround = voxelHeight >= terrainHeight;
+	bool atGround = voxelHeight == terrainHeight;
+	bool inTunnel = (getTunnelValue(chunkId, i, j, k) + bias) > 0.3;
+
+
+	int distanceFromSurface = voxelHeight - terrainHeight; // + : above, - : below
+	int distanceFromSeaLevel = voxelHeight - GROUND_LEVEL;
+
+	if (voxelHeight < 10  && !inTunnel)
 		return Voxel::LAVA;
-	return Voxel::AIR;
+
+	// Tunnels
+	if (!aboveGround && inTunnel) {
+		if (distanceFromSurface < round(-dirt)) {
+			return Voxel::ROCK;
+		}
+		result = Voxel::DIRT;
+	}
+
+	//Surface
+	if (atGround && inTunnel)
+		result = Voxel::GRASS;
+
+	
+		
+
+	if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT)
+		result = Voxel::WATER;
+
+/*	if ((distanceFromSeaLevel == SEA_HEIGHT || distanceFromSeaLevel == SEA_HEIGHT-1) && result == Voxel::GRASS) {
+		result = Voxel::SAND;
+	}*/
+	if (temperature > 20){
+		if (result == Voxel::GRASS || result == Voxel::DIRT) {
+			result = Voxel::SAND;
+		}
+		if (result == Voxel::WATER)
+			result = Voxel::SAND;
+
+		/*if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT)/2
+			result = Voxel::SAND;*/
+	}
+
+
+	return result;
 }
