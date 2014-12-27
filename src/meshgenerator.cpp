@@ -1,8 +1,55 @@
 #include "meshgenerator.h"
 
+// TODO(antoine): Meilleur endroit pour cette initialisation ?
+
+VoxelTextureMap VoxelTextures[(uint)Voxel::COUNT];
+
+
+inline void initializeTextureMaps(){
+
+	// On ne devrait jamais demander la texture de l'air
+	VoxelTextures[(uint)Voxel::AIR] = { TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE};
+
+	VoxelTextures[(uint)Voxel::GRASS] = {
+		TextureID::GRASS,
+		TextureID::DIRT,
+		TextureID::GRASS_SIDE,
+		TextureID::GRASS_SIDE,
+		TextureID::GRASS_SIDE,
+		TextureID::GRASS_SIDE
+	};
+
+	FULL_BLOCK(DIRT)
+	FULL_BLOCK(ROCK)
+	FULL_BLOCK(SAND)
+	FULL_BLOCK(GRAVEL)
+	FULL_BLOCK(LAVA)
+	FULL_BLOCK(WATER)
+	FULL_BLOCK(LEAVES)
+
+	VoxelTextures[(uint)Voxel::STONE] = {
+		TextureID::STONE_TOP,
+		TextureID::STONE_TOP,
+		TextureID::STONE_SIDE,
+		TextureID::STONE_SIDE,
+		TextureID::STONE_SIDE,
+		TextureID::STONE_SIDE
+	};
+
+	VoxelTextures[(uint)Voxel::TRUNK] = {
+		TextureID::TRUNK_TOP,
+		TextureID::TRUNK_TOP,
+		TextureID::TRUNK_SIDE,
+		TextureID::TRUNK_SIDE,
+		TextureID::TRUNK_SIDE,
+		TextureID::TRUNK_SIDE
+	};
+
+}
+
 MeshGenerator::MeshGenerator()
 {
-
+	initializeTextureMaps();
 }
 
 MeshGenerator::~MeshGenerator()
@@ -82,13 +129,24 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
                             du[v] = height;
                             dv[u] = width;
                         }
+						
+						VoxelTextureMap textureMap = VoxelTextures[c];
+						int t = (int)TextureID::ERROR_TEXTURE;
 
-                        vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, c);
-                        vertices[vertexCount++] = getVertex(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2], nIndex, c);
-                        vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, c);
-                        vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, c);
-                        vertices[vertexCount++] = getVertex(x[0] + du[0], x[1] + du[1], x[2] + du[2], nIndex, c);
-                        vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, c);
+							 if (nIndex == 0) t = (int)textureMap.right;
+						else if (nIndex == 1) t = (int)textureMap.left;
+						else if (nIndex == 2) t = (int)textureMap.bottom;
+						else if (nIndex == 3) t = (int)textureMap.top;
+						else if (nIndex == 4) t = (int)textureMap.front;
+						else if (nIndex == 5) t = (int)textureMap.back;
+						
+
+						vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, t);
+						vertices[vertexCount++] = getVertex(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2], nIndex, t);
+						vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, t);
+						vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, t);
+						vertices[vertexCount++] = getVertex(x[0] + du[0], x[1] + du[1], x[2] + du[2], nIndex, t);
+						vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, t);
 
                         for (int b = 0; b < width; ++b)
                             for (int a = 0; a < height; ++a)
@@ -108,7 +166,7 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
 }
 
 GLuint MeshGenerator::getVoxel(Voxel* data, int i, int j, int k) {
-    return data[i + CHUNK_SIZE * (j + CHUNK_SIZE * k)];
+    return (GLuint)data[i + CHUNK_SIZE * (j + CHUNK_SIZE * k)];
 }
 
 GLuint MeshGenerator::getVertex(int x, int y, int z, int normalIndex, int voxel) {

@@ -1,5 +1,5 @@
 #include "camera.h"
-
+#include "chunk.h"
 #include <cmath>
 #include <QKeyEvent>
 
@@ -15,7 +15,7 @@ float radToDeg(float x) {
 
 Camera::Camera() : m_speed{100.0f}, m_phi{degToRad(-33.0f)}, m_theta{degToRad(-10.0f)},
                     m_thetaMax{degToRad(75.0f)}, m_sensi{0.5f}, m_fov{60.0f}, m_near{1.0f},
-                    m_far{5000.0f}, m_width{1.0f}, m_height{1.0f}, m_position{200.0f, 200.0f, 200.0f},
+					m_far{ 5000.0f }, m_width{ 1.0f }, m_height{ 1.0f }, m_position{ 124.0f, CHUNK_SCALE*CHUNK_SIZE*5.5f, 124.0f },
                     m_direction{Direction::NONE}, m_mousePressed{false}, m_isViewMatrixDirty{true}, m_isProjMatrixDirty{false} {
     m_tang = (float)std::tan(m_fov * pi  / 180.0f);
     m_nh = m_near * m_tang;

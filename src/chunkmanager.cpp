@@ -9,8 +9,7 @@
 #include <QtGui/QOpenGLTexture>
 
 ChunkManager::ChunkManager() : m_isInit{false}, m_chunkBuffers{nullptr},
-                            m_oglBuffers{nullptr}, m_currentChunkI{-1},
-							m_currentChunkJ{ -1 }, m_currentChunkK{ -1 }, m_ChunkGenerator(){
+m_oglBuffers{ nullptr }, m_ChunkGenerator(), m_FirstUpdate{true}{
     m_chunkBuffers = new Voxel[CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
     memset(m_chunkBuffers, 1, CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
 
@@ -32,11 +31,16 @@ ChunkManager::ChunkManager() : m_isInit{false}, m_chunkBuffers{nullptr},
     m_canGenerateMesh = true;
     m_canUploadMesh = false;
     m_countToUpload = 0;
+
+	m_currentChunk = { 0, -1, 0 };
+
 }
 
 ChunkManager::~ChunkManager() {
     QThread::terminate();
     wait();
+	for (auto* c : m_ChunkMap)
+		delete c;
     delete[] m_chunkBuffers;
     delete[] m_availableChunkData;
     delete[] m_inUseChunkData;
@@ -45,6 +49,7 @@ ChunkManager::~ChunkManager() {
 }
 
 void ChunkManager::initialize(GameWindow* gl) {
+
 
     m_program = new QOpenGLShaderProgram(gl);
     m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/render.vs"));
@@ -61,6 +66,9 @@ void ChunkManager::initialize(GameWindow* gl) {
     m_program->setUniformValue("atlas", 0);
     m_program->setUniformValue("tileCount", 16);
     m_program->setUniformValue("tileSize", 16);
+	m_program->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE));
+	// TODO: Utiliser la couleur du ciel à la place
+	m_program->setUniformValue("fogColor", QVector4D(.5f,.5f,.5f,1.0f));
     m_program->release();
 
     m_atlas = new QOpenGLTexture(QImage(":/atlas.png"));
@@ -73,7 +81,7 @@ void ChunkManager::initialize(GameWindow* gl) {
     for (int i = 0; i < VBO_NUMBER; ++i) {
         Buffer* buffer = m_oglBuffers + i;
         buffer->count = 0;
-        buffer->draw = true;
+        buffer->draw = false;
         buffer->vao = new QOpenGLVertexArrayObject(gl);
         buffer->vao->create();
         buffer->vao->bind();
@@ -85,10 +93,13 @@ void ChunkManager::initialize(GameWindow* gl) {
     }
 
     m_isInit = true;
+
+	start();
 }
 
 void ChunkManager::destroy(GameWindow* gl) {
     m_isInit = false;
+
 
     // On nettoie les ressources opengl
     for (int i = 0; i < VBO_NUMBER; ++i) {
@@ -109,10 +120,11 @@ void ChunkManager::destroy(GameWindow* gl) {
 
 void ChunkManager::update(GameWindow* gl) {
     if (m_isInit) {
+
         // On débloque l'accès aux données (en cas d'oublie d'un appel à unlockChunkData)
-        for (int i = 0; i < CHUNK_NUMBER; ++i) {
+        /*for (int i = 0; i < CHUNK_NUMBER; ++i) {
             m_inUseChunkData[i].store(false);
-        }
+        }*/
 
         QVector3D camPos = gl->getCamera().getPosition();
         int chunkI = floor(camPos.x() / (CHUNK_SIZE * CHUNK_SCALE));
@@ -120,35 +132,56 @@ void ChunkManager::update(GameWindow* gl) {
         int chunkK = floor(camPos.z() / (CHUNK_SIZE * CHUNK_SCALE));
 
         // On nettoie les chunks inutiles
-        if (!m_generationIsRunning) {
-            for (auto it = m_ChunkMap.begin(); it != m_ChunkMap.end();) {
-                if ((it->second.chunkBufferIndex == -1) && (it->second.vboIndex == -1)) {
-                    it = m_ChunkMap.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-        }
-        // Si on change de chunk on lance la génération
-        if ((chunkI != m_currentChunkI) || (chunkK != m_currentChunkK)) {
-            m_currentChunkI = chunkI;
-            m_currentChunkJ = chunkJ;
-            m_currentChunkK = chunkK;
+		m_mutexChunkManagerList.lock();
+		for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end();) {
+			
+			auto it = *ite;
+			if ((std::abs(it->i - m_currentChunk.i) > VIEW_SIZE) ||
+				(std::abs(it->k - m_currentChunk.k) > VIEW_SIZE)) {
+				it->visible = false;
 
-            m_needRegen.store(true);
-
-            start();
+				if (it->chunkBufferIndex != -1) {
+					m_availableChunkData[it->chunkBufferIndex] = true;
+					it->chunkBufferIndex = -1;
+				}
+				if (it->vboIndex != -1) {
+					m_oglBuffers[it->vboIndex].draw = false;
+					m_availableBuffer[it->vboIndex] = true;
+					it->vboIndex = -1;
+				}
+				ite = m_ChunkMap.erase(ite);
+			} else {
+				++ite;
+			}
+			// TODO: Save le chunk sur le DD pour réutilisation
+			//++ite;
         }
+		m_mutexChunkManagerList.unlock();
+        
+        // Si on change de chunk on demande des nouveaux chunks
+		if ((chunkI != m_currentChunk.i) || (chunkK != m_currentChunk.k) || m_FirstUpdate) {
+
+			m_currentChunk = { chunkI, chunkJ, chunkK };
+
+			requestChunks();
+        }
+		m_mutexChunkManagerList.lock();
         if (m_canUploadMesh) {
             m_canUploadMesh = false;
             m_oglBuffers[m_vboToUpload].count = m_countToUpload;
             gl->glBindBuffer(GL_ARRAY_BUFFER, m_oglBuffers[m_vboToUpload].vbo);
             gl->glBufferData(GL_ARRAY_BUFFER, m_countToUpload * sizeof(GLuint), m_tempVertexData, GL_DYNAMIC_DRAW);
             gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+			m_oglBuffers[m_vboToUpload].draw = true;
+			m_vboToUpload = -1;
         }
         m_canGenerateMesh = true;
+		m_mutexChunkManagerList.unlock();
+		
+		m_FirstUpdate = false;
     }
 }
+
 
 void ChunkManager::draw(GameWindow* gl) {
     if (m_isInit) {
@@ -159,210 +192,160 @@ void ChunkManager::draw(GameWindow* gl) {
         scale.scale(CHUNK_SCALE, CHUNK_SCALE, CHUNK_SCALE);
         m_program->setUniformValue(m_matrixUniform, mat * scale);
         m_atlas->bind(0);
-
-        for (auto& it : m_ChunkMap) {
-            Chunk& chunk = it.second;
-            if (chunk.vboIndex != -1) {
-                Buffer* buffer = m_oglBuffers + chunk.vboIndex;
+		m_mutexChunkManagerList.lock();
+		int cnt = 0;
+        for (auto* chunk : m_ChunkMap) {
+            //Chunk& chunk = it.second;
+			if (chunk->vboIndex != -1 && chunk->visible) {
+				Buffer* buffer = m_oglBuffers + chunk->vboIndex;
                 if (buffer->draw) {
+					cnt++;
                     buffer->vao->bind();
-                    m_program->setUniformValue(m_chunkPosUniform, QVector3D(chunk.i * CHUNK_SIZE, chunk.j * CHUNK_SIZE, chunk.k * CHUNK_SIZE));
+					m_program->setUniformValue(m_chunkPosUniform, QVector3D(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
                     gl->glDrawArrays(GL_TRIANGLES, 0, buffer->count);
                     buffer->vao->release();
                 }
             }
         }
+		m_mutexChunkManagerList.unlock();
+
     }
 }
 
-Voxel* ChunkManager::lockChunkData(int i, int j, int k) {
-    Chunk& chunk = getChunk(i, j, k);
-    int index = chunk.chunkBufferIndex;
-    if (index >= 0) {
-        // On bloque le buffer
-        m_inUseChunkData[i].store(true);
+void ChunkManager::checkChunk(Coords tuple) {
+	auto it = m_ChunkMap.find(tuple);
+	if (it != m_ChunkMap.end()) {
+		Chunk* chunk = *it;
+		if ((chunk->chunkBufferIndex == -1 || chunk->vboIndex == -1) && !m_toGenerateChunkData.contains(chunk) && !m_toGenerateBuffer.contains(chunk)) {
+			m_toGenerateChunkData.push_back(chunk);
+		} else {
+			chunk->visible = true;
+		}
+	}
+	else {
+		// Chunk does not exist
+		Chunk* chunk = new Chunk();
+		chunk->i = tuple.i;
+		chunk->j = tuple.j;
+		chunk->k = tuple.k;
+		chunk->chunkBufferIndex = -1;
+		chunk->vboIndex = -1;
+		chunk->visible = false;
+		m_ChunkMap[tuple] = chunk;
+		m_toGenerateChunkData.push_back(m_ChunkMap[tuple]);
 
-        // Si le buffer est disponible on le renvoie
-        if (m_availableBuffer[i].load()) {
-            return m_chunkBuffers + (index * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
-        }
-        // Le buffer n'est pas disponible => on le débloque
-        m_inUseChunkData[i].store(false);
-    }
-    return nullptr;
+	}
 }
 
-void ChunkManager::unlockChunkData(int i, int j, int k) {
-    Chunk& chunk = getChunk(i, j, k);
-    int index = chunk.chunkBufferIndex;
-    if (index >= 0) {
-        //On débloque le buffer
-        m_inUseChunkData[i].store(false);
-    }
+void ChunkManager::requestChunks() {
+
+	m_mutexChunkManagerList.lock();
+	int startJ = std::max(0, std::min(m_currentChunk.j, 6));
+	for (int i = 0; i <= VIEW_SIZE; ++i) {
+		for (int k = 0; k <= VIEW_SIZE; ++k) {
+			for (int j = 0; j < 7; ++j) {
+
+				if (startJ + j < 7){
+					checkChunk({ m_currentChunk.i + i, startJ + j, m_currentChunk.k + k });
+					checkChunk({ m_currentChunk.i - i, startJ + j, m_currentChunk.k + k });
+					checkChunk({ m_currentChunk.i + i, startJ + j, m_currentChunk.k - k });
+					checkChunk({ m_currentChunk.i - i, startJ + j, m_currentChunk.k - k });
+				}
+				if (startJ - j >= 0){
+					checkChunk({ m_currentChunk.i + i, startJ - j, m_currentChunk.k + k });
+					checkChunk({ m_currentChunk.i - i, startJ - j, m_currentChunk.k + k });
+					checkChunk({ m_currentChunk.i + i, startJ - j, m_currentChunk.k - k });
+					checkChunk({ m_currentChunk.i - i, startJ - j, m_currentChunk.k - k });
+				}
+
+			}
+		}
+	}
+	m_mutexChunkManagerList.unlock();
+}
+
+
+
+Voxel* ChunkManager::getBufferAdress(int index) {
+	return m_chunkBuffers + (index * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
+}
+
+
+Chunk& ChunkManager::getChunk(Coords pos) {
+	auto it = m_ChunkMap.find(pos);
+	if (it == m_ChunkMap.end()) {
+		Chunk *chunk = new Chunk();
+		chunk->i = pos.i;
+		chunk->j = pos.j;
+		chunk->k = pos.k;
+		chunk->chunkBufferIndex = -1;
+		chunk->vboIndex = -1;
+		chunk->visible = false;
+		m_ChunkMap[pos] = chunk;
+		return *m_ChunkMap[pos];
+	}
+	return **it;
 }
 
 Chunk& ChunkManager::getChunk(int i, int j, int k) {
-    auto tuple = std::make_tuple(i, j, k);
-    auto it = m_ChunkMap.find(tuple);
-    if (it == m_ChunkMap.end()) {
-        Chunk chunk;
-        chunk.i = i;
-        chunk.j = j;
-        chunk.k = k;
-        chunk.chunkBufferIndex = -1;
-        chunk.vboIndex = -1;
-        chunk.visible = true;
-        m_ChunkMap[tuple] = chunk;
-    }
-    return m_ChunkMap[tuple];
+	return getChunk({ i, j, k });
 }
 
 void ChunkManager::run() {
+
     while (m_needRegen) {
-        m_needRegen.store(false);
-        m_generationIsRunning.store(true);
-
-        m_toInvalidateChunkData.clear();
-        m_toInvalidateBuffer.clear();
-        m_toGenerateChunkData.clear();
-        m_toGenerateBuffer.clear();
-
-        // On invalide les chunks en dehors de la vue
-        for (auto& it : m_ChunkMap) {
-            if (m_needRegen) {
-                break;
-            }
-            Chunk& chunk = it.second;
-            if ((std::abs(chunk.i - m_currentChunkI) > VIEW_SIZE) ||
-                (std::abs(chunk.k - m_currentChunkK) > VIEW_SIZE)) {
-                if (chunk.chunkBufferIndex != -1) {
-                    m_availableChunkData[chunk.chunkBufferIndex].store(false);
-                    m_toInvalidateChunkData.push_back(it.first);
-                }
-                if (chunk.vboIndex != -1) {
-                    m_availableBuffer[chunk.vboIndex].store(false);
-                    m_toInvalidateBuffer.push_back(it.first);
-                }
-            }
-        }
-        if (m_needRegen) {
-            break;
-        }
-        // On recherche tous les chunks nécessaires
-        for (int i = m_currentChunkI - VIEW_SIZE; i <= m_currentChunkI + VIEW_SIZE; ++i) {
-            for (int k = m_currentChunkK - VIEW_SIZE; k <= m_currentChunkK + VIEW_SIZE; ++k) {
-                for (int j = 0; j < 7; ++j) {
-                    if (m_needRegen) {
-                        break;
-                    }
-                    auto tuple = std::make_tuple(i, j, k);
-                    auto it = m_ChunkMap.find(tuple);
-                    if (it != m_ChunkMap.end()) {
-                        Chunk& chunk = it->second;
-                        chunk.i = i;
-                        chunk.j = j;
-                        chunk.k = k;
-                        if (chunk.chunkBufferIndex == -1) {
-                            m_toGenerateChunkData.push_back(tuple);
-                        }
-                        if (chunk.vboIndex == -1) {
-                            m_toGenerateBuffer.push_back(tuple);
-                        }
-                    } else {
-                        Chunk chunk;
-                        chunk.i = i;
-                        chunk.j = j;
-                        chunk.k = k;
-                        chunk.chunkBufferIndex = -1;
-                        chunk.vboIndex = -1;
-                        chunk.visible = true;
-                        m_toGenerateChunkData.push_back(tuple);
-                        m_toGenerateBuffer.push_back(tuple);
-                        m_ChunkMap[tuple] = chunk;
-                    }
-                }
-            }
-        }
-        if (m_needRegen) {
-            break;
-        }
-        // On génére tous les chunk
-        while (m_toGenerateChunkData.size() > 0) {
-            if (m_needRegen) {
-                break;
-            }
+        // On génére tous les chunks requis
+		m_mutexChunkManagerList.lock();
+        if (m_toGenerateChunkData.size() > 0) {
             // Le chunk à créer
-            std::tuple<int, int, int> newChunkPos = m_toGenerateChunkData.back();
-            m_toGenerateChunkData.pop_back();
-            Chunk& newChunk = getChunk(std::get<0>(newChunkPos), std::get<1>(newChunkPos), std::get<2>(newChunkPos));
+			
 
-            int bufferIndex = -1;
-            if (m_toInvalidateChunkData.size() > 0) {
-                // Le chunk à supprimer
-                std::tuple<int, int, int> oldChunkPos = m_toInvalidateChunkData.back();
-                m_toInvalidateChunkData.pop_back();
-                Chunk& oldChunk = getChunk(std::get<0>(oldChunkPos), std::get<1>(oldChunkPos), std::get<2>(oldChunkPos));
-                bufferIndex = oldChunk.chunkBufferIndex;
-                // TODO sauvegarder l'ancien chunk
-                oldChunk.chunkBufferIndex = -1;
-            } else {
-                bufferIndex = seekFreeChunkData();
-            }
-            if (bufferIndex != -1) {
-                newChunk.chunkBufferIndex = bufferIndex;
-                m_availableChunkData[bufferIndex].store(false);
-				
-                // TODO Générer le nouveau chunk
-				
-				Voxel* data = m_chunkBuffers + (newChunk.chunkBufferIndex * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
-				m_ChunkGenerator.generateChunk(data, newChunk.i, newChunk.j, newChunk.k);
+			auto* newChunk = m_toGenerateChunkData.front();
+            m_toGenerateChunkData.pop_front();       
+
+            int bufferIndex = seekFreeChunkData();
+			int vboIndex = seekFreeBuffer();
+            
+			if (bufferIndex != -1 && vboIndex != -1) {
+				newChunk->chunkBufferIndex = bufferIndex;
+				newChunk->vboIndex = vboIndex;
+
+				m_availableChunkData[bufferIndex] = false;
+				m_availableBuffer[vboIndex] = false;
+				m_mutexChunkManagerList.unlock();
+                // TODO Générer le nouveau chunk et le prendre du DD si déja présent
+				Voxel* data = getBufferAdress(bufferIndex);
+				m_ChunkGenerator.generateChunk(data, newChunk->i, newChunk->j, newChunk->k);
+				m_mutexChunkManagerList.lock();
+				m_toGenerateBuffer.push_back(newChunk);
 				
             } else {
                 // Plus assez de blocs libres
+
                 #ifdef QT_DEBUG
                 std::cout << "Plus assez de blocs libre pour charger un chunk" << std::endl;
                 #endif
                 break;
             }
         }
-        if (m_needRegen) {
-            break;
-        }
+
         // On transforme tous les chunks en meshs.
-        while (m_toGenerateBuffer.size() > 0) {
-            while (m_canGenerateMesh == false) {
-                if (m_needRegen) {
-                    break;
-                }
-            }
-            m_canGenerateMesh = false;
-            if (m_needRegen) {
-                break;
-            }
+		if (m_toGenerateBuffer.size() > 0 && m_canGenerateMesh) {
+			m_canGenerateMesh = false;
+
             // Le chunk à créer
-            std::tuple<int, int, int> newChunkPos = m_toGenerateBuffer.back();
-            m_toGenerateBuffer.pop_back();
-            Chunk& newChunk = getChunk(std::get<0>(newChunkPos), std::get<1>(newChunkPos), std::get<2>(newChunkPos));
-            if (newChunk.chunkBufferIndex !=-1) {
-                Voxel* data = m_chunkBuffers + (newChunk.chunkBufferIndex * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
-
-                if (m_toInvalidateBuffer.size() > 0) {
-                    // Le chunk à supprimer
-                    std::tuple<int, int, int> oldChunkPos = m_toInvalidateBuffer.back();
-                    m_toInvalidateBuffer.pop_back();
-                    Chunk& oldChunk = getChunk(std::get<0>(oldChunkPos), std::get<1>(oldChunkPos), std::get<2>(oldChunkPos));
-                    m_vboToUpload = oldChunk.vboIndex;
-                    oldChunk.vboIndex = -1;
-                } else {
-                    m_vboToUpload = seekFreeBuffer();
-                }
-                if (m_vboToUpload != -1) {
-                    newChunk.vboIndex = m_vboToUpload;
-
+			auto* newChunk = m_toGenerateBuffer.front();
+			m_toGenerateBuffer.pop_front();
+			
+			if (newChunk->chunkBufferIndex != -1) {
+				if (newChunk->vboIndex != -1) {
+					m_vboToUpload = newChunk->vboIndex;
+					m_availableBuffer[m_vboToUpload] = false;
+					m_oglBuffers[m_vboToUpload].draw = false;
+					Voxel *data = getBufferAdress(newChunk->chunkBufferIndex);
                     m_countToUpload = m_meshGenerator.generate(data, m_tempVertexData);
-
-                    m_availableBuffer[m_vboToUpload].store(false);
-                    m_canUploadMesh = true;
+					m_canUploadMesh = true;
+					newChunk->visible = true;
                 } else {
                     // Plus assez de vbo libres
                     #ifdef QT_DEBUG
@@ -375,8 +358,14 @@ void ChunkManager::run() {
                 std::cout << "Impossible de generer un mesh à partir d'un chunk non charge" << std::endl;
                 #endif
             }
+			
+
         }
-        m_generationIsRunning.store(false);
+		m_mutexChunkManagerList.unlock();
+		// Eviter de faire fondre le cpu dans des boucles vides ;)
+
+
+		QThread::msleep(5);
     }
 }
 
