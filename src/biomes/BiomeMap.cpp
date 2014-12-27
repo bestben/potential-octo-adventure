@@ -3,86 +3,82 @@
 #include <QtCore/QString>
 #include "OpenSimplexNoise.hpp"
 
-BiomeMap::BiomeMap() : BiomeMap(0,0){
-	
-}
 
-BiomeMap::BiomeMap(int i, int k) : mLayers()
+
+BiomeMap::BiomeMap() : mTunnelNoise(42)
 {
-	mTunnels = new double[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE * 7];
+	// Pluie
+	mRainfall = new BiomeLayer(255.0, 0.0, 0.05, 0.0, 0.0, 0);
 
-	BiomeLayer *rainfall = new BiomeLayer();
-
-	rainfall->generate(255.0, 0.0, 0.05, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 0);
-	mLayers.insert(QString("rainfall"), std::shared_ptr<BiomeLayer>(rainfall));
-
-
-	// Temperature can varie betwenn -20°C and 30°C
-	BiomeLayer *temperature = new BiomeLayer();
-	temperature->generate(60.0, -20.0, 0.005, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 1);
-	mLayers.insert(QString("temperature"), std::shared_ptr<BiomeLayer>(temperature));
+	// Temperatur entre -20°C et 30°C
+	mTemperature = new BiomeLayer(60.0, -20.0, 0.005, 0.0, 0.0, 1);
 
 	// Variation du sol
-	BiomeLayer *heightmap = new BiomeLayer();
-	heightmap->generate(20.0, (double)GROUND_LEVEL, 0.05, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 2);
-	mLayers.insert(QString("heightmap"), std::shared_ptr<BiomeLayer>(heightmap));
+	mHeightmap = new BiomeLayer(40.0, 0.0, 0.025, 0.0, 0.0, 2);
 
 	// Montagnes
-	BiomeLayer *mountains = new BiomeLayer();
-	mountains->generate(60.0, 0.0, 0.05, (double)(i * CHUNK_SIZE), (double)(k * CHUNK_SIZE), 2);
-	mLayers.insert(QString("mountains"), std::shared_ptr<BiomeLayer>(mountains));
+	mMountains = new BiomeLayer(1.0, 0.0, 0.005, 0.0, 0.0, 3);
 
-	// Tunnels
-	// Générés avec un bruit 3D
-	OpenSimplexNoise tunnelNoise(-1);
-	double mScale = 0.05;
-	for (int x = 0; x < CHUNK_SIZE; ++x) {
-		for (int y = 0; y < CHUNK_SIZE*7; ++y) {
-			for (int z = 0; z < CHUNK_SIZE; ++z) {
-				mTunnels[z*CHUNK_SIZE*CHUNK_SIZE * 7 + y*CHUNK_SIZE + x] = 50.0*(tunnelNoise.value((x + (i * CHUNK_SIZE))*mScale, y*mScale, (z + (k * CHUNK_SIZE))*mScale) + 1.0);
-			}
-		}
-	}
+	mSharpHills = new BiomeLayer(5.0, 0.0, 0.005, 0.0, 0.0, 4);
+}
 
+double BiomeMap::getTunnelValue(const Coords& chunkId, int x, int y, int z) {
+
+	int i = chunkId.i*CHUNK_SIZE + x;
+	int j = chunkId.j*CHUNK_SIZE + y;
+	int k = chunkId.k*CHUNK_SIZE + z;
+
+	return (mTunnelNoise.value(i*0.05, j*0.05, k*0.05) + 1.0)*0.5; 
 }
 
 
 BiomeMap::~BiomeMap()
 {
-	delete mTunnels;
+	delete mHeightmap;
+	delete mMountains;
+	delete mTemperature;
+	delete mRainfall;
+	delete mSharpHills;
+
 }
 
+int BiomeMap::getGroundLevel(const Coords& chunkId, int i, int k) {
 
+	double value = (double)GROUND_LEVEL;
+	value += mHeightmap->getValue(chunkId, i, k)*mMountains->getValue(chunkId, i, k);
 
-BiomeLayer& BiomeMap::getLayer(const QString &layerName) {
-	return *mLayers[layerName];
+	double sharpHill = mSharpHills->getValue(chunkId, i, k);
+	if (sharpHill > 1.0) {
+		value += sharpHill*sharpHill;
+	}
+
+	return (int)(value + 0.5); // Rounding
 }
 
-int BiomeMap::getGroundLevel(int i, int k) const {
-	
-	auto& height = *mLayers[QString("heightmap")];
-	auto& mountains = *mLayers[QString("mountains")];
-
-	return (int)(height.getValue(i, k) + mountains.getValue(i, k) + 0.5);
-}
-
-Voxel BiomeMap::getVoxelType(int i, int j, int k) const {
+Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 	// TODO: Use other layers
 	// TODO: Bias tunnels density near surface towards 100 to avoid holes in the ground
-	if (mTunnels[k*CHUNK_SIZE*CHUNK_SIZE * 7 + j*CHUNK_SIZE + i] > 50.0){
-		if (j <= getGroundLevel(i, k)) {
-			return 1;
+
+	int voxelHeight = chunkId.j*CHUNK_SIZE + j;
+
+	if (voxelHeight == 0)
+		return Voxel::ROCK;
+
+	int terrainHeight = getGroundLevel(chunkId, i, k);
+
+
+	double bias = clamp(range(voxelHeight-terrainHeight+5,0.0,20.0),0.0,1.0);
+
+
+	if ((getTunnelValue(chunkId, i, j, k) + bias) > 0.3){
+		if (voxelHeight < terrainHeight) {
+			return Voxel::DIRT;
 		}
-			
+		else if (voxelHeight == terrainHeight){
+			return Voxel::GRASS;
+		}
 	}
-
-	return 0;
-}
-
-
-void BiomeMap::outputDebug() const {
-	
-	for (auto it = mLayers.begin(); it != mLayers.end(); ++it) {
-		it.value().get()->outputDebugFile((it.key()+".raw").toUtf8().constData());
-	}
+	if (voxelHeight < 10)
+		return Voxel::LAVA;
+	return Voxel::AIR;
 }

@@ -1,36 +1,25 @@
 #include "BiomeLayer.h"
 #include "OpenSimplexNoise.hpp"
-#include <fstream>
-#include <iostream>
+#include "../chunk.h"
 
 
 
-
-BiomeLayer::BiomeLayer()
+BiomeLayer::BiomeLayer(double amplitude, double offset, double scale, double xOffset, double yOffset, long seed) :
+mAmplitude(amplitude),
+mOffset(offset),
+mScale(scale),
+mXOffset(xOffset),
+mYOffset(yOffset),
+mSeed(seed),
+mNoise(seed)
 {
-	mData = new double[CHUNK_SIZE*CHUNK_SIZE];
 }
 
 
 BiomeLayer::~BiomeLayer()
 {
-	delete mData;
 }
 
-
-void BiomeLayer::generate(double amplitude, double offset, double scale, double xOffset, double yOffset, long seed){
-	mSeed = seed;
-
-	OpenSimplexNoise noiseA(mSeed);
-
-	for (int x = 0; x < CHUNK_SIZE; ++x){
-		for (int y = 0; y < CHUNK_SIZE; ++y){
-			mData[(y*CHUNK_SIZE) + x] = clamp(offset + amplitude*(noiseA.value(((double)x + xOffset)*scale, ((double)y + yOffset)*scale) + 1.0) / 2.0);
-		}
-	}
-	mReady = true;
-	
-}
 
 
 void BiomeLayer::setClamp(double min, double max){
@@ -39,38 +28,17 @@ void BiomeLayer::setClamp(double min, double max){
 	mHasClamp = true;
 }
 
-double BiomeLayer::clamp(double value) const{
-	return mHasClamp ? (value > mClampMax ? mClampMax : (value < mClampMin ? mClampMin : value)) : value;
-}
-
-bool BiomeLayer::isReady() const{
-	return mReady;
-}
-
-double BiomeLayer::getValue(int i, int k) const{
-	return mData[k*CHUNK_SIZE + i];
+double BiomeLayer::clampLayer(double value) const{
+	return mHasClamp ? clamp(value, mClampMin, mClampMax) : value;
 }
 
 
-void BiomeLayer::outputDebugFile(const char *filename) const{
+double BiomeLayer::getValue(Coords chunkId, int i, int k){
 
-	short *data = new short[CHUNK_SIZE*CHUNK_SIZE];
+	int x = i + chunkId.i*CHUNK_SIZE;
+	int z = k + chunkId.k*CHUNK_SIZE;
 
-	short min = (1<<15) - 1;
-	short max = (1<<15);
-	for (int i = 0; i < CHUNK_SIZE*CHUNK_SIZE; ++i){
-		data[i] = static_cast<short>(mData[i]);
-		if (data[i] < min) min = data[i];
-		if (data[i] > max) max = data[i];
-	}
-
-	// TODO: Remove debug
-	std::cout << min << " - " << max << std::endl;
-
-	std::ofstream file;
-	file.open(filename, std::ios::basic_ios::out | std::ios::basic_ios::binary);
-	file.write((const char *)data, CHUNK_SIZE*CHUNK_SIZE*sizeof(short));
-	file.close();
-
-	delete data;
+	double noiseValue = mNoise.value(((double)x + mXOffset)*mScale, ((double)z + mYOffset)*mScale);
+	return clampLayer(mOffset + mAmplitude*(noiseValue + 1.0)*0.5);
 }
+

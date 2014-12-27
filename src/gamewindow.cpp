@@ -6,10 +6,13 @@
 #include <QtCore/QCoreApplication>
 #include <QtGui/QOpenGLDebugLogger>
 
-GameWindow::GameWindow() : m_isInitialized{false}, m_lastDelta{0}, m_currentDeltaIndex{0} {
-    m_deltaTimer.start();
 
+
+GameWindow::GameWindow() : QOpenGLWindow(), m_lastDelta{0}, m_currentDeltaIndex{0}, m_isInitialized{false}, m_chunkManager()
+{
+    m_deltaTimer.start();
     memset(m_lastDeltas, 0, FPS_FRAME_NUMBER * sizeof(int));
+
 }
 
 GameWindow::~GameWindow() {
@@ -50,6 +53,8 @@ void GameWindow::initializeGL() {
 }
 
 void GameWindow::paintGL() {
+	// Sky color
+	glClearColor(.5f, .5f, .5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     
     m_lastDelta = m_deltaTimer.elapsed();

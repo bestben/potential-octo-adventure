@@ -1,34 +1,34 @@
 #pragma once
 
 #include "../chunk.h"
-
-
+#include "OpenSimplexNoise.hpp"
 
 
 class BiomeLayer
 {
 public:
-	BiomeLayer();
+	BiomeLayer(double amplitude, double offset, double scale, double xOffset, double yOffset, long seed);
 	~BiomeLayer();
 
-	void generate(double amplitude, double offset, double scale, double xOffset, double yOffset, long seed);
 	void setClamp(double min, double max);
-	bool isReady() const;
-	double getValue(int i, int k) const;
-
-
-	void outputDebugFile(const char *filename) const;
+	double getValue(Coords chunkId, int i, int k);
 
 private:
 
-	double clamp(double value) const;
+	double clampLayer(double value) const;
 
-	double *mData;
+	OpenSimplexNoise mNoise;
+
+	double mAmplitude;
+	double mOffset;
+	double mScale;
+	double mXOffset;
+	double mYOffset;
 	long mSeed;
+
 	double mClampMin;
 	double mClampMax;
 	bool mHasClamp = false;
-	bool mReady = false;
 };
 
 
