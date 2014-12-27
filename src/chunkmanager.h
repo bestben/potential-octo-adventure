@@ -42,7 +42,7 @@ public:
 	Chunk& getChunk(Coords pos);
 	Chunk& getChunk(int i, int j, int k);
 
-    char getVoxel(int x, int y, int z);
+    Voxel getVoxel(int x, int y, int z);
 
 protected:
     void run();

@@ -224,24 +224,16 @@ void ChunkManager::checkChunk(Coords tuple) {
 	}
 	else {
 		// Chunk does not exist
-		Chunk* chunk = new Chunk();
-		chunk->i = tuple.i;
-		chunk->j = tuple.j;
-		chunk->k = tuple.k;
-		chunk->chunkBufferIndex = -1;
-		chunk->vboIndex = -1;
-		chunk->visible = false;
-		m_ChunkMap[tuple] = chunk;
-		m_toGenerateChunkData.push_back(m_ChunkMap[tuple]);
-
-        // Si le buffer est disponible on le renvoie
-        if (!m_availableBuffer[i].load()) {
-            return m_chunkBuffers + (index * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
-        }
-        // Le buffer n'est pas disponible => on le débloque
-        m_inUseChunkData[i].store(false);
+        Chunk* chunk = new Chunk();
+        chunk->i = tuple.i;
+        chunk->j = tuple.j;
+        chunk->k = tuple.k;
+        chunk->chunkBufferIndex = -1;
+        chunk->vboIndex = -1;
+        chunk->visible = false;
+        m_ChunkMap[tuple] = chunk;
+        m_toGenerateChunkData.push_back(m_ChunkMap[tuple]);
     }
-    return nullptr;
 }
 
 void ChunkManager::requestChunks() {
@@ -394,16 +386,20 @@ int ChunkManager::seekFreeBuffer() {
     return -1;
 }
 
-char ChunkManager::getVoxel(int x, int y, int z) {
-    Voxel* voxels = lockChunkData(x / CHUNK_SIZE, y / CHUNK_SIZE, z / CHUNK_SIZE);
-    char res = 0;
-    if (voxels != nullptr) {
-        int localX = x % CHUNK_SIZE;
-        int localY = y % CHUNK_SIZE;
-        int localZ = z % CHUNK_SIZE;
-        res = voxels[localX + CHUNK_SIZE * (localY + CHUNK_SIZE * localZ)];
-        std::cout << "found : " << (int)res << std::endl;
+Voxel ChunkManager::getVoxel(int x, int y, int z) {
+    Voxel res = Voxel::AIR;
+
+    Chunk& chunk = getChunk(x / CHUNK_SIZE, y / CHUNK_SIZE, z / CHUNK_SIZE);
+    if (chunk.chunkBufferIndex != -1) {
+        Voxel* voxels = getBufferAdress(chunk.chunkBufferIndex);
+
+        if (voxels != nullptr) {
+            int localX = x % CHUNK_SIZE;
+            int localY = y % CHUNK_SIZE;
+            int localZ = z % CHUNK_SIZE;
+            res = voxels[localX + CHUNK_SIZE * (localY + CHUNK_SIZE * localZ)];
+            std::cout << "found : " << (int)res << std::endl;
+        }
     }
-    unlockChunkData(x / CHUNK_SIZE, y / CHUNK_SIZE, z / CHUNK_SIZE);
     return res;
 }

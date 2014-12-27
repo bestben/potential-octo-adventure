@@ -6,7 +6,6 @@ SOURCES += \
     biomes/BiomeMap.cpp \
     chunkmanager.cpp \
     meshgenerator.cpp \
-    physic/physicmanager.cpp
     biomes/ChunkGenerator.cpp \
     libnoise/latlon.cpp \
     libnoise/noisegen.cpp \
@@ -42,7 +41,8 @@ SOURCES += \
     libnoise/module/terrace.cpp \
     libnoise/module/translatepoint.cpp \
     libnoise/module/turbulence.cpp \
-    libnoise/module/voronoi.cpp
+    libnoise/module/voronoi.cpp \
+    physic/physicmanager.cpp
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -70,8 +70,6 @@ HEADERS += \
     chunk.h \
     defs.h \
     biomes/ChunkGenerator.h \
-    physic/body.h \
-    physic/physicmanager.h
     libnoise/basictypes.h \
     libnoise/exception.h \
     libnoise/interp.h \
@@ -115,4 +113,6 @@ HEADERS += \
     libnoise/module/terrace.h \
     libnoise/module/translatepoint.h \
     libnoise/module/turbulence.h \
-    libnoise/module/voronoi.h
+    libnoise/module/voronoi.h \
+    physic/body.h \
+    physic/physicmanager.h
