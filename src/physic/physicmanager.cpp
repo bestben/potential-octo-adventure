@@ -10,7 +10,7 @@ PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{fa
     m_bodies = new Body[BODY_COUNT];
     for (int i = 0; i < BODY_COUNT; ++i) {
         m_bodies[i].jump = false;
-        m_bodies[i].height = 6;
+        m_bodies[i].height = 20;
         m_bodies[i].width = 1;
         m_bodies[i].mass = 1;
     }
@@ -106,31 +106,38 @@ bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, con
         oldVoxel = QVector3D(floor(oldVoxel.x()), floor(oldVoxel.y()), floor(oldVoxel.z()));
         QVector3D newVoxel = (corners[i] + position + delta) / (CHUNK_SCALE);
         newVoxel = QVector3D(floor(newVoxel.x()), floor(newVoxel.y()), floor(newVoxel.z()));
-        if ((oldVoxel != newVoxel) && (chunkManager.getVoxel(newVoxel.x(), newVoxel.y(), newVoxel.z()) != Voxel::AIR)) {
+        QVector3D direction = oldVoxel - newVoxel;
+        direction.normalize();
+        QVector3D currentVoxel = oldVoxel;
+        if (oldVoxel != newVoxel) {
             std::cout << "old : " << oldVoxel.x() << " " << oldVoxel.y() << " " << oldVoxel.z() << std::endl;
             std::cout << "new : " << newVoxel.x() << " " << newVoxel.y() << " " << newVoxel.z() << std::endl;
-            QVector3D direction = oldVoxel - newVoxel;
-            QVector3D size = direction * QVector3D(body->width, corners[i].y(), body->width);
-            std::cout << "size : " << size.x() << " " << size.y() << " " << size.z() << std::endl;
-            direction = (direction * (CHUNK_SCALE + PADDING) / 2) + size;
-            std::cout << "direction : " << direction.x() << " " << direction.y() << " " << direction.z() << std::endl;
+            do {
+                currentVoxel -= direction;
+                if (chunkManager.getVoxel(currentVoxel.x(), currentVoxel.y(), currentVoxel.z()) != Voxel::AIR) {
+                    std::cout << "currentVoxel : " << currentVoxel.x() << " " << currentVoxel.y() << " " << currentVoxel.z() << std::endl;
+                    QVector3D size = direction * QVector3D(body->width, corners[i].y(), body->width);
+                    std::cout << "size : " << size.x() << " " << size.y() << " " << size.z() << std::endl;
+                    QVector3D scaledDirection = (direction * (CHUNK_SCALE + PADDING) / 2) + size;
+                    std::cout << "scaledDirection : " << scaledDirection.x() << " " << scaledDirection.y() << " " << scaledDirection.z() << std::endl;
 
-            QVector3D correctedPos = (newVoxel + QVector3D(0.5f, 0.5f, 0.5f)) * CHUNK_SCALE + direction;
-            std::cout << "position0 : " << position.x() << " " << position.y() << " " << position.z() << std::endl;
-            if (direction.x() != 0.0f) {
-                position.setX(correctedPos.x());
-            } else if (direction.y() != 0.0f) {
-                position.setY(correctedPos.y());
-            } else if (direction.z() != 0.0f) {
-                position.setZ(correctedPos.z());
-            }
-            std::cout << "position1 : " << position.x() << " " << position.y() << " " << position.z() << std::endl;
-
-            isColliding = true;
+                    /*QVector3D correctedPos = (newVoxel + QVector3D(0.5f, 0.5f, 0.5f)) * CHUNK_SCALE + scaledDirection;
+                    std::cout << "position0 : " << position.x() << " " << position.y() << " " << position.z() << std::endl;
+                    if (direction.x() != 0.0f) {
+                        position.setX(correctedPos.x());
+                    } else if (direction.y() != 0.0f) {
+                        position.setY(correctedPos.y());
+                    } else if (direction.z() != 0.0f) {
+                        position.setZ(correctedPos.z());
+                    }*/
+                    std::cout << "position1 : " << position.x() << " " << position.y() << " " << position.z() << std::endl;
+                    isColliding = true;
+                    break;
+                }
+            } while (currentVoxel != newVoxel);
         }
     }
     if (!isColliding) {
-        //std::cout << "No collide : " << delta.x() << " " << delta.y() << " " << delta.z() << std::endl;
         position += delta;
     }
 

@@ -389,9 +389,19 @@ int ChunkManager::seekFreeBuffer() {
 Voxel ChunkManager::getVoxel(int x, int y, int z) {
     Voxel res = Voxel::AIR;
 
-    Chunk& chunk = getChunk(x / CHUNK_SIZE, y / CHUNK_SIZE, z / CHUNK_SIZE);
+    Chunk& chunk = getChunk(floor((float)x / (float)CHUNK_SIZE), floor((float)y / (float)CHUNK_SIZE), floor((float)z / (float)CHUNK_SIZE));
     if (chunk.chunkBufferIndex != -1) {
         Voxel* voxels = getBufferAdress(chunk.chunkBufferIndex);
+
+        while (x < 0) {
+            x += CHUNK_SIZE;
+        }
+        while (y < 0) {
+            y += CHUNK_SIZE;
+        }
+        while (z < 0) {
+            z += CHUNK_SIZE;
+        }
 
         if (voxels != nullptr) {
             int localX = x % CHUNK_SIZE;
