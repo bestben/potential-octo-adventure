@@ -7,7 +7,7 @@
 #define VBO_NUMBER 700
 
 #define CHUNK_SIZE 31
-#define CHUNK_SCALE 16
+#define CHUNK_SCALE 5
 
 #define VIEW_SIZE 4
 
@@ -69,8 +69,7 @@ inline bool operator==(Coords lhs, Coords rhs){
 	return (lhs.i == rhs.i) && (lhs.j == rhs.j) && (lhs.k == rhs.k);
 }
 
-
-enum class Voxel : unsigned char
+enum class VoxelType : unsigned char
 {
 	AIR = 0,
 	GRASS,
@@ -85,6 +84,8 @@ enum class Voxel : unsigned char
 	LEAVES,
 	COUNT // On ajoute un elmeent pour avoir la taille de l'enum
 };
+
+typedef unsigned int Voxel;
 
 enum class TextureID : uint
 {
@@ -115,7 +116,7 @@ struct VoxelTextureMap
 	TextureID back;
 };
 
-#define FULL_BLOCK(name) VoxelTextures[(uint)Voxel::name] = { TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name };
+#define FULL_BLOCK(name) VoxelTextures[(uint)VoxelType::name] = { TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name };
 
 
 inline int div_floor(int x, int y) {
@@ -143,6 +144,33 @@ inline Coords chunkIdToChunkIdInMap(Coords chunkId) {
 	return{ i<0 ? i + BIOMEMAP_CHUNKS : i, chunkId.j, k<0 ? k + BIOMEMAP_CHUNKS  : k};
 }
 
+inline Coords worldCoordsToChunkCoords(Coords c) {
+	int i = c.i % CHUNK_SIZE;
+	int j = c.j % CHUNK_SIZE;
+	int k = c.k % CHUNK_SIZE;
+	return{ i<0 ? i + CHUNK_SIZE : i, j<0 ? j + CHUNK_SIZE : j, k<0 ? k + CHUNK_SIZE : k };
+}
+
 inline Coords chunkIdToMapId(Coords chunkId) {
 	return{ div_floor(chunkId.i, BIOMEMAP_CHUNKS), 0, div_floor(chunkId.k, BIOMEMAP_CHUNKS) };
+}
+
+// Get the bits XXXX XXXX 0000 0000
+inline VoxelType getVoxelType(Voxel v) {
+	return (VoxelType)((v >> 8) & 0xF);
+}
+
+// Get the bits XXXX XXXX 0000 0000
+inline void setVoxelType(Voxel *v, VoxelType type) {
+	*v = (*v & 0xF) | ((unsigned char)type << 8);
+}
+
+// Get the bits 0000 0000 XXXX XXXX 
+inline unsigned char getVoxelLight(Voxel v) {
+	return (v & 0xF);
+}
+
+// Get the bits 0000 0000 XXXX XXXX
+inline void setVoxelLight(Voxel *v, unsigned char val) {
+	*v = (*v & 0xF0) | val;
 }

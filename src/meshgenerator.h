@@ -21,7 +21,7 @@ public:
 
 private:
     GLuint getVoxel(Voxel* data, int i, int j, int k);
-    GLuint getVertex(int x, int y, int z, int normalIndex, int voxel);
+	GLuint getVertex(int x, int y, int z, int normalIndex, unsigned char type, unsigned char light);
 
     int* m_mask;
 };

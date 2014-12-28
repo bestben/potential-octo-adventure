@@ -72,7 +72,7 @@ void PhysicManager::update(GameWindow* gl, int dt) {
                 }
             } else {
                 avgAcceleration = QVector3D(0.0f, 0.0f, 0.0f);
-                body->velocity = force;
+                body->velocity = force*10.0;
                 newPosition += deltaPos / 10;
             }
 
@@ -106,7 +106,7 @@ bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, con
         oldVoxel = QVector3D(floor(oldVoxel.x()), floor(oldVoxel.y()), floor(oldVoxel.z()));
         QVector3D newVoxel = (corners[i] + position + delta) / (CHUNK_SCALE);
         newVoxel = QVector3D(floor(newVoxel.x()), floor(newVoxel.y()), floor(newVoxel.z()));
-        if ((oldVoxel != newVoxel) && (chunkManager.getVoxel(newVoxel.x(), newVoxel.y(), newVoxel.z()) != Voxel::AIR)) {
+        if ((oldVoxel != newVoxel) && (getVoxelType(chunkManager.getVoxel(newVoxel.x(), newVoxel.y(), newVoxel.z())) != VoxelType::AIR)) {
             std::cout << "old : " << oldVoxel.x() << " " << oldVoxel.y() << " " << oldVoxel.z() << std::endl;
             std::cout << "new : " << newVoxel.x() << " " << newVoxel.y() << " " << newVoxel.z() << std::endl;
             QVector3D direction = oldVoxel - newVoxel;

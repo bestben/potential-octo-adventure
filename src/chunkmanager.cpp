@@ -126,6 +126,13 @@ void ChunkManager::update(GameWindow* gl) {
             m_inUseChunkData[i].store(false);
         }*/
 
+		//TODO: Fix le thread qui plante :(
+		if (!isRunning()) {
+			m_mutexChunkManagerList.unlock();
+			start();
+		}
+			
+
         QVector3D camPos = gl->getCamera().getPosition();
         int chunkI = floor(camPos.x() / (CHUNK_SIZE * CHUNK_SCALE));
         int chunkJ = floor(camPos.y() / (CHUNK_SIZE * CHUNK_SCALE));
@@ -291,7 +298,7 @@ Chunk& ChunkManager::getChunk(int i, int j, int k) {
 }
 
 void ChunkManager::run() {
-
+	
     while (m_needRegen) {
         // On génére tous les chunks requis
 		m_mutexChunkManagerList.lock();
@@ -387,18 +394,20 @@ int ChunkManager::seekFreeBuffer() {
 }
 
 Voxel ChunkManager::getVoxel(int x, int y, int z) {
-    Voxel res = Voxel::AIR;
+	Voxel res = 0;
 
-    Chunk& chunk = getChunk(x / CHUNK_SIZE, y / CHUNK_SIZE, z / CHUNK_SIZE);
+    Chunk& chunk = getChunk(div_floor(x, CHUNK_SIZE), div_floor(y, CHUNK_SIZE), div_floor(z, CHUNK_SIZE));
     if (chunk.chunkBufferIndex != -1) {
         Voxel* voxels = getBufferAdress(chunk.chunkBufferIndex);
 
         if (voxels != nullptr) {
+
+			Coords c = worldCoordsToChunkCoords({ x, y, z });
             int localX = x % CHUNK_SIZE;
             int localY = y % CHUNK_SIZE;
             int localZ = z % CHUNK_SIZE;
-            res = voxels[localX + CHUNK_SIZE * (localY + CHUNK_SIZE * localZ)];
-            std::cout << "found : " << (int)res << std::endl;
+            res = voxels[c.i + CHUNK_SIZE * (c.j + CHUNK_SIZE * c.k)];
+            //std::cout << "found : " << (int)res.type << std::endl;
         }
     }
     return res;
