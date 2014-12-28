@@ -33,11 +33,14 @@ int main(int argc, char* argv[]) {
 
         QScreen* screen = app.primaryScreen();
         QRect rec = screen->geometry();
-        mainWindow.resize(rec.size().width(), rec.size().height() - 100);
         #ifdef QT_DEBUG
         mainWindow.resize(rec.size().width(), rec.size().height() / 2);
-        #endif
         mainWindow.show();
+        #endif
+        #ifdef QT_NO_DEBUG
+        mainWindow.resize(rec.size().width(), rec.size().height());
+        mainWindow.showFullScreen();
+        #endif
 
         return app.exec();
     } catch (std::exception& e) {
