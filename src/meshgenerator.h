@@ -24,5 +24,5 @@ private:
 	GLuint getVertex(int x, int y, int z, int normalIndex, TextureID tex, Voxel voxel);
 
     Voxel* m_mask;
-	bool* m_offsetNormal;
+    bool* m_offsetNormal;
 };
