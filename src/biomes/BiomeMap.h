@@ -12,7 +12,7 @@ class BiomeMap
 {
 public:
 	BiomeMap(int mapX, int mapY);
-	Voxel getVoxelType(const Coords& chunkId, int i, int j, int k);
+	VoxelType getVoxelType(const Coords& chunkId, int i, int j, int k);
 	~BiomeMap();
 
 private:

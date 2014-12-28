@@ -146,23 +146,23 @@ BiomeMap::~BiomeMap()
 }
 
 
-Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
+VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 
 	// Coordonnées relative de ce chunks dans la map que cet objet représente
 	Coords chunkIdInMap = chunkIdToChunkIdInMap(chunkId);
 	int voxelHeight = chunkId.j*CHUNK_SIZE + j;
 
-	Voxel result = Voxel::AIR;
+	VoxelType result = VoxelType::AIR;
 
 	
 
 	if (voxelHeight == 0){
-		result = Voxel::ROCK;
+		result = VoxelType::ROCK;
 		return result;
 	}
 
 	double temperature = getValue(mTemperature, chunkIdInMap, i, k);
-	Voxel replace = temperature > 20 ? Voxel::SAND : Voxel::GRAVEL;
+	VoxelType replace = temperature > 20 ? VoxelType::SAND : VoxelType::GRAVEL;
 
 	// On veut des montagnes pas hautes dans les deserts
 	double biasDesert = 1.0 - clamp(range(temperature, 20.0, 35.0), 0.0, 1.0);
@@ -200,19 +200,19 @@ Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 		result = Voxel::WATER;*/
 
 	if (voxelHeight < 10  && !inTunnel)
-		return Voxel::LAVA;
+		return VoxelType::LAVA;
 
 	// Tunnels
 	if (!aboveGround && inTunnel) {
 		if (distanceFromSurface < round(-dirt)) {
-			return Voxel::ROCK;
+			return VoxelType::ROCK;
 		}
-		result = Voxel::DIRT;
+		result = VoxelType::DIRT;
 	}
 
 	//Surface
 	if (atGround && inTunnel)
-		result = Voxel::GRASS;
+		result = VoxelType::GRASS;
 	if (atGround && inTunnelBorder)
 		result = replace;
 
@@ -224,10 +224,10 @@ Voxel BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 	}*/
 	
 	if (temperature > 18){
-		if (result == Voxel::GRASS || result == Voxel::DIRT) {
+		if (result == VoxelType::GRASS || result == VoxelType::DIRT) {
 			result = replace;
 		}
-		if (result == Voxel::WATER)
+		if (result == VoxelType::WATER)
 			result = replace;
 
 		/*if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT)/2

@@ -20,8 +20,9 @@ public:
     int generate(Voxel* data, GLuint* vertices);
 
 private:
-    GLuint getVoxel(Voxel* data, int i, int j, int k);
-    GLuint getVertex(int x, int y, int z, int normalIndex, int voxel);
+    Voxel getVoxel(Voxel* data, int i, int j, int k);
+	GLuint getVertex(int x, int y, int z, int normalIndex, TextureID tex, Voxel voxel);
 
-    int* m_mask;
+    Voxel* m_mask;
+    bool* m_offsetNormal;
 };

@@ -12,8 +12,8 @@ PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{fa
     m_bodies = new Body[BODY_COUNT];
     for (int i = 0; i < BODY_COUNT; ++i) {
         m_bodies[i].jump = false;
-        m_bodies[i].height = 20;
-        m_bodies[i].width = 3;
+        m_bodies[i].height = 12;
+        m_bodies[i].width = 1;
         m_bodies[i].mass = 1;
         m_bodies[i].onGround = false;
     }
@@ -124,7 +124,7 @@ bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, con
         if (oldVoxel != newVoxel) {
             do {
                 currentVoxel -= direction;
-                if (chunkManager.getVoxel(currentVoxel.x(), currentVoxel.y(), currentVoxel.z()) != Voxel::AIR) {
+                if (chunkManager.getVoxel(currentVoxel.x(), currentVoxel.y(), currentVoxel.z()).type != VoxelType::AIR) {
                     isColliding = true;
                     break;
                 }

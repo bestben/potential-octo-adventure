@@ -2,12 +2,13 @@
 
 #include <QtCore/qhash.h>
 #include <QtCore/QString>
+#include <cstdint>
 
-#define CHUNK_NUMBER 700
-#define VBO_NUMBER 700
+#define CHUNK_NUMBER 1024
+#define VBO_NUMBER 1024
 
 #define CHUNK_SIZE 31
-#define CHUNK_SCALE 16
+#define CHUNK_SCALE 5
 
 #define VIEW_SIZE 4
 
@@ -41,9 +42,14 @@ struct Chunk {
 #define GROUND_LEVEL 128
 #define SEA_HEIGHT 10
 
-typedef unsigned int uint;
-//typedef unsigned char Voxel;
-//typedef std::tuple<int, int, int> Coords;
+typedef int8_t int8;
+typedef uint8_t uint8;
+typedef int16_t int16;
+typedef uint16_t uint16;
+typedef int32_t int32;
+typedef uint32_t uint32;
+typedef int64_t int64;
+typedef uint64_t uint64;
 
 struct Coords
 {
@@ -69,8 +75,7 @@ inline bool operator==(Coords lhs, Coords rhs){
 	return (lhs.i == rhs.i) && (lhs.j == rhs.j) && (lhs.k == rhs.k);
 }
 
-
-enum class Voxel : unsigned char
+enum class VoxelType : uint8
 {
 	AIR = 0,
 	GRASS,
@@ -86,7 +91,20 @@ enum class Voxel : unsigned char
 	COUNT // On ajoute un elmeent pour avoir la taille de l'enum
 };
 
-enum class TextureID : uint
+//typedef unsigned int Voxel;
+
+struct Voxel
+{
+	VoxelType type : 8;
+	uint8 sunLight : 4;
+	uint8 torchLight : 4;
+};
+
+inline bool operator==(const Voxel &lhs, const Voxel &rhs){
+	return lhs.type == rhs.type && lhs.sunLight == rhs.sunLight && lhs.torchLight == rhs.torchLight;
+}
+
+enum class TextureID : uint8
 {
 	GRASS = 0,
 	ROCK = 1,
@@ -115,7 +133,7 @@ struct VoxelTextureMap
 	TextureID back;
 };
 
-#define FULL_BLOCK(name) VoxelTextures[(uint)Voxel::name] = { TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name };
+#define FULL_BLOCK(name) VoxelTextures[(uint)VoxelType::name] = { TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name };
 
 
 inline int div_floor(int x, int y) {
@@ -141,6 +159,13 @@ inline Coords chunkIdToChunkIdInMap(Coords chunkId) {
 	int i = chunkId.i % BIOMEMAP_CHUNKS;
 	int k = chunkId.k % BIOMEMAP_CHUNKS;
 	return{ i<0 ? i + BIOMEMAP_CHUNKS : i, chunkId.j, k<0 ? k + BIOMEMAP_CHUNKS  : k};
+}
+
+inline Coords worldCoordsToChunkCoords(Coords c) {
+	int i = c.i % CHUNK_SIZE;
+	int j = c.j % CHUNK_SIZE;
+	int k = c.k % CHUNK_SIZE;
+	return{ i<0 ? i + CHUNK_SIZE : i, j<0 ? j + CHUNK_SIZE : j, k<0 ? k + CHUNK_SIZE : k };
 }
 
 inline Coords chunkIdToMapId(Coords chunkId) {

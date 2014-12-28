@@ -126,6 +126,13 @@ void ChunkManager::update(GameWindow* gl) {
             m_inUseChunkData[i].store(false);
         }*/
 
+		//TODO: Fix le thread qui plante :(
+		if (!isRunning()) {
+			m_mutexChunkManagerList.unlock();
+			start();
+		}
+			
+
         QVector3D camPos = gl->getCamera().getPosition();
         int chunkI = floor(camPos.x() / (CHUNK_SIZE * CHUNK_SCALE));
         int chunkJ = floor(camPos.y() / (CHUNK_SIZE * CHUNK_SCALE));
@@ -291,10 +298,11 @@ Chunk& ChunkManager::getChunk(int i, int j, int k) {
 }
 
 void ChunkManager::run() {
-
+	
     while (m_needRegen) {
         // On génére tous les chunks requis
 		m_mutexChunkManagerList.lock();
+		
         if (m_toGenerateChunkData.size() > 0) {
             // Le chunk à créer
 			
@@ -304,7 +312,7 @@ void ChunkManager::run() {
 
             int bufferIndex = seekFreeChunkData();
 			int vboIndex = seekFreeBuffer();
-            
+	
 			if (bufferIndex != -1 && vboIndex != -1) {
 				newChunk->chunkBufferIndex = bufferIndex;
 				newChunk->vboIndex = vboIndex;
@@ -312,9 +320,11 @@ void ChunkManager::run() {
 				m_availableChunkData[bufferIndex] = false;
 				m_availableBuffer[vboIndex] = false;
 				m_mutexChunkManagerList.unlock();
+
                 // TODO Générer le nouveau chunk et le prendre du DD si déja présent
 				Voxel* data = getBufferAdress(bufferIndex);
 				m_ChunkGenerator.generateChunk(data, newChunk->i, newChunk->j, newChunk->k);
+
 				m_mutexChunkManagerList.lock();
 				m_toGenerateBuffer.push_back(newChunk);
 				
@@ -324,7 +334,6 @@ void ChunkManager::run() {
                 #ifdef QT_DEBUG
                 std::cout << "Plus assez de blocs libre pour charger un chunk" << std::endl;
                 #endif
-                break;
             }
         }
 
@@ -338,11 +347,14 @@ void ChunkManager::run() {
 			
 			if (newChunk->chunkBufferIndex != -1) {
 				if (newChunk->vboIndex != -1) {
+
 					m_vboToUpload = newChunk->vboIndex;
 					m_availableBuffer[m_vboToUpload] = false;
 					m_oglBuffers[m_vboToUpload].draw = false;
+
 					Voxel *data = getBufferAdress(newChunk->chunkBufferIndex);
-                    m_countToUpload = m_meshGenerator.generate(data, m_tempVertexData);
+					m_countToUpload = m_meshGenerator.generate(data, m_tempVertexData); 
+
 					m_canUploadMesh = true;
 					newChunk->visible = true;
                 } else {
@@ -350,7 +362,6 @@ void ChunkManager::run() {
                     #ifdef QT_DEBUG
                     std::cout << "Plus assez de vbo libre pour charger un chunk" << std::endl;
                     #endif
-                    break;
                 }
             } else {
                 #ifdef QT_DEBUG
@@ -358,7 +369,6 @@ void ChunkManager::run() {
                 #endif
             }
 			
-
         }
 		m_mutexChunkManagerList.unlock();
 		// Eviter de faire fondre le cpu dans des boucles vides ;)
@@ -387,27 +397,15 @@ int ChunkManager::seekFreeBuffer() {
 }
 
 Voxel ChunkManager::getVoxel(int x, int y, int z) {
-    Voxel res = Voxel::AIR;
+	Voxel res = {};
 
-    Chunk& chunk = getChunk(floor((float)x / (float)CHUNK_SIZE), floor((float)y / (float)CHUNK_SIZE), floor((float)z / (float)CHUNK_SIZE));
+    Chunk& chunk = getChunk(div_floor(x, CHUNK_SIZE), div_floor(y, CHUNK_SIZE), div_floor(z, CHUNK_SIZE));
     if (chunk.chunkBufferIndex != -1) {
         Voxel* voxels = getBufferAdress(chunk.chunkBufferIndex);
-
-        while (x < 0) {
-            x += CHUNK_SIZE;
-        }
-        while (y < 0) {
-            y += CHUNK_SIZE;
-        }
-        while (z < 0) {
-            z += CHUNK_SIZE;
-        }
-
         if (voxels != nullptr) {
-            int localX = x % CHUNK_SIZE;
-            int localY = y % CHUNK_SIZE;
-            int localZ = z % CHUNK_SIZE;
-            res = voxels[localX + CHUNK_SIZE * (localY + CHUNK_SIZE * localZ)];
+			Coords c = worldCoordsToChunkCoords({ x, y, z });
+            res = voxels[c.i + CHUNK_SIZE * (c.j + CHUNK_SIZE * c.k)];
+            //std::cout << "found : " << (int)res.type << std::endl;
         }
     }
     return res;
