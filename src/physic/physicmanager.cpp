@@ -92,6 +92,17 @@ void PhysicManager::update(GameWindow* gl, int dt) {
             body->jump = false;
 
             body->position = newPosition;
+
+            // Gestion du passage sous la map
+            if (m_hasGravity && ((body->position.y() + body->height) < 0.0f)) {
+                body->position.setY(CHUNK_SIZE * CHUNK_SCALE * 7);
+            }
+            // Gestion du blocage
+            QVector3D voxel = body->position / (CHUNK_SCALE);
+            voxel = QVector3D(floor(voxel.x()), floor(voxel.y()), floor(voxel.z()));
+            if (m_hasGravity && (gl->getChunkManager().getVoxel(voxel.x(), voxel.y(), voxel.z()).type != VoxelType::AIR)) {
+                body->position.setY(CHUNK_SIZE * CHUNK_SCALE * 7);
+            }
         }
     }
 }

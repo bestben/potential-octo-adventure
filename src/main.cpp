@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
         format.setOption(QSurfaceFormat::DebugContext);
         #endif
         format.setDepthBufferSize(24);
-        format.setSwapInterval(1); // A changer pour caper à 60FPS
+        format.setSwapInterval(1); // A changer pour caper ou non à 60FPS
         format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
 
         GameWindow mainWindow;
