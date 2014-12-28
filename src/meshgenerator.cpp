@@ -1,4 +1,5 @@
 #include "meshgenerator.h"
+#include <iostream>
 
 // TODO(antoine): Meilleur endroit pour cette initialisation ?
 
@@ -49,24 +50,27 @@ inline void initializeTextureMaps(){
 
 MeshGenerator::MeshGenerator()
 {
-    m_mask = new int[CHUNK_SIZE * CHUNK_SIZE];
+    m_mask = new Voxel[CHUNK_SIZE * CHUNK_SIZE];
+	m_offsetNormal = new bool[CHUNK_SIZE * CHUNK_SIZE];
 
 	initializeTextureMaps();
 }
 
 MeshGenerator::~MeshGenerator() {
     delete[] m_mask;
+	delete[] m_offsetNormal;
 }
 
 int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
     int vertexCount = 0;
-
+	Voxel emptyVoxel = {};
     for (int axis = 0; axis < 3; ++axis) {
         const int u = (axis + 1) % 3;
         const int v = (axis + 2) % 3;
 
         int x[3] = {0}, q[3] = {0};
-        memset(m_mask, 0, CHUNK_SIZE * CHUNK_SIZE * sizeof(int));
+        memset(m_mask, 0, CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
+		memset(m_offsetNormal, true, CHUNK_SIZE * CHUNK_SIZE * sizeof(bool));
 
         // Calcule du mask
         q[axis] = 1;
@@ -75,17 +79,21 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
             for (x[v] = 0; x[v] < CHUNK_SIZE; ++x[v]) {
                 for (x[u] = 0; x[u] < CHUNK_SIZE; ++x[u], ++counter)
                 {
-                    const int a = 0 <= x[axis] ? getVoxel(data, x[0], x[1], x[2]) : 0;
-                    const int b = x[axis] < CHUNK_SIZE - 1 ? getVoxel(data, x[0] + q[0],
+					Voxel a = 0 <= x[axis] ? getVoxel(data, x[0], x[1], x[2]) : emptyVoxel;
+					Voxel b = x[axis] < CHUNK_SIZE - 1 ? getVoxel(data, x[0] + q[0],
                             x[1] + q[1],
-                            x[2] + q[2]) : 0;
-                    const bool ba = static_cast<bool>(a);
-                    if (ba == static_cast<bool>(b))
-                        m_mask[counter] = 0;
-                    else if (ba)
-                        m_mask[counter] = a;
-                    else
-                        m_mask[counter] = -b;
+							x[2] + q[2]) : emptyVoxel;
+
+					//TODO: Fix ce bug. En printant nIndex plus bas, on se rend compte qu'on passe toujours dans le else, pas normal?
+					const bool ba = a.type != VoxelType::AIR;
+					if (ba == (b.type != VoxelType::AIR)){
+						m_mask[counter] = emptyVoxel;
+					}else if (ba){
+						m_mask[counter] = a;
+					}else{
+						m_mask[counter] = b;
+						m_offsetNormal[counter] = false;
+					}
                 }
             }
             ++x[axis];
@@ -94,10 +102,10 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
             counter = 0;
             for (int j = 0; j < CHUNK_SIZE; ++j) {
                 for (int i = 0; i < CHUNK_SIZE;) {
-                    int c = m_mask[counter];
-                    if (c) {
+                    Voxel c = m_mask[counter];
+                    if (c.type != VoxelType::AIR) {
                         // Calcule de la largeur
-                        for (width = 1; c == m_mask[counter + width] &&
+						for (width = 1; (c == m_mask[counter + width]) && (m_offsetNormal[counter] == m_offsetNormal[counter + width]) &&
                              i + width < CHUNK_SIZE; ++width) {
                         }
 
@@ -105,7 +113,7 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
                         bool done = false;
                         for (height = 1; j + height < CHUNK_SIZE; ++height) {
                             for (int k = 0; k < width; ++k)
-                                if (c != m_mask[counter + k + height * CHUNK_SIZE]) {
+								if (!(c == m_mask[counter + k + height * CHUNK_SIZE] && (m_offsetNormal[counter] == m_offsetNormal[counter + k + height * CHUNK_SIZE]))) {
                                     done = true;
                                     break;
                                 }
@@ -120,40 +128,39 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
                         int du[3] = {0}, dv[3] = {0};
 
                         int nIndex = axis * 2;
-                        if (c > 0) {
+						if (!m_offsetNormal[counter]) {
                             dv[v] = height;
                             du[u] = width;
                             nIndex++;
                         } else {
-                            c = -c;
                             du[v] = height;
                             dv[u] = width;
                         }
 						
-						
-						auto type = (unsigned int)getVoxelType(c);
-						auto light = getVoxelLight(c);
-						VoxelTextureMap textureMap = VoxelTextures[type];
-						int t = (int)TextureID::ERROR_TEXTURE;
 
-							 if (nIndex == 0) t = (int)textureMap.right;
-						else if (nIndex == 1) t = (int)textureMap.left;
-						else if (nIndex == 2) t = (int)textureMap.bottom;
-						else if (nIndex == 3) t = (int)textureMap.top;
-						else if (nIndex == 4) t = (int)textureMap.front;
-						else if (nIndex == 5) t = (int)textureMap.back;
+						VoxelTextureMap textureMap = VoxelTextures[(uint8)c.type];
+						TextureID t = TextureID::ERROR_TEXTURE;
+
+							 if (nIndex == 0) t = textureMap.right;
+						else if (nIndex == 1) t = textureMap.left;
+						else if (nIndex == 2) t = textureMap.bottom;
+						else if (nIndex == 3) t = textureMap.top;
+						else if (nIndex == 4) t = textureMap.front;
+						else if (nIndex == 5) t = textureMap.back;
+
+						std::cout << "test " << nIndex << std::endl;
 						
 
-						vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, t, light);
-						vertices[vertexCount++] = getVertex(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2], nIndex, t, light);
-						vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, t, light);
-						vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, t, light);
-						vertices[vertexCount++] = getVertex(x[0] + du[0], x[1] + du[1], x[2] + du[2], nIndex, t, light);
-						vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, t, light);
+						vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, t, c);
+						vertices[vertexCount++] = getVertex(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2], nIndex, t, c);
+						vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, t, c);
+						vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, t, c);
+						vertices[vertexCount++] = getVertex(x[0] + du[0], x[1] + du[1], x[2] + du[2], nIndex, t, c);
+						vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, t, c);
 
                         for (int b = 0; b < width; ++b)
                             for (int a = 0; a < height; ++a)
-                                m_mask[counter + b + a * CHUNK_SIZE] = 0;
+                                m_mask[counter + b + a * CHUNK_SIZE] = emptyVoxel;
 
                         i += width; counter += width;
                     } else {
@@ -167,16 +174,18 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
     return vertexCount;
 }
 
-GLuint MeshGenerator::getVoxel(Voxel* data, int i, int j, int k) {
-    return (GLuint)data[i + CHUNK_SIZE * (j + CHUNK_SIZE * k)];
+Voxel MeshGenerator::getVoxel(Voxel* data, int i, int j, int k) {
+    return data[i + CHUNK_SIZE * (j + CHUNK_SIZE * k)];
 }
 
-GLuint MeshGenerator::getVertex(int x, int y, int z, int normalIndex, unsigned char type, unsigned char light) {
-	/* Bit map
+GLuint MeshGenerator::getVertex(int x, int y, int z, int normalIndex, TextureID tex, Voxel voxel) {
+	/* Bit map 32bits
 	0-15 Coords (3*5bits)
-	16-23 Type (8bits)
+	16-23 Texture (8bits)
 	24-26 Normal (3 bits)
 	28-31 Light (5bits)
 	*/
-    return (light << 26) | (normalIndex << 23) | (type << 15) | (x << 10) | (y << 5) | (z);
+	//TODO: Separer les lights pour permettre des couleurs différentes entre sunlight et torchlight
+	uint8 light = voxel.sunLight + voxel.torchLight;
+	return (light << 26) | (normalIndex << 23) | ((uint8)tex << 15) | (x << 10) | (y << 5) | (z);
 }

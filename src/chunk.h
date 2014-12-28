@@ -2,9 +2,10 @@
 
 #include <QtCore/qhash.h>
 #include <QtCore/QString>
+#include <cstdint>
 
-#define CHUNK_NUMBER 700
-#define VBO_NUMBER 700
+#define CHUNK_NUMBER 1024
+#define VBO_NUMBER 1024
 
 #define CHUNK_SIZE 31
 #define CHUNK_SCALE 5
@@ -41,9 +42,14 @@ struct Chunk {
 #define GROUND_LEVEL 128
 #define SEA_HEIGHT 10
 
-typedef unsigned int uint;
-//typedef unsigned char Voxel;
-//typedef std::tuple<int, int, int> Coords;
+typedef int8_t int8;
+typedef uint8_t uint8;
+typedef int16_t int16;
+typedef uint16_t uint16;
+typedef int32_t int32;
+typedef uint32_t uint32;
+typedef int64_t int64;
+typedef uint64_t uint64;
 
 struct Coords
 {
@@ -69,7 +75,7 @@ inline bool operator==(Coords lhs, Coords rhs){
 	return (lhs.i == rhs.i) && (lhs.j == rhs.j) && (lhs.k == rhs.k);
 }
 
-enum class VoxelType : unsigned char
+enum class VoxelType : uint8
 {
 	AIR = 0,
 	GRASS,
@@ -85,9 +91,20 @@ enum class VoxelType : unsigned char
 	COUNT // On ajoute un elmeent pour avoir la taille de l'enum
 };
 
-typedef unsigned int Voxel;
+//typedef unsigned int Voxel;
 
-enum class TextureID : uint
+struct Voxel
+{
+	VoxelType type : 8;
+	uint8 sunLight : 4;
+	uint8 torchLight : 4;
+};
+
+inline bool operator==(const Voxel &lhs, const Voxel &rhs){
+	return lhs.type == rhs.type && lhs.sunLight == rhs.sunLight && lhs.torchLight == rhs.torchLight;
+}
+
+enum class TextureID : uint8
 {
 	GRASS = 0,
 	ROCK = 1,
@@ -153,24 +170,4 @@ inline Coords worldCoordsToChunkCoords(Coords c) {
 
 inline Coords chunkIdToMapId(Coords chunkId) {
 	return{ div_floor(chunkId.i, BIOMEMAP_CHUNKS), 0, div_floor(chunkId.k, BIOMEMAP_CHUNKS) };
-}
-
-// Get the bits XXXX XXXX 0000 0000
-inline VoxelType getVoxelType(Voxel v) {
-	return (VoxelType)((v >> 8) & 0xF);
-}
-
-// Get the bits XXXX XXXX 0000 0000
-inline void setVoxelType(Voxel *v, VoxelType type) {
-	*v = (*v & 0xF) | ((unsigned char)type << 8);
-}
-
-// Get the bits 0000 0000 XXXX XXXX 
-inline unsigned char getVoxelLight(Voxel v) {
-	return (v & 0xF);
-}
-
-// Get the bits 0000 0000 XXXX XXXX
-inline void setVoxelLight(Voxel *v, unsigned char val) {
-	*v = (*v & 0xF0) | val;
 }
