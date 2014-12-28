@@ -16,8 +16,8 @@ float radToDeg(float x) {
     return x * 180.0f / pi;
 }
 
-Camera::Camera() : m_speed{100.0f}, m_phi{degToRad(-33.0f)}, m_theta{degToRad(-10.0f)},
-                    m_thetaMax{degToRad(75.0f)}, m_sensi{0.5f}, m_fov{60.0f}, m_near{0.25f},
+Camera::Camera() : m_speed{CAMERA_WALK_SPEED}, m_phi{degToRad(-33.0f)}, m_theta{degToRad(-10.0f)},
+                    m_thetaMax{degToRad(75.0f)}, m_sensi{0.5f}, m_fov{60.0f}, m_desiredFov{m_fov}, m_near{0.25f},
                     m_far{2500.0f}, m_width{1.0f}, m_height{1.0f},
                     m_direction{Direction::NONE}, m_mousePressed{false}, m_isViewMatrixDirty{true}, m_isProjMatrixDirty{false} {
     m_tang = (float)std::tan(m_fov * pi  / 180.0f);
@@ -43,6 +43,16 @@ void Camera::update(int dt) {
     QVector3D move = dir * m_speed;
 
     m_body->force = move;
+
+    if (m_desiredFov > m_fov) {
+        float df = CAMERA_FOV_SPEED * ((float)dt / 1000.0f);
+        m_fov = std::min(m_fov + df, m_desiredFov);
+        m_isProjMatrixDirty = true;
+    } else {
+        float df = CAMERA_FOV_RELEASE_SPEED * ((float)dt / 1000.0f);
+        m_fov = std::max(m_fov - df, m_desiredFov);
+        m_isProjMatrixDirty = true;
+    }
 }
 
 void Camera::postUpdate() {
@@ -258,6 +268,10 @@ void Camera::keyPressEvent(QKeyEvent* event) {
 
     if (event->key() == Qt::Key_Space) {
         m_body->jump = true;
+    } else if (event->key() == Qt::Key_Control) {
+        m_speed = CAMERA_RUN_SPEED;
+        m_desiredFov = CAMERA_RUN_FOV;
+        m_isProjMatrixDirty = true;
     }
 
     Direction mod = Direction::NONE;
@@ -276,6 +290,11 @@ void Camera::keyPressEvent(QKeyEvent* event) {
 }
 
 void Camera::keyReleaseEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Control) {
+        m_speed = CAMERA_WALK_SPEED;
+        m_desiredFov = CAMERA_WALK_FOV;
+        m_isProjMatrixDirty = true;
+    }
     Direction mod = Direction::NONE;
     if (event->key() == Qt::Key_Z) {
         mod = Direction::UP;

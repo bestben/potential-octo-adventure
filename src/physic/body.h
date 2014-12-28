@@ -13,4 +13,5 @@ struct Body {
     float width;
     float mass;
     bool jump;
+    bool onGround;
 };

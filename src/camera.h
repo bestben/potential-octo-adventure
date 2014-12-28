@@ -23,6 +23,15 @@ enum Direction {
 struct Body;
 class GameWindow;
 
+#define CAMERA_WALK_SPEED 150.0f
+#define CAMERA_RUN_SPEED 250.0f
+
+#define CAMERA_WALK_FOV 60.0f
+#define CAMERA_RUN_FOV 90.0f
+
+#define CAMERA_FOV_SPEED 15.0f // La vitesse du changement de fov par second
+#define CAMERA_FOV_RELEASE_SPEED 30.0f // La vitesse du changement de fov par second lors du relachement
+
 /**
  * @brief Classe représentant une caméra pouvant naviguer dans un espace en 3D.
  */
@@ -93,6 +102,7 @@ private:
     float m_sensi; // Sensibilité de la souris (Degrés / pixel).
 
     float m_fov; // L'angle de vue
+    float m_desiredFov;
     float m_near;
     float m_far;
     float m_width;

@@ -408,7 +408,6 @@ Voxel ChunkManager::getVoxel(int x, int y, int z) {
             int localY = y % CHUNK_SIZE;
             int localZ = z % CHUNK_SIZE;
             res = voxels[localX + CHUNK_SIZE * (localY + CHUNK_SIZE * localZ)];
-            std::cout << "found : " << (int)res << std::endl;
         }
     }
     return res;

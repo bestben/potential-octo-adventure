@@ -6,13 +6,16 @@
 
 #include "body.h"
 
+#define JUMP_SPEED 300
+
 PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{false} {
     m_bodies = new Body[BODY_COUNT];
     for (int i = 0; i < BODY_COUNT; ++i) {
         m_bodies[i].jump = false;
         m_bodies[i].height = 20;
-        m_bodies[i].width = 1;
+        m_bodies[i].width = 3;
         m_bodies[i].mass = 1;
+        m_bodies[i].onGround = false;
     }
 }
 
@@ -43,32 +46,41 @@ void PhysicManager::update(GameWindow* gl, int dt) {
                 lastAcceleration.setZ(0.0f);
             }
             if (m_hasGravity) {
-                force.setY(0.0f);
-                force += g;
-                if (body->jump) {
-                    force -= 10 * g;
-                }
-                newAcceleration = force / body->mass;
-                //avgAcceleration = (lastAcceleration + newAcceleration) * 0.5;
-                avgAcceleration = newAcceleration;
-                body->velocity += avgAcceleration * delta;
-
                 // Test collision
                 bool colliding = collide(gl, body, newPosition, QVector3D(0.0f, deltaPos.y(), 0.0f));
                 if (colliding) {
                     avgAcceleration.setY(0.0f);
-                    body->velocity.setY(0.0f);
+                    if (body->velocity.y() < 0.0f) {
+                        body->velocity.setY(0.0f);
+                    }
+                    m_bodies[i].onGround = true;
+                } else {
+                    m_bodies[i].onGround = false;
                 }
                 colliding = collide(gl, body, newPosition, QVector3D(deltaPos.x(), 0.0f, 0.0f));
                 if (colliding) {
                     avgAcceleration.setX(0.0f);
                     body->velocity.setX(0.0f);
                 }
-
                 colliding = collide(gl, body, newPosition, QVector3D(0.0f, 0.0f, deltaPos.z()));
                 if (colliding) {
                     avgAcceleration.setZ(0.0f);
                     body->velocity.setZ(0.0f);
+                }
+
+                // Gestion physique
+                force.setY(0.0f);
+                //force += g;
+                newAcceleration = g / body->mass;
+                //avgAcceleration = (lastAcceleration + newAcceleration) * 0.5;
+                avgAcceleration = newAcceleration;
+                body->velocity.setX(force.x());
+                body->velocity.setZ(force.z());
+                body->velocity += avgAcceleration * delta;
+
+                // Gére le saut
+                if (body->jump && body->onGround) {
+                    body->velocity.setY(JUMP_SPEED);
                 }
             } else {
                 avgAcceleration = QVector3D(0.0f, 0.0f, 0.0f);
@@ -85,7 +97,7 @@ void PhysicManager::update(GameWindow* gl, int dt) {
 }
 
 bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, const QVector3D& delta) {
-    const float PADDING = 0.000001;
+    const float PADDING = 0.00001f;
     ChunkManager& chunkManager = gl->getChunkManager();
     QVector3D corners[] = {
         QVector3D(body->width + PADDING, - PADDING, body->width + PADDING),
@@ -110,27 +122,9 @@ bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, con
         direction.normalize();
         QVector3D currentVoxel = oldVoxel;
         if (oldVoxel != newVoxel) {
-            std::cout << "old : " << oldVoxel.x() << " " << oldVoxel.y() << " " << oldVoxel.z() << std::endl;
-            std::cout << "new : " << newVoxel.x() << " " << newVoxel.y() << " " << newVoxel.z() << std::endl;
             do {
                 currentVoxel -= direction;
                 if (chunkManager.getVoxel(currentVoxel.x(), currentVoxel.y(), currentVoxel.z()) != Voxel::AIR) {
-                    std::cout << "currentVoxel : " << currentVoxel.x() << " " << currentVoxel.y() << " " << currentVoxel.z() << std::endl;
-                    QVector3D size = direction * QVector3D(body->width, corners[i].y(), body->width);
-                    std::cout << "size : " << size.x() << " " << size.y() << " " << size.z() << std::endl;
-                    QVector3D scaledDirection = (direction * (CHUNK_SCALE + PADDING) / 2) + size;
-                    std::cout << "scaledDirection : " << scaledDirection.x() << " " << scaledDirection.y() << " " << scaledDirection.z() << std::endl;
-
-                    /*QVector3D correctedPos = (newVoxel + QVector3D(0.5f, 0.5f, 0.5f)) * CHUNK_SCALE + scaledDirection;
-                    std::cout << "position0 : " << position.x() << " " << position.y() << " " << position.z() << std::endl;
-                    if (direction.x() != 0.0f) {
-                        position.setX(correctedPos.x());
-                    } else if (direction.y() != 0.0f) {
-                        position.setY(correctedPos.y());
-                    } else if (direction.z() != 0.0f) {
-                        position.setZ(correctedPos.z());
-                    }*/
-                    std::cout << "position1 : " << position.x() << " " << position.y() << " " << position.z() << std::endl;
                     isColliding = true;
                     break;
                 }
