@@ -196,8 +196,8 @@ VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 	int distanceFromSurface = voxelHeight - terrainHeight; // + : above, - : below
 	int distanceFromSeaLevel = voxelHeight - GROUND_LEVEL;
 	
-	/*if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT)
-		result = Voxel::WATER;*/
+	if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT && inTunnel)
+		result = VoxelType::WATER;
 
 	if (voxelHeight < 10  && !inTunnel)
 		return VoxelType::LAVA;
@@ -213,7 +213,7 @@ VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 	//Surface
 	if (atGround && inTunnel)
 		result = VoxelType::GRASS;
-	if (atGround && inTunnelBorder)
+	if ((atGround||result==VoxelType::WATER)&&inTunnelBorder)
 		result = replace;
 
 
