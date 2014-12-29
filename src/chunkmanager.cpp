@@ -222,7 +222,7 @@ void ChunkManager::checkChunk(Coords tuple) {
 	auto it = m_ChunkMap.find(tuple);
 	if (it != m_ChunkMap.end()) {
 		Chunk* chunk = *it;
-		if ((chunk->chunkBufferIndex == -1 || chunk->vboIndex == -1) && !m_toGenerateChunkData.contains(chunk) && !m_toGenerateBuffer.contains(chunk)) {
+		if ((chunk->chunkBufferIndex == -1 || chunk->vboIndex == -1)) {
 			m_toGenerateChunkData.push_back(chunk);
 		} else {
 			chunk->visible = true;
@@ -305,7 +305,6 @@ void ChunkManager::run() {
         if (m_toGenerateChunkData.size() > 0) {
             // Le chunk à créer
 			
-
 			auto* newChunk = m_toGenerateChunkData.front();
             m_toGenerateChunkData.pop_front();       
 
@@ -313,6 +312,8 @@ void ChunkManager::run() {
 			int vboIndex = seekFreeBuffer();
 	
 			if (bufferIndex != -1 && vboIndex != -1) {
+				// On enlève les doubles
+				m_toGenerateChunkData.removeAll(newChunk);
 				newChunk->chunkBufferIndex = bufferIndex;
 				newChunk->vboIndex = vboIndex;
 
@@ -329,7 +330,7 @@ void ChunkManager::run() {
 				
             } else {
                 // Plus assez de blocs libres
-
+				m_toGenerateChunkData.push_back(newChunk);
                 #ifdef QT_DEBUG
                 std::cout << "Plus assez de blocs libre pour charger un chunk" << std::endl;
                 #endif
@@ -358,6 +359,8 @@ void ChunkManager::run() {
 					newChunk->visible = true;
                 } else {
                     // Plus assez de vbo libres
+					// Ne devrait jamais arriver
+					m_toGenerateBuffer.push_back(newChunk);
                     #ifdef QT_DEBUG
                     std::cout << "Plus assez de vbo libre pour charger un chunk" << std::endl;
                     #endif
@@ -370,9 +373,8 @@ void ChunkManager::run() {
 			
         }
 		m_mutexChunkManagerList.unlock();
+
 		// Eviter de faire fondre le cpu dans des boucles vides ;)
-
-
 		QThread::msleep(5);
     }
 }
@@ -398,7 +400,7 @@ int ChunkManager::seekFreeBuffer() {
 Voxel ChunkManager::getVoxel(int x, int y, int z) {
 	Voxel res = {};
 
-    Chunk& chunk = getChunk(div_floor(x, CHUNK_SIZE), div_floor(y, CHUNK_SIZE), div_floor(z, CHUNK_SIZE));
+    Chunk& chunk = getChunk(voxelGetChunk({x,y,z}));
     if (chunk.chunkBufferIndex != -1) {
         Voxel* voxels = getBufferAdress(chunk.chunkBufferIndex);
         if (voxels != nullptr) {

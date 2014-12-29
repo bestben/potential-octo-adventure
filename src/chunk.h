@@ -1,13 +1,10 @@
 #pragma once
 
-#include <QtCore/qhash.h>
-#include <QtCore/QString>
 #include <QtGui/QVector3D>
-
 #include <cstdint>
 
-#define CHUNK_NUMBER 1024
-#define VBO_NUMBER 1024
+#define CHUNK_NUMBER 2048
+#define VBO_NUMBER 2048
 
 #define CHUNK_SIZE 31
 #define CHUNK_SCALE 5
@@ -25,7 +22,7 @@
 #define Assert(Expression)
 #endif
 
-
+#include "coords.h"
 
 struct Chunk {
     // Les coordonnées du chunk
@@ -53,29 +50,6 @@ typedef uint32_t uint32;
 typedef int64_t int64;
 typedef uint64_t uint64;
 
-struct Coords
-{
-	int i;
-	int j;
-	int k;
-};
-
-
-// TODO: Enum voxel types
-
-inline uint qHash(Coords c) {
-	QString str = "";
-	str += c.i;
-	str += "-";
-	str += c.j;
-	str += "-";
-	str += c.k;
-	return qHash(str);
-}
-
-inline bool operator==(Coords lhs, Coords rhs){
-	return (lhs.i == rhs.i) && (lhs.j == rhs.j) && (lhs.k == rhs.k);
-}
 
 enum class VoxelType : uint8
 {
@@ -138,13 +112,6 @@ struct VoxelTextureMap
 #define FULL_BLOCK(name) VoxelTextures[(uint)VoxelType::name] = { TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name };
 
 
-inline int div_floor(int x, int y) {
-	int q = x / y;
-	int r = x%y;
-	if ((r != 0) && ((r<0) != (y<0))) --q;
-	return q;
-}
-
 inline double lerp(double v0, double v1, double t) {
 	return (1 - t)*v0 + t*v1;
 }
@@ -157,27 +124,6 @@ inline double range(double value, double min, double max) {
 	return (value - min) / (max - min);
 }
 
-inline Coords chunkIdToChunkIdInMap(Coords chunkId) {
-	int i = chunkId.i % BIOMEMAP_CHUNKS;
-	int k = chunkId.k % BIOMEMAP_CHUNKS;
-	return{ i<0 ? i + BIOMEMAP_CHUNKS : i, chunkId.j, k<0 ? k + BIOMEMAP_CHUNKS  : k};
-}
 
-inline Coords voxelCoordsToChunkCoords(Coords c) {
-	int i = c.i % CHUNK_SIZE;
-	int j = c.j % CHUNK_SIZE;
-	int k = c.k % CHUNK_SIZE;
-	return{ i<0 ? i + CHUNK_SIZE : i, j<0 ? j + CHUNK_SIZE : j, k<0 ? k + CHUNK_SIZE : k };
-}
 
-inline Coords voxelGetChunk(Coords c) {
-	return{ div_floor(c.i, CHUNK_SIZE), div_floor(c.j, CHUNK_SIZE), div_floor(c.k, CHUNK_SIZE) };
-}
 
-inline Coords chunkIdToMapId(Coords chunkId) {
-	return{ div_floor(chunkId.i, BIOMEMAP_CHUNKS), 0, div_floor(chunkId.k, BIOMEMAP_CHUNKS) };
-}
-
-inline Coords worldToVoxel(const QVector3D &pos) {
-	return{ div_floor(pos.x(), (CHUNK_SCALE)), div_floor(pos.y(), (CHUNK_SCALE)), div_floor(pos.z(), (CHUNK_SCALE)) };
-}

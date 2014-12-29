@@ -67,6 +67,7 @@ HEADERS += \
     biomes/BiomeMap.h \
     chunkmanager.h \
     meshgenerator.h \
+    coords.h \
     chunk.h \
     defs.h \
     biomes/ChunkGenerator.h \
