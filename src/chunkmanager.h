@@ -44,6 +44,14 @@ public:
 	Chunk& getChunk(int i, int j, int k);
 
     Voxel getVoxel(int x, int y, int z);
+    /**
+     * @brief Modifie un voxel et lance la reconstruction du mesh.
+     * @param x Coordonnée du voxel.
+     * @param y Coordonnée du voxel.
+     * @param z Coordonnée du voxel.
+     * @return L'ancien type du voxel.
+     */
+    VoxelType setVoxel(int x, int y, int z, VoxelType newType);
 
 protected:
     void run();

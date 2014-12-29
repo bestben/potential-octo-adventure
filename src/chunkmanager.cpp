@@ -467,3 +467,22 @@ Voxel ChunkManager::getVoxel(int x, int y, int z) {
     }
     return res;
 }
+
+VoxelType ChunkManager::setVoxel(int x, int y, int z, VoxelType newType) {
+    VoxelType res = VoxelType::AIR;
+
+    Chunk& chunk = getChunk(div_floor(x, CHUNK_SIZE), div_floor(y, CHUNK_SIZE), div_floor(z, CHUNK_SIZE));
+    if (chunk.chunkBufferIndex != -1) {
+        Voxel* voxels = getBufferAdress(chunk.chunkBufferIndex);
+        if (voxels != nullptr) {
+            Coords c = voxelCoordsToChunkCoords({ x, y, z });
+            res = voxels[c.i + CHUNK_SIZE * (c.j + CHUNK_SIZE * c.k)].type;
+            voxels[c.i + CHUNK_SIZE * (c.j + CHUNK_SIZE * c.k)].type = newType;
+            // On lance la regen du mesh
+            m_mutexChunkManagerList.lock();
+            m_toGenerateBuffer.push_back(&chunk);
+            m_mutexChunkManagerList.unlock();
+        }
+    }
+    return res;
+}
