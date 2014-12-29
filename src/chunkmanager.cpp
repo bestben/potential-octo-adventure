@@ -9,9 +9,15 @@
 #include <QtGui/QOpenGLTexture>
 
 ChunkManager::ChunkManager() : m_isInit{false}, m_chunkBuffers{nullptr},
-m_oglBuffers{ nullptr }, m_ChunkGenerator(), m_FirstUpdate{true}{
+                            m_oglBuffers{ nullptr }, m_ChunkGenerator(), m_FirstUpdate{true}{
     m_chunkBuffers = new Voxel[CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
     memset(m_chunkBuffers, 0, CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
+
+    m_chunkToDrawCount = 0;
+    m_chunkToDraw = new Chunk*[VBO_NUMBER];
+    for (int i = 0; i < VBO_NUMBER; ++i) {
+        m_chunkToDraw[i] = nullptr;
+    }
 
     m_needRegen = true;
     m_generationIsRunning = false;
@@ -46,11 +52,10 @@ ChunkManager::~ChunkManager() {
     delete[] m_inUseChunkData;
     delete[] m_availableBuffer;
     delete[] m_tempVertexData;
+    delete[] m_chunkToDraw;
 }
 
 void ChunkManager::initialize(GameWindow* gl) {
-
-
     m_program = new QOpenGLShaderProgram(gl);
     m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/render.vs"));
     m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/render.ps"));
@@ -71,6 +76,24 @@ void ChunkManager::initialize(GameWindow* gl) {
 	m_program->setUniformValue("fogColor", QVector4D(.5f,.5f,.5f,1.0f));
     m_program->release();
 
+    m_waterProgram = new QOpenGLShaderProgram(gl);
+    m_waterProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/water.vs"));
+    m_waterProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/water.ps"));
+    if (!m_waterProgram->link()) {
+        // TODO(antoine): Remove Force crash
+        abort();
+    }
+    m_waterMatrixUniform = m_waterProgram->uniformLocation("viewProj");
+    m_waterChunkPosUniform = m_waterProgram->uniformLocation("chunkPosition");
+    m_waterProgram->bind();
+    m_waterProgram->setUniformValue("atlas", 0);
+    m_waterProgram->setUniformValue("tileCount", 16);
+    m_waterProgram->setUniformValue("tileSize", 16);
+    m_waterProgram->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE));
+    // TODO: Utiliser la couleur du ciel à la place
+    m_waterProgram->setUniformValue("fogColor", QVector4D(.5f,.5f,.5f,1.0f));
+    m_waterProgram->release();
+
     m_atlas = new QOpenGLTexture(QImage(":/atlas.png"));
     m_atlas->setMagnificationFilter(QOpenGLTexture::Nearest);
 
@@ -80,7 +103,8 @@ void ChunkManager::initialize(GameWindow* gl) {
     m_oglBuffers = new Buffer[VBO_NUMBER];
     for (int i = 0; i < VBO_NUMBER; ++i) {
         Buffer* buffer = m_oglBuffers + i;
-        buffer->count = 0;
+        buffer->opaqueCount = 0;
+        buffer->waterCount = 0;
         buffer->draw = false;
         buffer->vao = new QOpenGLVertexArrayObject(gl);
         buffer->vao->create();
@@ -116,9 +140,12 @@ void ChunkManager::destroy(GameWindow* gl) {
     m_atlas = nullptr;
     delete m_program;
     m_program = nullptr;
+    delete m_waterProgram;
+    m_waterProgram = nullptr;
 }
 
 void ChunkManager::update(GameWindow* gl) {
+    m_chunkToDrawCount = 0;
     if (m_isInit) {
 
         // On débloque l'accès aux données (en cas d'oublie d'un appel à unlockChunkData)
@@ -175,18 +202,39 @@ void ChunkManager::update(GameWindow* gl) {
 		m_mutexChunkManagerList.lock();
         if (m_canUploadMesh) {
             m_canUploadMesh = false;
-            m_oglBuffers[m_vboToUpload].count = m_countToUpload;
             gl->glBindBuffer(GL_ARRAY_BUFFER, m_oglBuffers[m_vboToUpload].vbo);
             gl->glBufferData(GL_ARRAY_BUFFER, m_countToUpload * sizeof(GLuint), m_tempVertexData, GL_DYNAMIC_DRAW);
             gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+            m_oglBuffers[m_vboToUpload].opaqueCount = m_tempBufferToUpload.opaqueCount;
+            m_oglBuffers[m_vboToUpload].waterCount = m_tempBufferToUpload.waterCount;
+
 			m_oglBuffers[m_vboToUpload].draw = true;
 			m_vboToUpload = -1;
         }
         m_canGenerateMesh = true;
+
+        float camX = gl->getCamera().getPosition().x();
+        float camY = gl->getCamera().getPosition().y();
+        float camZ = gl->getCamera().getPosition().z();
+        for (auto* chunk : m_ChunkMap) {
+            if (chunk->vboIndex != -1 && chunk->visible) {
+                m_chunkToDraw[m_chunkToDrawCount++] = chunk;
+                int dx = camX - chunk->i;
+                int dy = camY - chunk->j;
+                int dz = camZ - chunk->k;
+                chunk->distanceFromCamera = dx * dx + dy * dy + dz * dz;
+            }
+        }
+
+        std::sort(m_chunkToDraw, m_chunkToDraw + m_chunkToDrawCount, [this](Chunk* i, Chunk* j)->bool{
+            return i->distanceFromCamera < j->distanceFromCamera;
+        });
+
 		m_mutexChunkManagerList.unlock();
 		
 		m_FirstUpdate = false;
     }
+
 }
 
 
@@ -200,18 +248,29 @@ void ChunkManager::draw(GameWindow* gl) {
         m_program->setUniformValue(m_matrixUniform, mat * scale);
         m_atlas->bind(0);
 		m_mutexChunkManagerList.lock();
-		int cnt = 0;
-        for (auto* chunk : m_ChunkMap) {
-            //Chunk& chunk = it.second;
-			if (chunk->vboIndex != -1 && chunk->visible) {
-				Buffer* buffer = m_oglBuffers + chunk->vboIndex;
-                if (buffer->draw) {
-					cnt++;
-                    buffer->vao->bind();
-					m_program->setUniformValue(m_chunkPosUniform, QVector3D(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
-                    gl->glDrawArrays(GL_TRIANGLES, 0, buffer->count);
-                    buffer->vao->release();
-                }
+
+        for (int i = 0; i < m_chunkToDrawCount; ++i) {
+            Chunk* chunk = m_chunkToDraw[i];
+            Buffer* buffer = m_oglBuffers + chunk->vboIndex;
+
+            if (buffer->draw && buffer->opaqueCount > 0) {
+                buffer->vao->bind();
+                m_program->setUniformValue(m_chunkPosUniform, QVector3D(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
+                gl->glDrawArrays(GL_TRIANGLES, 0, buffer->opaqueCount);
+                buffer->vao->release();
+            }
+        }
+
+        m_waterProgram->bind();
+        m_waterProgram->setUniformValue(m_waterMatrixUniform, mat * scale);
+        for (int i = m_chunkToDrawCount - 1; i >= 0; --i) {
+            Chunk* chunk = m_chunkToDraw[i];
+            Buffer* buffer = m_oglBuffers + chunk->vboIndex;
+            if (buffer->draw && buffer->waterCount > 0) {
+                buffer->vao->bind();
+                m_waterProgram->setUniformValue(m_waterChunkPosUniform, QVector3D(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
+                gl->glDrawArrays(GL_TRIANGLES, buffer->opaqueCount, buffer->waterCount);
+                buffer->vao->release();
             }
         }
 		m_mutexChunkManagerList.unlock();
@@ -353,7 +412,7 @@ void ChunkManager::run() {
 					m_oglBuffers[m_vboToUpload].draw = false;
 
 					Voxel *data = getBufferAdress(newChunk->chunkBufferIndex);
-					m_countToUpload = m_meshGenerator.generate(data, m_tempVertexData); 
+                    m_countToUpload = m_meshGenerator.generate(data, &m_tempBufferToUpload, m_tempVertexData);
 
 					m_canUploadMesh = true;
 					newChunk->visible = true;
@@ -405,7 +464,6 @@ Voxel ChunkManager::getVoxel(int x, int y, int z) {
         if (voxels != nullptr) {
 			Coords c = worldCoordsToChunkCoords({ x, y, z });
             res = voxels[c.i + CHUNK_SIZE * (c.j + CHUNK_SIZE * c.k)];
-            //std::cout << "found : " << (int)res.type << std::endl;
         }
     }
     return res;

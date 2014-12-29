@@ -48,6 +48,9 @@ void GameWindow::initializeGL() {
     glCullFace(GL_BACK);
     glFrontFace(GL_CW);
 
+    glEnable(GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     m_camera.init(this);
     m_chunkManager.initialize(this);
     

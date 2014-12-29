@@ -19,7 +19,8 @@ class GameWindow;
 struct Buffer {
     QOpenGLVertexArrayObject* vao;
     GLuint vbo;
-    unsigned int count;
+    unsigned int opaqueCount;
+    unsigned int waterCount;
     bool draw;
 };
 
@@ -57,12 +58,17 @@ private:
     MeshGenerator m_meshGenerator;
     // Le shader affichant un chunk
     QOpenGLShaderProgram* m_program;
+    // Le shader affichant l'eau
+    QOpenGLShaderProgram* m_waterProgram;
     // L'atlas de textures
     QOpenGLTexture* m_atlas;
 
     int m_posAttr;
     int m_matrixUniform;
     int m_chunkPosUniform;
+
+    int m_waterMatrixUniform;
+    int m_waterChunkPosUniform;
 
     // Le tableau contenant tous les voxels des chunks
     Voxel* m_chunkBuffers;
@@ -71,6 +77,8 @@ private:
 
     // Le tableau des buffers opengl
     Buffer* m_oglBuffers;
+    Chunk** m_chunkToDraw;
+    int m_chunkToDrawCount;
 
     //std::map<std::tuple<int, int, int>, Chunk> m_ChunkMap;
 	QHash<Coords, Chunk*> m_ChunkMap;
@@ -109,6 +117,7 @@ private:
 	*/
 
     GLuint* m_tempVertexData;
+    Buffer m_tempBufferToUpload;
     int m_vboToUpload;
     int m_countToUpload;
 
