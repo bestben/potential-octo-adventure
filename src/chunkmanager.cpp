@@ -134,9 +134,8 @@ void ChunkManager::update(GameWindow* gl) {
 			
 
         QVector3D camPos = gl->getCamera().getPosition();
-        int chunkI = floor(camPos.x() / (CHUNK_SIZE * CHUNK_SCALE));
-        int chunkJ = floor(camPos.y() / (CHUNK_SIZE * CHUNK_SCALE));
-        int chunkK = floor(camPos.z() / (CHUNK_SIZE * CHUNK_SCALE));
+
+		Coords chunkHere = voxelGetChunk(worldToVoxel(camPos));
 
         // On nettoie les chunks inutiles
 		m_mutexChunkManagerList.lock();
@@ -166,9 +165,9 @@ void ChunkManager::update(GameWindow* gl) {
 		m_mutexChunkManagerList.unlock();
         
         // Si on change de chunk on demande des nouveaux chunks
-		if ((chunkI != m_currentChunk.i) || (chunkK != m_currentChunk.k) || m_FirstUpdate) {
+		if ((chunkHere.i != m_currentChunk.i) || (chunkHere.k != m_currentChunk.k) || m_FirstUpdate) {
 
-			m_currentChunk = { chunkI, chunkJ, chunkK };
+			m_currentChunk = chunkHere;
 
 			requestChunks();
         }
@@ -403,7 +402,7 @@ Voxel ChunkManager::getVoxel(int x, int y, int z) {
     if (chunk.chunkBufferIndex != -1) {
         Voxel* voxels = getBufferAdress(chunk.chunkBufferIndex);
         if (voxels != nullptr) {
-			Coords c = worldCoordsToChunkCoords({ x, y, z });
+			Coords c = voxelCoordsToChunkCoords({ x, y, z });
             res = voxels[c.i + CHUNK_SIZE * (c.j + CHUNK_SIZE * c.k)];
             //std::cout << "found : " << (int)res.type << std::endl;
         }

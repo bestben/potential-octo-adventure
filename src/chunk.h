@@ -2,6 +2,8 @@
 
 #include <QtCore/qhash.h>
 #include <QtCore/QString>
+#include <QtGui/QVector3D>
+
 #include <cstdint>
 
 #define CHUNK_NUMBER 1024
@@ -161,13 +163,21 @@ inline Coords chunkIdToChunkIdInMap(Coords chunkId) {
 	return{ i<0 ? i + BIOMEMAP_CHUNKS : i, chunkId.j, k<0 ? k + BIOMEMAP_CHUNKS  : k};
 }
 
-inline Coords worldCoordsToChunkCoords(Coords c) {
+inline Coords voxelCoordsToChunkCoords(Coords c) {
 	int i = c.i % CHUNK_SIZE;
 	int j = c.j % CHUNK_SIZE;
 	int k = c.k % CHUNK_SIZE;
 	return{ i<0 ? i + CHUNK_SIZE : i, j<0 ? j + CHUNK_SIZE : j, k<0 ? k + CHUNK_SIZE : k };
 }
 
+inline Coords voxelGetChunk(Coords c) {
+	return{ div_floor(c.i, CHUNK_SIZE), div_floor(c.j, CHUNK_SIZE), div_floor(c.k, CHUNK_SIZE) };
+}
+
 inline Coords chunkIdToMapId(Coords chunkId) {
 	return{ div_floor(chunkId.i, BIOMEMAP_CHUNKS), 0, div_floor(chunkId.k, BIOMEMAP_CHUNKS) };
+}
+
+inline Coords worldToVoxel(const QVector3D &pos) {
+	return{ div_floor(pos.x(), (CHUNK_SCALE)), div_floor(pos.y(), (CHUNK_SCALE)), div_floor(pos.z(), (CHUNK_SCALE)) };
 }
