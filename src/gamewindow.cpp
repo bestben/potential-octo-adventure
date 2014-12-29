@@ -8,7 +8,8 @@
 
 
 
-GameWindow::GameWindow() : QOpenGLWindow(), m_lastDelta{0}, m_currentDeltaIndex{0}, m_isInitialized{false}, m_chunkManager()
+GameWindow::GameWindow() : QOpenGLWindow(), m_player{*this, m_camera}, m_lastDelta{0},
+                            m_currentDeltaIndex{0}, m_isInitialized{false}, m_chunkManager()
 {
     m_deltaTimer.start();
     memset(m_lastDeltas, 0, FPS_FRAME_NUMBER * sizeof(int));
@@ -98,23 +99,23 @@ void GameWindow::keyPressEvent(QKeyEvent* event) {
         m_hasPhysic = !m_hasPhysic;
         m_physicManager.setGravity(m_hasPhysic);
     }
-    m_camera.keyPressEvent(event);
+    m_player.keyPressEvent(event);
 }
 
 void GameWindow::keyReleaseEvent(QKeyEvent* event) {
-    m_camera.keyReleaseEvent(event);
+    m_player.keyReleaseEvent(event);
 }
 
 void GameWindow::mousePressEvent(QMouseEvent* event) {
-    m_camera.mousePressEvent(event);
+    m_player.mousePressEvent(event);
 }
 
 void GameWindow::mouseReleaseEvent(QMouseEvent* event) {
-    m_camera.mouseReleaseEvent(event);
+    m_player.mouseReleaseEvent(event);
 }
 
 void GameWindow::mouseMoveEvent(QMouseEvent * event) {
-    m_camera.mouseMoveEvent(event);
+    m_player.mouseMoveEvent(event);
 }
 
 void GameWindow::resizeGL(int w, int h) {

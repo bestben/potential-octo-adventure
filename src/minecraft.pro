@@ -42,7 +42,8 @@ SOURCES += \
     libnoise/module/translatepoint.cpp \
     libnoise/module/turbulence.cpp \
     libnoise/module/voronoi.cpp \
-    physic/physicmanager.cpp
+    physic/physicmanager.cpp \
+    player.cpp
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -115,4 +116,5 @@ HEADERS += \
     libnoise/module/turbulence.h \
     libnoise/module/voronoi.h \
     physic/body.h \
-    physic/physicmanager.h
+    physic/physicmanager.h \
+    player.h

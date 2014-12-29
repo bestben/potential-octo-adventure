@@ -1,4 +1,8 @@
 ﻿Touches:
     "zqsd" pour se déplacer.
+    "Espace" pour sauter.
+    "Ctrl" pour courir.
     "p" pour activer/désactiver la physique.
     "Clique droit" pour tourner la vue.
+    "Clique Gauche" pour détruire un bloc.
+    "Clique millieu" pour poser un bloc.

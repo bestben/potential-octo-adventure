@@ -1,6 +1,7 @@
 #pragma once
 
 #include "camera.h"
+#include "player.h"
 
 #include <QTimer>
 #include <QTime>
@@ -14,7 +15,6 @@
 class QOpenGLTexture;
 class QOpenGLDebugLogger;
 class QOpenGLDebugMessage;
-class Camera;
 
 // Le nombre de frames à considérer pour le calcul des FPS
 #define FPS_FRAME_NUMBER 100
@@ -63,6 +63,7 @@ public:
 
 private:
     Camera m_camera;
+    Player m_player;
     QOpenGLDebugLogger* m_logger;
 
     int m_lastDelta;
