@@ -2,6 +2,10 @@
 	<qresource prefix="/">
 		<file alias="render.vs">shaders/render.vs</file>
 		<file alias="render.ps">shaders/render.ps</file>
+        
+		<file alias="water.vs">shaders/water.vs</file>
+		<file alias="water.ps">shaders/water.ps</file>
+        
 		<file alias="atlas.png">textures/atlas.png</file>
 	</qresource>
 </RCC>

@@ -16,6 +16,7 @@ PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{fa
         m_bodies[i].width = 1;
         m_bodies[i].mass = 1;
         m_bodies[i].onGround = false;
+        m_bodies[i].inWater = false;
     }
 }
 
@@ -26,7 +27,7 @@ PhysicManager::~PhysicManager() {
 void PhysicManager::update(GameWindow* gl, int dt) {
     float delta = (float)dt / 1000.0;
 
-    QVector3D g(0.0, -981, 0.0);
+    QVector3D g(0.0, -981.0f, 0.0);
 
     for (int i = 0; i < BODY_COUNT; ++i) {
         if (!m_freeBodies[i]) {
@@ -70,8 +71,11 @@ void PhysicManager::update(GameWindow* gl, int dt) {
 
                 // Gestion physique
                 force.setY(0.0f);
-                //force += g;
                 newAcceleration = g / body->mass;
+                if (body->inWater) {
+                    newAcceleration /= 10.0f;
+                    force = force / 10.0f;
+                }
                 //avgAcceleration = (lastAcceleration + newAcceleration) * 0.5;
                 avgAcceleration = newAcceleration;
                 body->velocity.setX(force.x());
@@ -79,8 +83,10 @@ void PhysicManager::update(GameWindow* gl, int dt) {
                 body->velocity += avgAcceleration * delta;
 
                 // Gére le saut
-                if (body->jump && body->onGround) {
+                if (body->jump && body->onGround && !body->inWater) {
                     body->velocity.setY(JUMP_SPEED);
+                } else if (body->jump && body->inWater) {
+                    body->velocity.setY(JUMP_SPEED / 10.0f);
                 }
             } else {
                 avgAcceleration = QVector3D(0.0f, 0.0f, 0.0f);
@@ -100,9 +106,11 @@ void PhysicManager::update(GameWindow* gl, int dt) {
             // Gestion du blocage
             QVector3D voxel = body->position / (CHUNK_SCALE);
             voxel = QVector3D(floor(voxel.x()), floor(voxel.y()), floor(voxel.z()));
-            if (m_hasGravity && (gl->getChunkManager().getVoxel(voxel.x(), voxel.y(), voxel.z()).type != VoxelType::AIR)) {
+            VoxelType type = gl->getChunkManager().getVoxel(voxel.x(), voxel.y(), voxel.z()).type;
+            if (m_hasGravity && (type != VoxelType::AIR) && (type != VoxelType::WATER)) {
                 body->position.setY(CHUNK_SIZE * CHUNK_SCALE * 7);
             }
+            body->inWater = type == VoxelType::WATER;
         }
     }
 }
@@ -135,7 +143,8 @@ bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, con
         if (oldVoxel != newVoxel) {
             do {
                 currentVoxel -= direction;
-                if (chunkManager.getVoxel(currentVoxel.x(), currentVoxel.y(), currentVoxel.z()).type != VoxelType::AIR) {
+                VoxelType type = chunkManager.getVoxel(currentVoxel.x(), currentVoxel.y(), currentVoxel.z()).type;
+                if ((type != VoxelType::AIR) && (type != VoxelType::WATER)) {
                     isColliding = true;
                     break;
                 }

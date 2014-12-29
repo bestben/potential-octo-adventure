@@ -14,4 +14,5 @@ struct Body {
     float mass;
     bool jump;
     bool onGround;
+    bool inWater;
 };

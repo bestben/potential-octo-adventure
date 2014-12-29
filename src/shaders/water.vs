@@ -8,9 +8,6 @@ uniform mat4 viewProj;
 out vec3 ex_pos;
 flat out int ex_voxel;
 out vec3 ex_normal;
-
-out mat4 normal_mat;
-out vec3 ex_normal_eye;
 out vec4 view_pos;
 
 uniform vec3 normals[6] = {
@@ -36,7 +33,7 @@ void main() {
 
     ex_pos = absolutePosition.xyz;
     ex_normal = normals[normalIndex];
+    
     view_pos = viewProj * absolutePosition;
-
     gl_Position = view_pos;
 }
