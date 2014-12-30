@@ -84,6 +84,8 @@ void GameWindow::paintGL() {
     m_chunkManager.draw(this);
     m_player.draw();
 
+    m_player.postDraw();
+
     // On demande une nouvelle frame
     QCoreApplication::postEvent(this, new QEvent(QEvent::UpdateRequest));
 }

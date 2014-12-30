@@ -4,7 +4,9 @@
 #include "camera.h"
 
 #include <QtGui/QMouseEvent>
-#include <iostream>
+#include <QtGui/QOpenGLShaderProgram>
+#include <QtGui/QOpenGLTexture>
+#include <QtGui/QOpenGLVertexArrayObject>
 
 Player::Player(GameWindow& game, Camera& camera) : m_game{game}, m_camera{camera}, m_maxBlockDistance{40.0f} {
 
@@ -15,9 +17,27 @@ Player::~Player() {
 
 void Player::init() {
     m_box.init(&m_game);
+
+    m_crossProgram = new QOpenGLShaderProgram(&m_game);
+    m_crossProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/cross.vs"));
+    m_crossProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/cross.ps"));
+    m_crossProgram->link();
+    m_crossProgram->bind();
+    m_crossProgram->setUniformValue("texture", 0);
+    m_crossProgram->release();
+
+    m_crossXSizeUniform = m_crossProgram->uniformLocation("xSize");
+    m_crossYSizeUniform = m_crossProgram->uniformLocation("ySize");
+
+    m_crossTexture = new QOpenGLTexture(QImage(":/cross.png"));
+
+    m_crossVao = new QOpenGLVertexArrayObject(&m_game);
+    m_crossVao->create();
 }
 
 void Player::destroy() {
+    delete m_crossProgram;
+    delete m_crossTexture;
     m_box.destroy(&m_game);
 }
 
@@ -53,12 +73,16 @@ void Player::draw() {
         m_box.setPosition(QVector3D(currentVoxel.i, currentVoxel.j, currentVoxel.k) * CHUNK_SCALE);
         m_box.draw(&m_game);
     }
-    //m_box.setPosition(camPos - QVector3D(0.0f, 5.0f, 0.0f));
-    //m_box.draw(&m_game);
 }
 
 void Player::postDraw() {
-
+    m_crossProgram->bind();
+    m_crossProgram->setUniformValue(m_crossXSizeUniform, CROSS_WIDTH / m_game.width());
+    m_crossProgram->setUniformValue(m_crossYSizeUniform, CROSS_HEIGHT / m_game.height());
+    m_crossTexture->bind(0);
+    m_crossVao->bind();
+    m_game.glDrawArrays(GL_TRIANGLES, 0, 6);
+    m_crossVao->release();
 }
 
 void Player::keyPressEvent(QKeyEvent* event) {

@@ -5,9 +5,13 @@
 
 class GameWindow;
 class Camera;
+class QOpenGLTexture;
 
 class QKeyEvent;
 class QMouseEvent;
+
+#define CROSS_WIDTH 72.0f
+#define CROSS_HEIGHT 72.0f
 
 /**
  * @brief Classe s'occupant de la gestion du joueur.
@@ -39,9 +43,14 @@ private:
 
     // La box à afficher autours du bloc selectionné
     WireframeBox m_box;
-
     // La distance max à laquelle le joueur peut poser / retirer un bloc
     float m_maxBlockDistance;
+
+    QOpenGLShaderProgram* m_crossProgram;
+    QOpenGLTexture* m_crossTexture;
+    QOpenGLVertexArrayObject* m_crossVao;
+    int m_crossXSizeUniform;
+    int m_crossYSizeUniform;
 };
 
 #endif // PLAYER_H
