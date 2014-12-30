@@ -5,6 +5,7 @@ SOURCES += \
     gamewindow.cpp \
     biomes/BiomeMap.cpp \
     chunkmanager.cpp \
+	LightManager.cpp \
     meshgenerator.cpp \
     biomes/ChunkGenerator.cpp \
     libnoise/latlon.cpp \
@@ -66,6 +67,7 @@ HEADERS += \
     gamewindow.h \
     biomes/BiomeMap.h \
     chunkmanager.h \
+	LightManager.h \
     meshgenerator.h \
     coords.h \
     chunk.h \

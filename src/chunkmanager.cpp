@@ -9,7 +9,8 @@
 #include <QtGui/QOpenGLTexture>
 
 ChunkManager::ChunkManager() : m_isInit{false}, m_chunkBuffers{nullptr},
-m_oglBuffers{ nullptr }, m_ChunkGenerator(), m_FirstUpdate{true}{
+m_oglBuffers{ nullptr }, m_ChunkGenerator(), m_FirstUpdate{ true }{
+	m_LightManager = new LightManager(this);
     m_chunkBuffers = new Voxel[CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
     memset(m_chunkBuffers, 0, CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
 
@@ -61,9 +62,10 @@ void ChunkManager::initialize(GameWindow* gl) {
     m_posAttr = m_program->attributeLocation("position");
     m_matrixUniform = m_program->uniformLocation("viewProj");
     m_chunkPosUniform = m_program->uniformLocation("chunkPosition");
+	m_lightMapUniform = m_program->uniformLocation("lightMap");
 
     m_program->bind();
-    m_program->setUniformValue("atlas", 0);
+	m_program->setUniformValue("atlas", 0);
     m_program->setUniformValue("tileCount", 16);
     m_program->setUniformValue("tileSize", 16);
 	m_program->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE));
@@ -77,19 +79,44 @@ void ChunkManager::initialize(GameWindow* gl) {
     GLuint vbos[VBO_NUMBER];
     gl->glGenBuffers(VBO_NUMBER, vbos);
 
+	GLuint vbos_light[VBO_NUMBER];
+	gl->glGenBuffers(VBO_NUMBER, vbos_light);
+	
+	//GLuint light_textures[VBO_NUMBER];
+	//gl->glGenTextures(VBO_NUMBER, light_textures);
+
+	uint16 fullbright[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
+
+	for (int i = 0; i < CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE; ++i)
+		fullbright[i] = 0;
+
+
     m_oglBuffers = new Buffer[VBO_NUMBER];
     for (int i = 0; i < VBO_NUMBER; ++i) {
         Buffer* buffer = m_oglBuffers + i;
         buffer->count = 0;
         buffer->draw = false;
-        buffer->vao = new QOpenGLVertexArrayObject(gl);
+
+		//buffer->buffer_texture_light = light_textures[i];
+		buffer->texture_light = new QOpenGLTexture(QOpenGLTexture::TargetBuffer);
+		buffer->texture_light->create();
+
+		buffer->vbo_light = vbos_light[i];
+		
+
+		buffer->vbo = vbos[i];
+		buffer->vao = new QOpenGLVertexArrayObject(gl);
         buffer->vao->create();
         buffer->vao->bind();
-        buffer->vbo = vbos[i];
+
+		gl->glBindBuffer(GL_TEXTURE_BUFFER, buffer->vbo_light);
+		gl->glBufferData(GL_TEXTURE_BUFFER, sizeof(fullbright), fullbright, GL_DYNAMIC_DRAW);
+
         gl->glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
         gl->glEnableVertexAttribArray(m_posAttr);
         gl->glVertexAttribIPointer(m_posAttr, 1, GL_UNSIGNED_INT, 0, 0);
         buffer->vao->release();
+
     }
 
     m_isInit = true;
@@ -106,7 +133,7 @@ void ChunkManager::destroy(GameWindow* gl) {
         Buffer* buffer = m_oglBuffers + i;
         delete buffer->vao;
         gl->glDeleteBuffers(1, &buffer->vbo);
-    }
+	}
 
     // On supprime les tableaux
     delete[] m_oglBuffers;
@@ -120,18 +147,6 @@ void ChunkManager::destroy(GameWindow* gl) {
 
 void ChunkManager::update(GameWindow* gl) {
     if (m_isInit) {
-
-        // On débloque l'accès aux données (en cas d'oublie d'un appel à unlockChunkData)
-        /*for (int i = 0; i < CHUNK_NUMBER; ++i) {
-            m_inUseChunkData[i].store(false);
-        }*/
-
-		//TODO: Fix le thread qui plante :(
-		if (!isRunning()) {
-			m_mutexChunkManagerList.unlock();
-			start();
-		}
-			
 
         QVector3D camPos = gl->getCamera().getPosition();
 
@@ -176,12 +191,21 @@ void ChunkManager::update(GameWindow* gl) {
             m_canUploadMesh = false;
             m_oglBuffers[m_vboToUpload].count = m_countToUpload;
             gl->glBindBuffer(GL_ARRAY_BUFFER, m_oglBuffers[m_vboToUpload].vbo);
-            gl->glBufferData(GL_ARRAY_BUFFER, m_countToUpload * sizeof(GLuint), m_tempVertexData, GL_DYNAMIC_DRAW);
+			gl->glBufferData(GL_ARRAY_BUFFER, m_countToUpload * sizeof(GLuint), 0, GL_DYNAMIC_DRAW);
+            //gl->glBufferData(GL_ARRAY_BUFFER, m_countToUpload * sizeof(GLuint), m_tempVertexData, GL_DYNAMIC_DRAW);
+
+			//GL_MAP_UNSYNCHRONIZED_BIT ?
+			void *data = gl->glMapBufferRange(GL_ARRAY_BUFFER, 0, m_countToUpload*sizeof(GLuint), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+			memcpy(data, m_tempVertexData, m_countToUpload*sizeof(GLuint));
+			gl->glUnmapBuffer(GL_ARRAY_BUFFER);
             gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
 			m_oglBuffers[m_vboToUpload].draw = true;
 			m_vboToUpload = -1;
         }
         m_canGenerateMesh = true;
+
+		m_LightManager->update(gl);
+
 		m_mutexChunkManagerList.unlock();
 		
 		m_FirstUpdate = false;
@@ -197,7 +221,7 @@ void ChunkManager::draw(GameWindow* gl) {
         QMatrix4x4 scale;
         scale.scale(CHUNK_SCALE, CHUNK_SCALE, CHUNK_SCALE);
         m_program->setUniformValue(m_matrixUniform, mat * scale);
-        m_atlas->bind(0);
+		m_atlas->bind(0);
 		m_mutexChunkManagerList.lock();
 		int cnt = 0;
         for (auto* chunk : m_ChunkMap) {
@@ -206,10 +230,17 @@ void ChunkManager::draw(GameWindow* gl) {
 				Buffer* buffer = m_oglBuffers + chunk->vboIndex;
                 if (buffer->draw) {
 					cnt++;
-                    buffer->vao->bind();
+					buffer->vao->bind();
+
+					buffer->texture_light->bind(1);
+					gl->glTexBuffer(GL_TEXTURE_BUFFER, GL_R16UI, buffer->vbo_light);
+
 					m_program->setUniformValue(m_chunkPosUniform, QVector3D(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
+					m_program->setUniformValue(m_lightMapUniform, 1);
                     gl->glDrawArrays(GL_TRIANGLES, 0, buffer->count);
                     buffer->vao->release();
+
+					gl->glBindTexture(GL_TEXTURE_BUFFER, 0);
                 }
             }
         }
@@ -272,7 +303,7 @@ void ChunkManager::requestChunks() {
 
 
 Voxel* ChunkManager::getBufferAdress(int index) {
-	return m_chunkBuffers + (index * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
+	return index!=-1 ? m_chunkBuffers + (index * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE) : nullptr;
 }
 
 
@@ -314,7 +345,7 @@ void ChunkManager::run() {
 			if (bufferIndex != -1 && vboIndex != -1) {
 				// On enlève les doubles
 				m_toGenerateChunkData.removeAll(newChunk);
-				newChunk->chunkBufferIndex = bufferIndex;
+				
 				newChunk->vboIndex = vboIndex;
 
 				m_availableChunkData[bufferIndex] = false;
@@ -324,6 +355,11 @@ void ChunkManager::run() {
                 // TODO Générer le nouveau chunk et le prendre du DD si déja présent
 				Voxel* data = getBufferAdress(bufferIndex);
 				m_ChunkGenerator.generateChunk(data, newChunk->i, newChunk->j, newChunk->k);
+
+				newChunk->chunkBufferIndex = bufferIndex;
+				Coords c = { newChunk->i, newChunk->j, newChunk->k };
+				c *= CHUNK_SIZE;
+				m_LightManager->placeTorchLight(c + Coords{ 16, 16, 16 }, 12);
 
 				m_mutexChunkManagerList.lock();
 				m_toGenerateBuffer.push_back(newChunk);
@@ -350,7 +386,7 @@ void ChunkManager::run() {
 
 					m_vboToUpload = newChunk->vboIndex;
 					m_availableBuffer[m_vboToUpload] = false;
-					m_oglBuffers[m_vboToUpload].draw = false;
+					m_oglBuffers[m_vboToUpload].draw = true;
 
 					Voxel *data = getBufferAdress(newChunk->chunkBufferIndex);
 					m_countToUpload = m_meshGenerator.generate(data, m_tempVertexData); 
@@ -375,7 +411,7 @@ void ChunkManager::run() {
 		m_mutexChunkManagerList.unlock();
 
 		// Eviter de faire fondre le cpu dans des boucles vides ;)
-		QThread::msleep(5);
+		QThread::msleep(33);
     }
 }
 
@@ -410,4 +446,31 @@ Voxel ChunkManager::getVoxel(int x, int y, int z) {
         }
     }
     return res;
+}
+
+
+void ChunkManager::uploadLightMap(GameWindow* gl, Chunk *chunk) {
+
+	Buffer* buffer = m_oglBuffers + chunk->vboIndex;
+
+	uint16 lightmap[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
+	Voxel *chunkData = getBufferAdress(chunk->chunkBufferIndex);
+
+	for (int k = 0; k < CHUNK_SIZE; ++k) {
+		for (int j = 0; j < CHUNK_SIZE; ++j) {
+			for (int i = 0; i < CHUNK_SIZE; ++i) {
+				int index = getIndexInChunkData({ i, j, k });
+				//TODO: Bit packing instead
+				lightmap[index] = chunkData[index].torchLight + chunkData[index].sunLight;
+			}
+		}
+	}
+
+	gl->glBindBuffer(GL_TEXTURE_BUFFER, buffer->vbo_light);
+	void *data = gl->glMapBufferRange(GL_TEXTURE_BUFFER, 0, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*sizeof(uint16), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	memcpy(data, lightmap, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*sizeof(uint16));
+	gl->glUnmapBuffer(GL_TEXTURE_BUFFER);
+
+	chunk->isDirty = false;
+	
 }

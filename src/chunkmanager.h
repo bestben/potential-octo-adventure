@@ -10,6 +10,7 @@
 #include "chunk.h"
 #include "meshgenerator.h"
 #include "biomes/ChunkGenerator.h"
+#include "LightManager.h"
 
 class QOpenGLVertexArrayObject;
 class QOpenGLShaderProgram;
@@ -21,6 +22,8 @@ struct Buffer {
     GLuint vbo;
     unsigned int count;
     bool draw;
+	GLuint vbo_light;
+	QOpenGLTexture* texture_light;
 };
 
 /**
@@ -33,7 +36,7 @@ public:
 
 	void initialize(GameWindow* gl);
     void update(GameWindow* gl);
-    void draw(GameWindow* gl);
+	void draw(GameWindow* gl);
 	void checkChunk(Coords tuple);
 	void requestChunks();
 	Voxel* getBufferAdress(int index);
@@ -43,6 +46,7 @@ public:
 	Chunk& getChunk(int i, int j, int k);
 
     Voxel getVoxel(int x, int y, int z);
+	void uploadLightMap(GameWindow* gl, Chunk* chunk);
 
 protected:
     void run();
@@ -51,6 +55,8 @@ private:
     
     int seekFreeChunkData();
     int seekFreeBuffer();
+
+	
 
     bool m_isInit;
 
@@ -63,6 +69,7 @@ private:
     int m_posAttr;
     int m_matrixUniform;
     int m_chunkPosUniform;
+	int m_lightMapUniform;
 
     // Le tableau contenant tous les voxels des chunks
     Voxel* m_chunkBuffers;
@@ -116,6 +123,8 @@ private:
     std::atomic<bool> m_canUploadMesh;
 
 	ChunkGenerator m_ChunkGenerator;
+	LightManager* m_LightManager;
 
 	bool m_FirstUpdate;
+	
 };

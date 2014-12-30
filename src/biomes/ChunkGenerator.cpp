@@ -41,12 +41,14 @@ void ChunkGenerator::generateChunk(Voxel* data, Coords chunkId) {
 				Voxel *v = &data[(z*CHUNK_SIZE + y)*CHUNK_SIZE + x];
 				*v = {};
 				v->type = (*map)->getVoxelType(chunkId, x, y, z);
+				v->torchLight = 0;
+				v->sunLight = 0;
 			}
 		}
 	}
 
+
 	//TODO: Fast flood lighting
-
-
+	
 
 }

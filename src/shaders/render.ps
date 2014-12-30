@@ -1,6 +1,7 @@
 #version 330
 
 uniform sampler2D atlas;
+
 uniform int tileCount;
 uniform int tileSize;
 uniform float fogDistance;
@@ -9,13 +10,19 @@ uniform vec4 fogColor;
 out vec4 out_color;
 
 in vec3 ex_pos;
+in vec3 voxel_pos;
+
 flat in int ex_voxel;
 in vec3 ex_normal;
 in vec4 view_pos;
 
+uniform usamplerBuffer lightMap;
 
+void main() {
 
-void main() {    
+    vec3 offset = ex_normal * 0.5f;
+    float lightLevel = texelFetch(lightMap, clamp(int(floor(voxel_pos.z+offset.z)),0,30)*31*31 + clamp(int(floor(voxel_pos.y+offset.y)),0,30)*31 + clamp(int(floor(voxel_pos.x+offset.x)),0,30)).r;  
+
     vec2 tileOffset = vec2(ex_voxel % tileCount, (ex_voxel%256) / tileCount);
     tileOffset = tileOffset / tileSize;
     
@@ -26,13 +33,15 @@ void main() {
     vec3 texel = texelAll.rgb;
 	vec3 lightDir = vec3(0.5,-1.0,0.5	);
 	float dot_prod = max(dot(-lightDir, ex_normal), 0.0);
+    float light = clamp( lightLevel / 32.0,0.0,1.0);
 
-	vec3 ambiant = vec3(0.2,0.2,0.2) * texel;
-	vec3 diffuse = vec3(0.5,0.5,0.5) * texel * dot_prod;
+	vec3 ambiant = vec3(1.0,1.0,1.0) * texel * light;
+
+	vec3 diffuse = vec3(0.5,0.5,0.5) * texel * dot_prod * light;
 
 	float minFogDist = fogDistance*0.5;
 	float fogFactor = clamp((length(-view_pos)-minFogDist)/(fogDistance-minFogDist),0.0,1.0);
 
-    out_color = mix(vec4(ambiant + diffuse,texelAll.a), fogColor, fogFactor);
+    out_color = mix(vec4(ambiant, texelAll.a), fogColor, fogFactor);
 
 }

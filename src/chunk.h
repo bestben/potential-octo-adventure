@@ -3,6 +3,15 @@
 #include <QtGui/QVector3D>
 #include <cstdint>
 
+typedef int8_t int8;
+typedef uint8_t uint8;
+typedef int16_t int16;
+typedef uint16_t uint16;
+typedef int32_t int32;
+typedef uint32_t uint32;
+typedef int64_t int64;
+typedef uint64_t uint64;
+
 #define CHUNK_NUMBER 2048
 #define VBO_NUMBER 2048
 
@@ -36,19 +45,14 @@ struct Chunk {
     int chunkBufferIndex;
     int vboIndex;
 	bool ready;
+	bool isDirty;
+
 };
 
 #define GROUND_LEVEL 128
 #define SEA_HEIGHT 10
 
-typedef int8_t int8;
-typedef uint8_t uint8;
-typedef int16_t int16;
-typedef uint16_t uint16;
-typedef int32_t int32;
-typedef uint32_t uint32;
-typedef int64_t int64;
-typedef uint64_t uint64;
+
 
 
 enum class VoxelType : uint8
@@ -78,6 +82,10 @@ struct Voxel
 
 inline bool operator==(const Voxel &lhs, const Voxel &rhs){
 	return lhs.type == rhs.type && lhs.sunLight == rhs.sunLight && lhs.torchLight == rhs.torchLight;
+}
+
+inline bool isOpaque(const Voxel& v) {
+	return v.type != VoxelType::AIR;
 }
 
 enum class TextureID : uint8
