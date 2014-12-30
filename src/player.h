@@ -1,6 +1,8 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include "wireframebox.h"
+
 class GameWindow;
 class Camera;
 
@@ -15,7 +17,11 @@ public:
     Player(GameWindow& game, Camera& camera);
     ~Player();
 
+    void init();
+    void destroy();
     void update(int dt);
+    void draw();
+    void postDraw();
 
     /*
      * Fonctions gérant les événements.
@@ -30,6 +36,9 @@ private:
     GameWindow& m_game;
     // La camera attachée au joueur
     Camera& m_camera;
+
+    // La box à afficher autours du bloc selectionné
+    WireframeBox m_box;
 
     // La distance max à laquelle le joueur peut poser / retirer un bloc
     float m_maxBlockDistance;

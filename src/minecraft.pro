@@ -43,7 +43,8 @@ SOURCES += \
     libnoise/module/turbulence.cpp \
     libnoise/module/voronoi.cpp \
     physic/physicmanager.cpp \
-    player.cpp
+    player.cpp \
+    wireframebox.cpp
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -117,4 +118,5 @@ HEADERS += \
     libnoise/module/voronoi.h \
     physic/body.h \
     physic/physicmanager.h \
-    player.h
+    player.h \
+    wireframebox.h

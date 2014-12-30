@@ -259,7 +259,7 @@ void ChunkManager::draw(GameWindow* gl) {
                 buffer->vao->release();
             }
         }
-
+        //glDisable(GL_CULL_FACE);
         m_waterProgram->bind();
         m_waterProgram->setUniformValue(m_waterMatrixUniform, mat * scale);
         for (int i = m_chunkToDrawCount - 1; i >= 0; --i) {
@@ -272,6 +272,7 @@ void ChunkManager::draw(GameWindow* gl) {
                 buffer->vao->release();
             }
         }
+        //glEnable(GL_CULL_FACE);
 		m_mutexChunkManagerList.unlock();
 
     }

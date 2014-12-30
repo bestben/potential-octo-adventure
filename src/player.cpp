@@ -11,10 +11,53 @@ Player::Player(GameWindow& game, Camera& camera) : m_game{game}, m_camera{camera
 }
 
 Player::~Player() {
+}
 
+void Player::init() {
+    m_box.init(&m_game);
+}
+
+void Player::destroy() {
+    m_box.destroy(&m_game);
 }
 
 void Player::update(int dt) {
+
+}
+
+void Player::draw() {
+    QVector3D camPos = m_camera.getPosition();
+    QVector3D dir = m_camera.frontDir();
+    dir.normalize();
+    float delta = 0.5f;
+    float maxSquareDistance = m_maxBlockDistance * m_maxBlockDistance;
+
+    Coords startVoxel = worldToVoxel(camPos);
+    Coords lastVoxel = startVoxel;
+    Coords currentVoxel = startVoxel;
+
+    QVector3D rayPos = camPos + dir * delta;
+    ChunkManager& chunkManager = m_game.getChunkManager();
+    bool hit = false;
+    while (((rayPos - camPos).lengthSquared() < maxSquareDistance)) {
+        currentVoxel = worldToVoxel(rayPos);
+        VoxelType type = chunkManager.getVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k).type;
+        if ((type != VoxelType::AIR) && (type != VoxelType::WATER)) {
+            hit = true;
+            break;
+        }
+        lastVoxel = currentVoxel;
+        rayPos = rayPos + dir * delta;
+    }
+    if (!(lastVoxel == startVoxel) && hit) {
+        m_box.setPosition(QVector3D(currentVoxel.i, currentVoxel.j, currentVoxel.k) * CHUNK_SCALE);
+        m_box.draw(&m_game);
+    }
+    //m_box.setPosition(camPos - QVector3D(0.0f, 5.0f, 0.0f));
+    //m_box.draw(&m_game);
+}
+
+void Player::postDraw() {
 
 }
 

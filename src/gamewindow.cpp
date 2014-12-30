@@ -22,6 +22,7 @@ GameWindow::~GameWindow() {
     delete m_logger;
 #endif
     m_chunkManager.destroy(this);
+    m_player.destroy();
 }
 
 void GameWindow::handleLoggedMessage(const QOpenGLDebugMessage& message) {
@@ -53,6 +54,7 @@ void GameWindow::initializeGL() {
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     m_camera.init(this);
+    m_player.init();
     m_chunkManager.initialize(this);
     
     m_isInitialized = true;
@@ -76,9 +78,11 @@ void GameWindow::paintGL() {
     m_physicManager.update(this, m_lastDelta);
 
     m_camera.postUpdate();
+    m_player.update(m_lastDelta);
 
     m_chunkManager.update(this);
     m_chunkManager.draw(this);
+    m_player.draw();
 
     // On demande une nouvelle frame
     QCoreApplication::postEvent(this, new QEvent(QEvent::UpdateRequest));

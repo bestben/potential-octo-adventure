@@ -6,6 +6,9 @@
 		<file alias="water.vs">shaders/water.vs</file>
 		<file alias="water.ps">shaders/water.ps</file>
         
+        <file alias="wireframeBox.vs">shaders/wireframeBox.vs</file>
+		<file alias="wireframeBox.ps">shaders/wireframeBox.ps</file>
+        
 		<file alias="atlas.png">textures/atlas.png</file>
 	</qresource>
 </RCC>
