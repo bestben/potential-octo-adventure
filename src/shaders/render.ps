@@ -17,11 +17,16 @@ in vec4 view_pos;
 void main() {    
     vec2 tileOffset = vec2(ex_voxel % tileCount, (ex_voxel%256) / tileCount);
     tileOffset = tileOffset / tileSize;
+
+    vec2 texCoordX = tileOffset + fract(-ex_pos.zy) / tileSize;
+    vec2 texCoordY = tileOffset + fract(-ex_pos.xz) / tileSize;
+    vec2 texCoordZ = tileOffset + fract(-ex_pos.xy) / tileSize;
     
-    vec2 tileUV = vec2(dot(ex_normal.zxy, ex_pos), dot(ex_normal.yzx, ex_pos));
-    vec2 texCoord = tileOffset + fract(tileUV) / tileSize;
+    vec4 sampleX = texture2D(atlas, texCoordX); // Project along x axis
+    vec4 sampleY = texture2D(atlas, texCoordY); // Project along y axis
+    vec4 sampleZ = texture2D(atlas, texCoordZ); // Project along z axis
     
-    vec4 texelAll = texture2D(atlas, texCoord);
+    vec4 texelAll = sampleX * abs(ex_normal.x) + sampleY * abs(ex_normal.y) + sampleZ * abs(ex_normal.z);
     vec3 texel = texelAll.rgb;
 	vec3 lightDir = vec3(0.5,-1.0,0.5	);
 	float dot_prod = max(dot(-lightDir, ex_normal), 0.0);
