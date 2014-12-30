@@ -7,6 +7,8 @@ uniform int tileSize;
 uniform float fogDistance;
 uniform vec4 fogColor;
 
+uniform float time;
+
 out vec4 out_color;
 
 in vec3 ex_pos;
@@ -19,6 +21,8 @@ void main() {
     tileOffset = tileOffset / tileSize;
     
     vec2 tileUV = vec2(dot(ex_normal.zxy, ex_pos), dot(ex_normal.yzx, ex_pos));
+    tileUV.x = tileUV.x + sin(tileUV.y*10.+time*0.005)*0.01;
+    tileUV.y = tileUV.y + sin(tileUV.x*10.+time*0.005)*0.01;
     vec2 texCoord = tileOffset + fract(tileUV) / tileSize;
     
     vec4 texelAll = texture2D(atlas, texCoord);

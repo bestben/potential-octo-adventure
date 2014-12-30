@@ -35,5 +35,5 @@ void main() {
     ex_normal = normals[normalIndex];
     
     view_pos = viewProj * absolutePosition;
-    gl_Position = view_pos;
+    gl_Position = viewProj * (absolutePosition + vec4(0.0, -0.2, 0.0, 0.0));
 }

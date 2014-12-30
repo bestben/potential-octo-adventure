@@ -6,6 +6,7 @@
 #include <tuple>
 #include <QThread>
 #include <QLinkedList>
+#include <QTime>
 
 #include "chunk.h"
 #include "meshgenerator.h"
@@ -143,5 +144,6 @@ private:
 	LightManager* m_LightManager;
 
 	bool m_FirstUpdate;
-	
+
+    QTime m_animationTime;
 };

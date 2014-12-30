@@ -40,7 +40,7 @@ m_oglBuffers{ nullptr }, m_ChunkGenerator(), m_FirstUpdate{ true }{
     m_countToUpload = 0;
 
 	m_currentChunk = { 0, -1, 0 };
-
+    m_animationTime.start();
 }
 
 ChunkManager::~ChunkManager() {
@@ -291,6 +291,7 @@ void ChunkManager::draw(GameWindow* gl) {
         //glDisable(GL_CULL_FACE);
         m_waterProgram->bind();
         m_waterProgram->setUniformValue(m_waterMatrixUniform, mat * scale);
+        m_waterProgram->setUniformValue("time", (float)m_animationTime.elapsed());
         for (int i = m_chunkToDrawCount - 1; i >= 0; --i) {
             Chunk* chunk = m_chunkToDraw[i];
             Buffer* buffer = m_oglBuffers + chunk->vboIndex;
