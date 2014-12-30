@@ -4,6 +4,7 @@ uniform sampler2D atlas;
 
 uniform int tileCount;
 uniform int tileSize;
+
 uniform float fogDistance;
 uniform vec4 fogColor;
 
@@ -17,7 +18,6 @@ in vec3 ex_normal;
 in vec4 view_pos;
 
 uniform usamplerBuffer lightMap;
-
 void main() {
 
     vec3 offset = ex_normal * 0.5f;

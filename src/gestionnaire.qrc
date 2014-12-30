@@ -2,7 +2,18 @@
 	<qresource prefix="/">
 		<file alias="render.vs">shaders/render.vs</file>
 		<file alias="render.ps">shaders/render.ps</file>
+        
+		<file alias="water.vs">shaders/water.vs</file>
+		<file alias="water.ps">shaders/water.ps</file>
+        
+        <file alias="wireframeBox.vs">shaders/wireframeBox.vs</file>
+		<file alias="wireframeBox.ps">shaders/wireframeBox.ps</file>
+        
+        <file alias="cross.vs">shaders/cross.vs</file>
+		<file alias="cross.ps">shaders/cross.ps</file>
+        
 		<file alias="atlas.png">textures/atlas.png</file>
+        <file alias="cross.png">textures/cross.png</file>
 	</qresource>
 </RCC>
 

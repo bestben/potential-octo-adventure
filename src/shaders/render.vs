@@ -1,6 +1,6 @@
 #version 330
 
-in uint position;
+layout(location = 0) in uint position;
 
 uniform vec3 chunkPosition;
 uniform mat4 viewProj;

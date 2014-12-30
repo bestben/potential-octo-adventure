@@ -66,6 +66,10 @@ public:
      * @return Un vecteur normalisé.
      */
     QVector3D getDirection();
+    /*
+     * Renvoie la direction dans laquelle la camera regarde.
+     */
+    QVector3D frontDir();
     /**
      * @brief Renvoie la matrice de vue de la caméra.
      */
@@ -88,11 +92,6 @@ public:
     void mouseMoveEvent(QMouseEvent * event);
 
 private:
-    /*
-     * Renvoie la direction dans laquelle la direction regarde.
-     */
-    QVector3D frontDir();
-
     void setCamDef(const QVector3D& p, const QVector3D& l, const QVector3D& u);
 
     float m_speed; // Vitesse de déplacement de la caméra (Unités / seconde).

@@ -1,6 +1,8 @@
 #include "meshgenerator.h"
 #include <iostream>
 
+#include "chunkmanager.h"
+
 // TODO(antoine): Meilleur endroit pour cette initialisation ?
 
 VoxelTextureMap VoxelTextures[(uint)VoxelType::COUNT];
@@ -51,6 +53,7 @@ inline void initializeTextureMaps(){
 MeshGenerator::MeshGenerator()
 {
     m_mask = new Voxel[CHUNK_SIZE * CHUNK_SIZE];
+    m_waterPassGrid = new Voxel[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
     m_offsetNormal = new bool[CHUNK_SIZE * CHUNK_SIZE];
 
 	initializeTextureMaps();
@@ -59,10 +62,15 @@ MeshGenerator::MeshGenerator()
 MeshGenerator::~MeshGenerator() {
     delete[] m_mask;
     delete[] m_offsetNormal;
+    delete[] m_waterPassGrid;
 }
 
-int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
+int MeshGenerator::generate(Voxel* data, Buffer* buffer, GLuint* vertices, bool waterPass) {
     int vertexCount = 0;
+    bool hasWater = false;
+    if (!waterPass) {
+        memset(m_waterPassGrid, 0, CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
+    }
 	Voxel emptyVoxel = {};
     for (int axis = 0; axis < 3; ++axis) {
         const int u = (axis + 1) % 3;
@@ -84,13 +92,26 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
                             x[1] + q[1],
 							x[2] + q[2]) : emptyVoxel;
 
+                    if (!waterPass) {
+                        if (a.type == VoxelType::WATER) {
+                            setVoxel(m_waterPassGrid, x[0], x[1], x[2], a);
+                            a = emptyVoxel;
+                            hasWater = true;
+                        }
+                        if (b.type == VoxelType::WATER) {
+                            setVoxel(m_waterPassGrid, x[0] + q[0], x[1] + q[1], x[2] + q[2], b);
+                            b = emptyVoxel;
+                            hasWater = true;
+                        }
+                    }
+
                     const bool ba = a.type != VoxelType::AIR;
-                    if (ba == (b.type != VoxelType::AIR)){
+                    if (ba == (b.type != VoxelType::AIR)) {
 						m_mask[counter] = emptyVoxel;
-					}else if (ba){
+                    } else if (ba) {
 						m_mask[counter] = a;
                         m_offsetNormal[counter] = true;
-                    }else{
+                    } else{
 						m_mask[counter] = b;
                         m_offsetNormal[counter] = false;
                     }
@@ -168,11 +189,28 @@ int MeshGenerator::generate(Voxel* data, GLuint* vertices) {
             }
         }
     }
+    if (!waterPass) {
+        buffer->opaqueCount = vertexCount;
+    } else {
+        buffer->waterCount = vertexCount;
+    }
+    if ((!waterPass) && (hasWater)) {
+        vertexCount += generate(m_waterPassGrid, buffer, vertices + vertexCount, true);
+    } else if (!waterPass) {
+        buffer->waterCount = 0;
+    }
     return vertexCount;
 }
 
 Voxel MeshGenerator::getVoxel(Voxel* data, int i, int j, int k) {
     return data[i + CHUNK_SIZE * (j + CHUNK_SIZE * k)];
+}
+
+void MeshGenerator::setVoxel(Voxel* data, int i, int j, int k, Voxel voxel) {
+    if ((i >= 0) && (j >= 0) && (k >= 0) &&
+        (i < CHUNK_SIZE) && (j < CHUNK_SIZE) && (k < CHUNK_SIZE)) {
+        data[i + CHUNK_SIZE * (j + CHUNK_SIZE * k)] = voxel;
+    }
 }
 
 GLuint MeshGenerator::getVertex(int x, int y, int z, int normalIndex, TextureID tex, Voxel voxel) {

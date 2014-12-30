@@ -71,7 +71,7 @@ void Camera::setPosition(const QVector3D& v) {
 }
 
 QVector3D Camera::getPosition() const {
-    return m_body->position;
+    return m_body->position + QVector3D(0.0f, m_body->height, 0.0f);
 }
 
 QVector3D Camera::getDirection() {
@@ -262,7 +262,7 @@ bool Camera::boxInFrustum(int x, int y, int z, int size) {
             return false;
     }
     return true;
- }
+}
 
 void Camera::keyPressEvent(QKeyEvent* event) {
 

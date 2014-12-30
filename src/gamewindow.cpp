@@ -8,7 +8,8 @@
 
 
 
-GameWindow::GameWindow() : QOpenGLWindow(), m_lastDelta{0}, m_currentDeltaIndex{0}, m_isInitialized{false}, m_chunkManager()
+GameWindow::GameWindow() : QOpenGLWindow(), m_player{*this, m_camera}, m_lastDelta{0},
+                            m_currentDeltaIndex{0}, m_isInitialized{false}, m_chunkManager()
 {
     m_deltaTimer.start();
     memset(m_lastDeltas, 0, FPS_FRAME_NUMBER * sizeof(int));
@@ -21,6 +22,7 @@ GameWindow::~GameWindow() {
     delete m_logger;
 #endif
     m_chunkManager.destroy(this);
+    m_player.destroy();
 }
 
 void GameWindow::handleLoggedMessage(const QOpenGLDebugMessage& message) {
@@ -48,7 +50,11 @@ void GameWindow::initializeGL() {
     glCullFace(GL_BACK);
     glFrontFace(GL_CW);
 
+    glEnable(GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     m_camera.init(this);
+    m_player.init();
     m_chunkManager.initialize(this);
     
     m_isInitialized = true;
@@ -72,9 +78,13 @@ void GameWindow::paintGL() {
     m_physicManager.update(this, m_lastDelta);
 
     m_camera.postUpdate();
+    m_player.update(m_lastDelta);
 
     m_chunkManager.update(this);
     m_chunkManager.draw(this);
+    m_player.draw();
+
+    m_player.postDraw();
 
     // On demande une nouvelle frame
     QCoreApplication::postEvent(this, new QEvent(QEvent::UpdateRequest));
@@ -95,23 +105,23 @@ void GameWindow::keyPressEvent(QKeyEvent* event) {
         m_hasPhysic = !m_hasPhysic;
         m_physicManager.setGravity(m_hasPhysic);
     }
-    m_camera.keyPressEvent(event);
+    m_player.keyPressEvent(event);
 }
 
 void GameWindow::keyReleaseEvent(QKeyEvent* event) {
-    m_camera.keyReleaseEvent(event);
+    m_player.keyReleaseEvent(event);
 }
 
 void GameWindow::mousePressEvent(QMouseEvent* event) {
-    m_camera.mousePressEvent(event);
+    m_player.mousePressEvent(event);
 }
 
 void GameWindow::mouseReleaseEvent(QMouseEvent* event) {
-    m_camera.mouseReleaseEvent(event);
+    m_player.mouseReleaseEvent(event);
 }
 
 void GameWindow::mouseMoveEvent(QMouseEvent * event) {
-    m_camera.mouseMoveEvent(event);
+    m_player.mouseMoveEvent(event);
 }
 
 void GameWindow::resizeGL(int w, int h) {
