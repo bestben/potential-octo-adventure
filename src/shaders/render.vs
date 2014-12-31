@@ -15,6 +15,7 @@ out mat4 normal_mat;
 out vec3 ex_normal_eye;
 out vec4 view_pos;
 
+
 uniform vec3 normals[6] = {
     vec3( -1, 0, 0 ),		// -X
 	vec3( 1, 0, 0 ),		// +X
@@ -40,12 +41,13 @@ void main() {
 
     voxel_pos = vec3(posX, posY, posZ);
     
-    vec3 tempPosition = chunkPosition + voxel_pos;
+    vec3 tempPosition = chunkPosition + vec3(posX, posY, posZ);
     vec4 absolutePosition = vec4(tempPosition.x, tempPosition.y, tempPosition.z, 1.0);
 
     ex_pos = absolutePosition.xyz;
     ex_normal = normals[normalIndex];
     view_pos = viewProj * absolutePosition;
+
 
     gl_Position = view_pos;
 }

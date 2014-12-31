@@ -13,20 +13,25 @@ LightManager::~LightManager()
 {
 }
 
-void LightManager::processChunk(Coords id) {
-	
+void LightManager::processChunk(Chunk* chunk) {
+	Coords c = { chunk->i, chunk->j, chunk->k };
+	auto it = torchLightUnloadedQueues.find(c);
+	if (it == torchLightUnloadedQueues.end())
+		return;
 
+	for (LightNode node : *it) {
+		// Update pointer just in case
+		node.chunk = chunk;
+		torchLightQueue.enqueue(node);
+	}
+	torchLightUnloadedQueues.remove({ chunk->i, chunk->j, chunk->k });
 }
 void LightManager::placeTorchLight(Coords voxelCoords, uint8 amount) {
 
-	std::cout << "Placing light at" << voxelCoords.i << "," << voxelCoords.j << "," << voxelCoords.k << std::endl;
-
-	
 
 	Coords chunkCoords = voxelGetChunk(voxelCoords);
-	auto* chunk = &mChunkManager->getChunk(chunkCoords);
+	auto* chunk = mChunkManager->getChunk(chunkCoords);
 
-	// Ne devrait jamais arriver car getChunk le crée s'il n'existe pas
 	if (chunk == nullptr)
 		return;
 	
@@ -41,10 +46,11 @@ void LightManager::placeTorchLight(Coords voxelCoords, uint8 amount) {
 
 	data[getIndexInChunkData(pos)].torchLight = amount;
 	torchLightQueue.enqueue({ pos, chunk });
-
 	
 	
 }
+
+
 
 
 void LightManager::update(GameWindow* gl) {
@@ -57,155 +63,26 @@ void LightManager::update(GameWindow* gl) {
 		torchLightQueue.pop_front();
 
 		if (node.chunk == nullptr) {
+			// Ya un gros problème la !
 			continue;
 		}
 
 		Voxel* data = mChunkManager->getBufferAdress(node.chunk->chunkBufferIndex);
 
 		if (data == nullptr) {
+			torchLightUnloadedQueues[{node.chunk->i, node.chunk->j, node.chunk->k}].enqueue(node);
 			continue;
 		}
 		int index = getIndexInChunkData(node.pos);
 		uint8 light = data[index].torchLight;
 
-		Coords newPos = {};
-		Chunk* newChunk;
+		processNodeNeighbor(node, { -1, 0, 0 }, light, data);
+		processNodeNeighbor(node, { 1, 0, 0 }, light, data);
+		processNodeNeighbor(node, { 0, -1, 0 }, light, data);
+		processNodeNeighbor(node, { 0, 1, 0 }, light, data);
+		processNodeNeighbor(node, { 0, 0, -1 }, light, data);
+		processNodeNeighbor(node, { 0, 0, 1 }, light, data);
 
-		// X-1
-		newPos = node.pos;
-		newPos.i -= 1;
-		newChunk = node.chunk;
-		if (newPos.i < 0) {
-			newPos.i += CHUNK_SIZE;
-			newChunk = &mChunkManager->getChunk({ newChunk->i - 1, newChunk->j, newChunk->k });
-			data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-		}
-		if (data != nullptr) {
-			int newIndex = getIndexInChunkData(newPos);
-			Voxel* newVoxel = &data[newIndex];
-			if (newVoxel->torchLight + 2 <= light) {
-				newVoxel->torchLight = light - 1;
-				dirtyLightMaps.push_back(newChunk);
-				newChunk->isDirty = true;
-				if (!isOpaque(*newVoxel))
-					torchLightQueue.enqueue({ newPos, newChunk });
-			}
-		}
-
-		// X+1
-		newPos = node.pos;
-		newPos.i += 1;
-		newChunk = node.chunk;
-		if (newPos.i >= CHUNK_SIZE) {
-			newPos.i -= CHUNK_SIZE;
-			newChunk = &mChunkManager->getChunk({ newChunk->i + 1, newChunk->j, newChunk->k });
-			data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-		}
-		if (data != nullptr) {
-			int newIndex = getIndexInChunkData(newPos);
-			Voxel* newVoxel = &data[newIndex];
-			if (newVoxel->torchLight + 2 <= light) {
-				newVoxel->torchLight = light - 1;
-				dirtyLightMaps.push_back(newChunk);
-				newChunk->isDirty = true;
-				if (!isOpaque(*newVoxel))
-					torchLightQueue.enqueue({ newPos, newChunk });
-			}
-		}
-
-		// Y-1
-		newPos = node.pos;
-		newPos.j -= 1;
-		newChunk = node.chunk;
-		if (newPos.j < 0) {
-			newPos.j += CHUNK_SIZE;
-			if (newChunk->j == 0) {
-				data = nullptr;
-			}
-			else {
-				newChunk = &mChunkManager->getChunk({ newChunk->i, newChunk->j - 1, newChunk->k });
-				data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-			}
-		}
-		if (data != nullptr) {
-			int newIndex = getIndexInChunkData(newPos);
-			Voxel* newVoxel = &data[newIndex];
-			if (newVoxel->torchLight + 2 <= light) {
-				newVoxel->torchLight = light - 1;
-				dirtyLightMaps.push_back(newChunk);
-				newChunk->isDirty = true;
-				if (!isOpaque(*newVoxel))
-					torchLightQueue.enqueue({ newPos, newChunk });
-			}
-		}
-
-		// Y+1
-		newPos = node.pos;
-		newPos.j += 1;
-		newChunk = node.chunk;
-		if (newPos.j >= CHUNK_SIZE) {
-			newPos.j -= CHUNK_SIZE;
-			if (newChunk->j == 6) {
-				data = nullptr;
-			}
-			else {
-				newChunk = &mChunkManager->getChunk({ newChunk->i, newChunk->j + 1, newChunk->k });
-				data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-			}
-		}
-		if (data != nullptr) {
-			int newIndex = getIndexInChunkData(newPos);
-			Voxel* newVoxel = &data[newIndex];
-			if (newVoxel->torchLight + 2 <= light) {
-				newVoxel->torchLight = light - 1;
-				dirtyLightMaps.push_back(newChunk);
-				newChunk->isDirty = true;
-				if (!isOpaque(*newVoxel))
-					torchLightQueue.enqueue({ newPos, newChunk });
-			}
-		}
-
-		// Z-1
-		newPos = node.pos;
-		newPos.k -= 1;
-		newChunk = node.chunk;
-		if (newPos.k < 0) {
-			newPos.k += CHUNK_SIZE;
-			newChunk = &mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k - 1 });
-			data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-		}
-		if (data != nullptr) {
-			int newIndex = getIndexInChunkData(newPos);
-			Voxel* newVoxel = &data[newIndex];
-			if (newVoxel->torchLight + 2 <= light) {
-				newVoxel->torchLight = light - 1;
-				dirtyLightMaps.push_back(newChunk);
-				newChunk->isDirty = true;
-				if (!isOpaque(*newVoxel))
-					torchLightQueue.enqueue({ newPos, newChunk });
-			}
-		}
-
-		// Z+1
-		newPos = node.pos;
-		newPos.k += 1;
-		newChunk = node.chunk;
-		if (newPos.k >= CHUNK_SIZE) {
-			newPos.k += CHUNK_SIZE;
-			newChunk = &mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k + 1 });
-			data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-		}
-		if (data != nullptr) {
-			int newIndex = getIndexInChunkData(newPos);
-			Voxel* newVoxel = &data[newIndex];
-			if (newVoxel->torchLight + 2 <= light) {
-				newVoxel->torchLight = light - 1;
-				dirtyLightMaps.push_back(newChunk);
-				newChunk->isDirty = true;
-				if (!isOpaque(*newVoxel))
-					torchLightQueue.enqueue({ newPos, newChunk });
-			}
-		}
 
 	} // End loop
 
@@ -217,4 +94,65 @@ void LightManager::update(GameWindow* gl) {
 			mChunkManager->uploadLightMap(gl, chunk);
 
 	}
+}
+
+void LightManager::processNodeNeighbor(LightNode& node, Coords dir, uint8 light, Voxel* currentData) {
+	
+	Voxel* data = currentData;
+
+	Coords newPos = node.pos + dir;
+	Chunk* newChunk = node.chunk;
+
+	if (newPos.i < 0) {
+		newPos.i += CHUNK_SIZE;
+		newChunk = mChunkManager->getChunk({ newChunk->i - 1, newChunk->j, newChunk->k });
+		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
+	}
+	else if (newPos.i >= CHUNK_SIZE) {
+		newPos.i -= CHUNK_SIZE;
+		newChunk = mChunkManager->getChunk({ newChunk->i + 1, newChunk->j, newChunk->k });
+		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
+	}
+	else if (newPos.j < 0) {
+		newPos.j += CHUNK_SIZE;
+		if (newChunk->j == 0) {
+			return;
+		}
+		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j - 1, newChunk->k });
+		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
+	}
+	else if (newPos.j >= CHUNK_SIZE) {
+		newPos.j -= CHUNK_SIZE;
+		if (newChunk->j == 6) {
+			return;
+		}
+		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j + 1, newChunk->k });
+		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
+	}
+	else if (newPos.k < 0) {
+		newPos.k += CHUNK_SIZE;
+		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k - 1 });
+		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
+	}
+	else if (newPos.k >= CHUNK_SIZE) {
+		newPos.k -= CHUNK_SIZE;
+		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k + 1 });
+		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
+	}
+
+
+	if (data != nullptr) {
+		int newIndex = getIndexInChunkData(newPos);
+		Voxel* newVoxel = &data[newIndex];
+		if (!isOpaque(*newVoxel) && newVoxel->torchLight + 2 <= light) {
+			newVoxel->torchLight = light - 1;
+			dirtyLightMaps.push_back(newChunk);
+			newChunk->isDirty = true;
+			torchLightQueue.enqueue({ newPos, newChunk });
+		}
+	}
+	else {
+		torchLightUnloadedQueues[{node.chunk->i, node.chunk->j, node.chunk->k}].enqueue(node);
+	}
+
 }

@@ -47,6 +47,14 @@ struct Chunk {
 	bool ready;
 	bool isDirty;
 
+	Chunk* chunkXP;
+	Chunk* chunkXM;
+	Chunk* chunkYP;
+	Chunk* chunkYM;
+	Chunk* chunkZP;
+	Chunk* chunkZM;
+
+	bool inQueue;
 };
 
 #define GROUND_LEVEL 128
@@ -85,7 +93,7 @@ inline bool operator==(const Voxel &lhs, const Voxel &rhs){
 }
 
 inline bool isOpaque(const Voxel& v) {
-	return v.type != VoxelType::AIR;
+	return v.type != VoxelType::AIR && v.type != VoxelType::WATER;
 }
 
 enum class TextureID : uint8
@@ -133,5 +141,5 @@ inline double range(double value, double min, double max) {
 }
 
 
-
+#define BIND_LIGHT_MAP_SIDE(name, nb) if (chunk->name) { if(chunk->name->vboIndex != -1) {sideBuffer = m_oglBuffers + chunk->name->vboIndex; sideBuffer->texture_light->bind(nb); gl->glTexBuffer(GL_TEXTURE_BUFFER, GL_R16UI, sideBuffer->vbo_light); } }
 

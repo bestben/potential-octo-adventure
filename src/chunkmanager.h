@@ -40,16 +40,19 @@ public:
     void update(GameWindow* gl);
 	void draw(GameWindow* gl);
 	void checkChunk(Coords tuple);
+	void findNeighbors(Chunk* chunk);
 	void requestChunks();
 	Voxel* getBufferAdress(int index);
 	void destroy(GameWindow* gl);
 
-	Chunk& getChunk(Coords pos);
-	Chunk& getChunk(int i, int j, int k);
+	Chunk* getChunk(Coords pos);
+	Chunk* getChunk(int i, int j, int k);
 
     Voxel getVoxel(int x, int y, int z);
     void uploadLightMap(GameWindow* gl, Chunk* chunk);
-    /**
+	LightManager& getLightManager();
+
+	/**
      * @brief Modifie un voxel et lance la reconstruction du mesh.
      * @param x Coordonnée du voxel.
      * @param y Coordonnée du voxel.
@@ -136,6 +139,7 @@ private:
     Buffer m_tempBufferToUpload;
     int m_vboToUpload;
     int m_countToUpload;
+	Chunk* m_chunkToUpload;
 
     std::atomic<bool> m_canGenerateMesh;
     std::atomic<bool> m_canUploadMesh;
