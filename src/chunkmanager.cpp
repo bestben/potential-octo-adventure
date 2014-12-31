@@ -85,7 +85,7 @@ void ChunkManager::initialize(GameWindow* gl) {
 
 	m_program->setUniformValue("tileCount", 16);
 	m_program->setUniformValue("tileSize", 16);
-	m_program->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE));
+	m_program->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE)*2.0f);
 	// TODO: Utiliser la couleur du ciel à la place
 	m_program->setUniformValue("fogColor", QVector4D(.5f, .5f, .5f, 1.0f));
 	m_program->release();
@@ -114,7 +114,7 @@ void ChunkManager::initialize(GameWindow* gl) {
 	m_waterProgram->setUniformValue("lightMap", 1);
 	m_waterProgram->setUniformValue("tileCount", 16);
 	m_waterProgram->setUniformValue("tileSize", 16);
-	m_waterProgram->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE));
+	m_waterProgram->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE)*2.0f);
 	// TODO: Utiliser la couleur du ciel à la place
 	m_waterProgram->setUniformValue("fogColor", QVector4D(.5f, .5f, .5f, 1.0f));
 	m_waterProgram->release();
@@ -537,6 +537,9 @@ void ChunkManager::run() {
 				newChunk->inQueue = false;
 				findNeighbors(newChunk);
 				
+				if (newChunk->j == 6 || true) {
+					m_LightManager->initializeSunlight(newChunk);
+				}
 				m_LightManager->processChunk(newChunk);
 				m_toGenerateBuffer.push_back(newChunk);
 
@@ -638,7 +641,10 @@ VoxelType ChunkManager::setVoxel(int x, int y, int z, VoxelType newType) {
 			Coords c = voxelCoordsToChunkCoords({ x, y, z });
 			res = voxels[c.i + CHUNK_SIZE * (c.j + CHUNK_SIZE * c.k)].type;
 			voxels[c.i + CHUNK_SIZE * (c.j + CHUNK_SIZE * c.k)].type = newType;
-			// TODO: Propager la lumière correctement
+
+			m_LightManager->voxelChanged({x,y,z});
+
+
 			// On lance la regen du mesh
 			m_mutexChunkManagerList.lock();
 			// TODO: push_front à la place pour assurer une mise à jour rapide ?

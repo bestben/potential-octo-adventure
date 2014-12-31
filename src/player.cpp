@@ -120,10 +120,12 @@ void Player::mousePressEvent(QMouseEvent* event) {
             rayPos = rayPos + dir * delta;
         }
         if (!(lastVoxel == startVoxel) && hit) {
-            if (event->button() & Qt::LeftButton) {
-                chunkManager.setVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k, VoxelType::AIR);
+			if (event->button() & Qt::LeftButton) {
+				chunkManager.setVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k, VoxelType::AIR);
+				//chunkManager.getLightManager().placeTorchLight({lastVoxel.i, lastVoxel.j, lastVoxel.k}, 15);
             } else {
                 chunkManager.setVoxel(lastVoxel.i, lastVoxel.j, lastVoxel.k, VoxelType::GRASS);
+				//chunkManager.getLightManager().removeTorchLight({ lastVoxel.i, lastVoxel.j, lastVoxel.k });
             }
         }
     }

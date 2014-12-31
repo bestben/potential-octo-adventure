@@ -42,8 +42,6 @@ void ChunkGenerator::generateChunk(Voxel* data, Coords chunkId) {
 				*v = {};
 				v->type = (*map)->getVoxelType(chunkId, x, y, z);
 
-				v->torchLight = 0;
-				v->sunLight = 0;
 			}
 		}
 	}
