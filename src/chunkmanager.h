@@ -11,6 +11,7 @@
 #include "chunk.h"
 #include "meshgenerator.h"
 #include "biomes/ChunkGenerator.h"
+#include "LightManager.h"
 
 class QOpenGLVertexArrayObject;
 class QOpenGLShaderProgram;
@@ -23,6 +24,8 @@ struct Buffer {
     unsigned int opaqueCount;
     unsigned int waterCount;
     bool draw;
+	GLuint vbo_light;
+	QOpenGLTexture* texture_light;
 };
 
 /**
@@ -35,17 +38,21 @@ public:
 
 	void initialize(GameWindow* gl);
     void update(GameWindow* gl);
-    void draw(GameWindow* gl);
+	void draw(GameWindow* gl);
 	void checkChunk(Coords tuple);
+	void findNeighbors(Chunk* chunk);
 	void requestChunks();
 	Voxel* getBufferAdress(int index);
 	void destroy(GameWindow* gl);
 
-	Chunk& getChunk(Coords pos);
-	Chunk& getChunk(int i, int j, int k);
+	Chunk* getChunk(Coords pos);
+	Chunk* getChunk(int i, int j, int k);
 
     Voxel getVoxel(int x, int y, int z);
-    /**
+    void uploadLightMap(GameWindow* gl, Chunk* chunk);
+	LightManager& getLightManager();
+
+	/**
      * @brief Modifie un voxel et lance la reconstruction du mesh.
      * @param x Coordonnée du voxel.
      * @param y Coordonnée du voxel.
@@ -62,6 +69,8 @@ private:
     int seekFreeChunkData();
     int seekFreeBuffer();
 
+	
+
     bool m_isInit;
 
     MeshGenerator m_meshGenerator;
@@ -75,6 +84,7 @@ private:
     int m_posAttr;
     int m_matrixUniform;
     int m_chunkPosUniform;
+    int m_lightMapUniform;
 
     int m_waterMatrixUniform;
     int m_waterChunkPosUniform;
@@ -129,11 +139,13 @@ private:
     Buffer m_tempBufferToUpload;
     int m_vboToUpload;
     int m_countToUpload;
+	Chunk* m_chunkToUpload;
 
     std::atomic<bool> m_canGenerateMesh;
     std::atomic<bool> m_canUploadMesh;
 
 	ChunkGenerator m_ChunkGenerator;
+	LightManager* m_LightManager;
 
 	bool m_FirstUpdate;
 
