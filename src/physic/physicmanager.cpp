@@ -17,6 +17,7 @@ PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{fa
         m_bodies[i].mass = 1;
         m_bodies[i].onGround = false;
         m_bodies[i].inWater = false;
+        m_bodies[i].isFullyInWater = false;
     }
 }
 
@@ -104,13 +105,18 @@ void PhysicManager::update(GameWindow* gl, int dt) {
                 body->position.setY(CHUNK_SIZE * CHUNK_SCALE * 7);
             }
             // Gestion du blocage
-            QVector3D voxel = body->position / (CHUNK_SCALE);
-            voxel = QVector3D(floor(voxel.x()), floor(voxel.y()), floor(voxel.z()));
-            VoxelType type = gl->getChunkManager().getVoxel(voxel.x(), voxel.y(), voxel.z()).type;
+            QVector3D footVoxel = body->position / (CHUNK_SCALE);
+            footVoxel = QVector3D(floor(footVoxel.x()), floor(footVoxel.y()), floor(footVoxel.z()));
+            VoxelType type = gl->getChunkManager().getVoxel(footVoxel.x(), footVoxel.y(), footVoxel.z()).type;
             if (m_hasGravity && (type != VoxelType::AIR) && (type != VoxelType::WATER)) {
                 body->position.setY(CHUNK_SIZE * CHUNK_SCALE * 7);
             }
             body->inWater = type == VoxelType::WATER;
+
+            QVector3D headVoxel = (body->position + QVector3D(0.0f, body->height, 0.0f)) / (CHUNK_SCALE);
+            headVoxel = QVector3D(floor(headVoxel.x()), floor(headVoxel.y()), floor(headVoxel.z()));
+            type = gl->getChunkManager().getVoxel(headVoxel.x(), headVoxel.y(), headVoxel.z()).type;
+            body->isFullyInWater = type == VoxelType::WATER;
         }
     }
 }

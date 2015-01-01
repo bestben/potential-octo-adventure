@@ -11,6 +11,8 @@
 
 #include "chunkmanager.h"
 #include "physic/physicmanager.h"
+#include "postprocess/framebuffer.h"
+#include "postprocess/postprocess.h"
 
 class QOpenGLTexture;
 class QOpenGLDebugLogger;
@@ -60,6 +62,7 @@ public:
 
     ChunkManager& getChunkManager();
     PhysicManager& getPhysicManager();
+    FrameBuffer& getFrameBuffer();
 
 private:
     Camera m_camera;
@@ -75,6 +78,9 @@ private:
 
     ChunkManager m_chunkManager;
     PhysicManager m_physicManager;
+    FrameBuffer m_framebuffer;
+
+    PostProcess m_waterPostProcess;
 
     bool m_hasPhysic;
 };

@@ -352,9 +352,9 @@ void Camera::mouseMoveEvent(QMouseEvent* event) {
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// FONCTIONS PRIVEES
-////////////////////////////////////////////////////////////////////////////////
+bool Camera::isInWater() const {
+    return m_body->isFullyInWater;
+}
 
 QVector3D Camera::frontDir() {
     QVector3D v{cos(m_theta) * cos(m_phi),

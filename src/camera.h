@@ -82,6 +82,8 @@ public:
     bool sphereInFrustum(const QVector3D& p, float radius);
     bool boxInFrustum(int x, int y, int z, int size);
 
+    bool isInWater() const;
+
     /*
      * Fonctions gérant les événements.
      */

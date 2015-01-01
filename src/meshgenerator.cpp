@@ -72,7 +72,14 @@ int MeshGenerator::generate(Voxel* data, Buffer* buffer, GLuint* vertices, bool 
         memset(m_waterPassGrid, 0, CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
     }
 	Voxel emptyVoxel = {};
-    for (int axis = 0; axis < 3; ++axis) {
+    int start = 0;
+    int end = 3;
+    if (waterPass) {
+        start = 1;
+        end = 2;
+    }
+
+    for (int axis = start; axis < end; ++axis) {
         const int u = (axis + 1) % 3;
         const int v = (axis + 2) % 3;
 
@@ -156,6 +163,9 @@ int MeshGenerator::generate(Voxel* data, Buffer* buffer, GLuint* vertices, bool 
                         } else {
                             du[v] = height;
                             dv[u] = width;
+                            if (waterPass) {
+                                break;
+                            }
                         }
 						
 

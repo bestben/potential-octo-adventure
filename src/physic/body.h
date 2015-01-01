@@ -15,4 +15,5 @@ struct Body {
     bool jump;
     bool onGround;
     bool inWater;
+    bool isFullyInWater;
 };

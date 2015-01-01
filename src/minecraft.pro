@@ -44,7 +44,9 @@ SOURCES += \
     libnoise/module/voronoi.cpp \
     physic/physicmanager.cpp \
     player.cpp \
-    wireframebox.cpp
+    wireframebox.cpp \
+    postprocess/framebuffer.cpp \
+    postprocess/postprocess.cpp
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -119,4 +121,6 @@ HEADERS += \
     physic/body.h \
     physic/physicmanager.h \
     player.h \
-    wireframebox.h
+    wireframebox.h \
+    postprocess/framebuffer.h \
+    postprocess/postprocess.h

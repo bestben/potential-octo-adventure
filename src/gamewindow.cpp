@@ -9,7 +9,7 @@
 
 
 GameWindow::GameWindow() : QOpenGLWindow(), m_player{*this, m_camera}, m_lastDelta{0},
-                            m_currentDeltaIndex{0}, m_isInitialized{false}, m_chunkManager()
+                            m_currentDeltaIndex{0}, m_isInitialized{false}, m_waterPostProcess{":/waterPostProcess.ps"}
 {
     m_deltaTimer.start();
     memset(m_lastDeltas, 0, FPS_FRAME_NUMBER * sizeof(int));
@@ -21,6 +21,8 @@ GameWindow::~GameWindow() {
 #ifdef QT_DEBUG
     delete m_logger;
 #endif
+    m_waterPostProcess.destroy(this);
+    m_framebuffer.destroy(this);
     m_chunkManager.destroy(this);
     m_player.destroy();
 }
@@ -56,6 +58,8 @@ void GameWindow::initializeGL() {
     m_camera.init(this);
     m_player.init();
     m_chunkManager.initialize(this);
+    m_framebuffer.initialize(this);
+    m_waterPostProcess.init(this);
     
     m_isInitialized = true;
 }
@@ -79,10 +83,16 @@ void GameWindow::paintGL() {
 
     m_camera.postUpdate();
     m_player.update(m_lastDelta);
-
     m_chunkManager.update(this);
+
+
+    m_framebuffer.begin(this);
     m_chunkManager.draw(this);
     m_player.draw();
+    if (m_camera.isInWater()) {
+        m_waterPostProcess.render(this);
+    }
+    m_framebuffer.end(this);
 
     m_player.postDraw();
 
@@ -130,6 +140,7 @@ void GameWindow::resizeGL(int w, int h) {
         glViewport(0, 0, w * retinaScale, h * retinaScale);
     }
     m_camera.changeViewportSize(w, h);
+    m_framebuffer.changeDimension(this, w, h);
 }
 
 float GameWindow::getFPS() const {
@@ -151,3 +162,8 @@ ChunkManager& GameWindow::getChunkManager() {
 PhysicManager& GameWindow::getPhysicManager() {
     return m_physicManager;
 }
+
+FrameBuffer& GameWindow::getFrameBuffer() {
+    return m_framebuffer;
+}
+
