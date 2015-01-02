@@ -614,8 +614,12 @@ int ChunkManager::seekFreeBuffer() {
 	return -1;
 }
 
-Voxel ChunkManager::getVoxel(int x, int y, int z) {
+Voxel ChunkManager::getVoxel(int x, int y, int z, bool* loaded) {
 	Voxel res = {};
+
+    if (loaded != nullptr) {
+        *loaded = false;
+    }
 
 	Chunk& chunk = *getChunk(voxelGetChunk({ x, y, z }));
 	if (chunk.chunkBufferIndex != -1) {
@@ -623,7 +627,10 @@ Voxel ChunkManager::getVoxel(int x, int y, int z) {
 		if (voxels != nullptr) {
 			Coords c = voxelCoordsToChunkCoords({ x, y, z });
 			res = voxels[c.i + CHUNK_SIZE * (c.j + CHUNK_SIZE * c.k)];
-		}
+            if (loaded != nullptr) {
+                *loaded = true;
+            }
+        }
 	}
 	return res;
 }

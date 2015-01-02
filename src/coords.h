@@ -1,6 +1,7 @@
 #pragma once
 #include <QtCore/QString>
 #include <QtCore/QHash>
+#include <QtGui/QVector3D>
 
 // Operations de division avec correction de la troncature dans les nombres négatifs
 inline int div_floor(int x, int y) {
@@ -39,7 +40,6 @@ struct Coords
 	Coords& operator*=(const int& v) { i *= v; j *= v; k *= v; return *this; }
 	Coords& operator/=(const int& v) { i = div_floor(i, v); j = div_floor(j, v); k = div_floor(k, v); return *this; }
 	Coords& operator%=(const int& v) { i = mod_floor(i, v); j = mod_floor(j, v); k = mod_floor(k, v); return *this; }
-
 };
 
 // Permet d'utiliser Coords dans un container qt
@@ -51,6 +51,19 @@ inline uint qHash(Coords c) {
 	str += "-";
 	str += c.k;
 	return qHash(str);
+}
+
+inline bool operator< (const Coords& lhs, const Coords& rhs) {
+    if (lhs.i != rhs.i) {
+        return lhs.i < rhs.i;
+    }
+    if (lhs.j != rhs.j) {
+        return lhs.j < rhs.j;
+    }
+    if (lhs.k != rhs.k) {
+        return lhs.k < rhs.k;
+    }
+    return false;
 }
 
 inline bool operator==(Coords const& l, Coords const& r){
@@ -115,6 +128,10 @@ inline Coords chunkIdToMapId(Coords const& chunkId) {
 
 inline Coords worldToVoxel(const QVector3D &pos) {
 	return{ div_floor(pos.x(), (CHUNK_SCALE)), div_floor(pos.y(), (CHUNK_SCALE)), div_floor(pos.z(), (CHUNK_SCALE)) };
+}
+
+inline QVector3D voxelToWorld(const Coords& pos) {
+        return QVector3D((pos.i + 0.5) * CHUNK_SCALE, (pos.j + 0.5) * CHUNK_SCALE, (pos.k + 0.5) * CHUNK_SCALE);
 }
 
 inline int getIndexInChunkData(Coords const& c) {

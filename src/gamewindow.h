@@ -14,6 +14,8 @@
 #include "postprocess/framebuffer.h"
 #include "postprocess/postprocess.h"
 
+#include "npc/npc.h"
+
 class QOpenGLTexture;
 class QOpenGLDebugLogger;
 class QOpenGLDebugMessage;
@@ -83,4 +85,6 @@ private:
     PostProcess m_waterPostProcess;
 
     bool m_hasPhysic;
+
+    Npc m_testNpc;
 };

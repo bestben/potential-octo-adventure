@@ -1,5 +1,4 @@
-#ifndef PLAYER_H
-#define PLAYER_H
+#pragma once
 
 #include "wireframebox.h"
 
@@ -52,5 +51,3 @@ private:
     int m_crossXSizeUniform;
     int m_crossYSizeUniform;
 };
-
-#endif // PLAYER_H

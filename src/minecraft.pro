@@ -47,7 +47,9 @@ SOURCES += \
     player.cpp \
     wireframebox.cpp \
     postprocess/framebuffer.cpp \
-    postprocess/postprocess.cpp
+    postprocess/postprocess.cpp \
+    npc/npc.cpp \
+    npc/pathfinding.cpp
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -126,4 +128,6 @@ HEADERS += \
     player.h \
     wireframebox.h \
     postprocess/framebuffer.h \
-    postprocess/postprocess.h
+    postprocess/postprocess.h \
+    npc/npc.h \
+    npc/pathfinding.hpp

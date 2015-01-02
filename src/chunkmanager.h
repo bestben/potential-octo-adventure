@@ -48,7 +48,7 @@ public:
 	Chunk* getChunk(Coords pos);
 	Chunk* getChunk(int i, int j, int k);
 
-    Voxel getVoxel(int x, int y, int z);
+    Voxel getVoxel(int x, int y, int z, bool* loaded = nullptr);
     void uploadLightMap(GameWindow* gl, Chunk* chunk);
 	LightManager& getLightManager();
 

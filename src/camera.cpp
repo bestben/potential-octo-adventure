@@ -66,7 +66,6 @@ void Camera::update(GameWindow* gl, int dt) {
     }
 
     // On translate la caméra
-    float mul = (dt / 1000.0f) * m_speed;
     QVector3D dir = getDirection();
     QVector3D move = dir * m_speed;
 
