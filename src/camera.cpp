@@ -19,7 +19,8 @@ float radToDeg(float x) {
 Camera::Camera() : m_speed{CAMERA_WALK_SPEED}, m_phi{degToRad(-33.0f)}, m_theta{degToRad(-10.0f)},
                     m_thetaMax{degToRad(75.0f)}, m_sensi{0.5f}, m_fov{60.0f}, m_desiredFov{m_fov}, m_near{0.25f},
                     m_far{2500.0f}, m_width{1.0f}, m_height{1.0f},
-                    m_direction{Direction::NONE}, m_mousePressed{false}, m_isViewMatrixDirty{true}, m_isProjMatrixDirty{false} {
+                    m_direction{Direction::NONE}, m_mousePressed{false}, m_isViewMatrixDirty{true}, m_isProjMatrixDirty{false},
+                    m_isFPS{false} {
     m_tang = (float)std::tan(m_fov * pi  / 180.0f);
     m_nh = m_near * m_tang;
     m_nw = m_nh * m_width / m_height;
@@ -36,7 +37,34 @@ void Camera::init(GameWindow* gl) {
     setCamDef(m_body->position, m_body->position + frontDir(), QVector3D(0.0f, 1.0f, 0.0f));
 }
 
-void Camera::update(int dt) {
+void Camera::update(GameWindow* gl, int dt) {
+    if (m_isFPS) {
+        QPoint cursorPos = gl->mapFromGlobal(QCursor::pos());
+        int dx = cursorPos.x() - (m_width / 2);
+        int dy = cursorPos.y() - (m_height / 2);
+
+        m_phi -= degToRad(dx * m_sensi);
+        m_theta -= degToRad(dy * m_sensi);
+
+        /*
+         * On évite à phi de devenir trop grand (ou trop petit)
+         *   en enlevant (ou ajoutant) 1 tour à chaque tour
+         */
+        if (m_phi > degToRad(360.0f)) {
+            m_phi -= degToRad(360.0f);
+        } else if (m_phi < 0.0f) {
+            m_phi += degToRad(360.0f);
+        }
+        // On évite que theta dépasse la limite
+        if (m_theta > m_thetaMax) {
+            m_theta = m_thetaMax;
+        } else if (m_theta < -m_thetaMax) {
+            m_theta = -m_thetaMax;
+        }
+
+        m_isViewMatrixDirty = true;
+    }
+
     // On translate la caméra
     float mul = (dt / 1000.0f) * m_speed;
     QVector3D dir = getDirection();
@@ -325,7 +353,7 @@ void Camera::mouseReleaseEvent(QMouseEvent* event) {
 }
 
 void Camera::mouseMoveEvent(QMouseEvent* event) {
-    if (m_mousePressed) {
+    if (m_mousePressed && !m_isFPS) {
         float dx = event->x() - m_oldMousPos.x();
         float dy = event->y() - m_oldMousPos.y();
         m_oldMousPos = event->pos();
@@ -361,4 +389,12 @@ QVector3D Camera::frontDir() {
                 sin(m_theta),
                 -cos(m_theta) * sin(m_phi)};
     return v;
+}
+
+void Camera::setFPSMode(bool isFPS) {
+    m_isFPS = isFPS;
+}
+
+bool Camera::isFPSMode() const {
+    return m_isFPS;
 }

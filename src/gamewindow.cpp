@@ -3,6 +3,8 @@
 #include <iostream>
 #include <QKeyEvent>
 
+#include <QApplication>
+
 #include <QtCore/QCoreApplication>
 #include <QtGui/QOpenGLDebugLogger>
 
@@ -61,6 +63,12 @@ void GameWindow::initializeGL() {
     m_framebuffer.initialize(this);
     m_waterPostProcess.init(this);
     
+    if (m_camera.isFPSMode()) {
+        setCursor(QCursor(Qt::BlankCursor));
+    } else {
+        setCursor(QCursor(Qt::ArrowCursor));
+    }
+
     m_isInitialized = true;
 }
 
@@ -78,7 +86,7 @@ void GameWindow::paintGL() {
 #endif
 
     // On met à jour la position de la caméra
-    m_camera.update(m_lastDelta);
+    m_camera.update(this, m_lastDelta);
     m_physicManager.update(this, m_lastDelta);
 
     m_camera.postUpdate();
@@ -95,6 +103,11 @@ void GameWindow::paintGL() {
     m_framebuffer.end(this);
 
     m_player.postDraw();
+
+    if (m_camera.isFPSMode()) {
+        QPoint center(width() / 2, height() / 2);
+        QCursor::setPos(mapToGlobal(center));
+    }
 
     // On demande une nouvelle frame
     QCoreApplication::postEvent(this, new QEvent(QEvent::UpdateRequest));
@@ -114,6 +127,15 @@ void GameWindow::keyPressEvent(QKeyEvent* event) {
     } else if(event->key() == Qt::Key_P) {
         m_hasPhysic = !m_hasPhysic;
         m_physicManager.setGravity(m_hasPhysic);
+    } else if(event->key() == Qt::Key_F) {
+        bool fps = m_camera.isFPSMode();
+        fps = !fps;
+        m_camera.setFPSMode(fps);
+        if (fps) {
+            setCursor(QCursor(Qt::BlankCursor));
+        } else {
+            setCursor(QCursor(Qt::ArrowCursor));
+        }
     }
     m_player.keyPressEvent(event);
 }
