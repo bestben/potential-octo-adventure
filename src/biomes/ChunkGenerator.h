@@ -10,8 +10,8 @@ class ChunkGenerator
 public:
 	ChunkGenerator();
 	~ChunkGenerator();
-	void generateChunk(Voxel* data, int i, int j, int k);
-	void generateChunk(Voxel* data, Coords chunkId);
+	bool generateChunk(Voxel* data, int i, int j, int k);
+	bool generateChunk(Voxel* data, Coords chunkId);
 
 private:
 	QHash<Coords, BiomeMap*> mMaps;

@@ -17,15 +17,17 @@ class QOpenGLVertexArrayObject;
 class QOpenGLShaderProgram;
 class QOpenGLTexture;
 class GameWindow;
+class MeshGenerator;
 
 struct Buffer {
     QOpenGLVertexArrayObject* vao;
     GLuint vbo;
     unsigned int opaqueCount;
     unsigned int waterCount;
+	unsigned int toUpOpaqueCount;
+	unsigned int toUpWaterCount;
     bool draw;
-	GLuint vbo_light;
-	QOpenGLTexture* texture_light;
+	GLuint* toUpData;
 };
 
 /**
@@ -40,7 +42,7 @@ public:
     void update(GameWindow* gl);
 	void draw(GameWindow* gl);
 	void checkChunk(Coords tuple);
-	void findNeighbors(Chunk* chunk);
+	
 	void requestChunks();
 	Voxel* getBufferAdress(int index);
 	void destroy(GameWindow* gl);
@@ -49,9 +51,11 @@ public:
 	Chunk* getChunk(int i, int j, int k);
 
     Voxel getVoxel(int x, int y, int z);
-    void uploadLightMap(GameWindow* gl, Chunk* chunk);
+	Voxel getVoxel(Coords c);
+	
 	LightManager& getLightManager();
-
+	VoxelType placeVoxel(Coords pos, VoxelType type);
+	void removeVoxel(Coords pos);
 	/**
      * @brief Modifie un voxel et lance la reconstruction du mesh.
      * @param x Coordonnée du voxel.
@@ -59,13 +63,18 @@ public:
      * @param z Coordonnée du voxel.
      * @return L'ancien type du voxel.
      */
-    VoxelType setVoxel(int x, int y, int z, VoxelType newType);
+	VoxelType setVoxel(int x, int y, int z, VoxelType newType, uint light = NO_CHANGE);
+	VoxelType setVoxel(Coords c, VoxelType newType, uint light = NO_CHANGE);
+
 
 protected:
     void run();
 
 private:
     
+    Coords m_lastChunkId;
+    Chunk* m_lastChunk;
+
     int seekFreeChunkData();
     int seekFreeBuffer();
 
@@ -73,7 +82,7 @@ private:
 
     bool m_isInit;
 
-    MeshGenerator m_meshGenerator;
+    MeshGenerator* m_meshGenerator;
     // Le shader affichant un chunk
     QOpenGLShaderProgram* m_program;
     // Le shader affichant l'eau
@@ -93,6 +102,9 @@ private:
     Voxel* m_chunkBuffers;
     std::atomic<bool>* m_availableChunkData;
     std::atomic<bool>* m_inUseChunkData;
+
+	uint16 m_chunkDataLeft;
+	uint16 m_vboLeft;
 
     // Le tableau des buffers opengl
     Buffer* m_oglBuffers;
@@ -118,6 +130,8 @@ private:
     std::atomic<bool>* m_availableBuffer;
 
 	QMutex m_mutexChunkManagerList;
+	QMutex m_mutexGenerateQueue;
+
 	/*
 	QLinkedList<Chunk*> m_toInvalidateChunkData;
 	

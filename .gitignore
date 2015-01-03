@@ -30,3 +30,7 @@ Makefile*
 #QtCtreator Qml
 *.qmlproject.user
 *.qmlproject.user.*
+*.tags
+*.tags_sorted_by_file
+*.sublime-project
+*.sublime-workspace

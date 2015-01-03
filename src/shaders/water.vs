@@ -1,6 +1,6 @@
 #version 330
 
-layout(location = 0) in int position;
+layout(location = 0) in uint position;
 
 uniform vec3 chunkPosition;
 uniform mat4 viewProj;
@@ -9,7 +9,11 @@ out vec3 ex_pos;
 flat out int ex_voxel;
 out vec3 ex_normal;
 out vec4 view_pos;
-out vec3 voxel_pos;
+
+out mat4 normal_mat;
+out vec3 ex_normal_eye;
+
+out float lightVar;
 
 uniform vec3 normals[6] = {
     vec3( -1, 0, 0 ),		// -X
@@ -21,18 +25,16 @@ uniform vec3 normals[6] = {
 };
 
 void main() {
-    int normalIndex = ((position & 0x03800000) >> 23);
-    ex_voxel = ((position & 0x007F8000) >> 15);
-    int posX = ((position & 0x00007C00) >> 10);
-    int posY = ((position & 0x000003E0) >> 5);
-    int posZ = (position & 0x0000001F);
+    uint light = ((position & uint(0xFC000000)) >> 26);
+    lightVar = float(light);
 
-    int i = int(posX);
-    int j = int(posY);
-    int k = int(posZ);
+    uint normalIndex = ((position & uint(0x03800000)) >> 23);
+    ex_voxel = int((position & uint(0x007F8000)) >> 15);
+    uint posX = ((position & uint(0x00007C00)) >> 10);
+    uint posY = ((position & uint(0x000003E0)) >> 5);
+    uint posZ = (position & uint(0x0000001F));
 
-    voxel_pos = vec3(posX, posY, posZ);
-    		
+
     vec3 tempPosition = chunkPosition + vec3(posX, posY, posZ);
     vec4 absolutePosition = vec4(tempPosition.x, tempPosition.y, tempPosition.z, 1.0);
 
