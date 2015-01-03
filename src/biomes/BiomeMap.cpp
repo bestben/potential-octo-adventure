@@ -149,7 +149,7 @@ BiomeMap::~BiomeMap()
 VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 
 	// Coordonnées relative de ce chunks dans la map que cet objet représente
-	Coords chunkIdInMap = chunkIdToChunkIdInMap(chunkId);
+	Coords chunkIdInMap = GetChunkRelPosInBiomeMap(chunkId);
 	int voxelHeight = chunkId.j*CHUNK_SIZE + j;
 
 	VoxelType result = VoxelType::AIR;
@@ -188,13 +188,19 @@ VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 
 	bool aboveGround = voxelHeight >= terrainHeight;
 	bool atGround = voxelHeight == terrainHeight;
+
+	int distanceFromSurface = voxelHeight - terrainHeight; // + : above, - : below
+	int distanceFromSeaLevel = voxelHeight - GROUND_LEVEL;
+
+	if (!atGround && aboveGround && distanceFromSeaLevel >= SEA_HEIGHT)
+		return result;
+
 	double tunnel = getTunnelValue(chunkId, i, j, k);
 	bool inTunnel = (tunnel + bias) > 0.2;
 	bool inTunnelBorder = (tunnel + bias) > 0.2 && (tunnel + bias) < 0.25;
 
 
-	int distanceFromSurface = voxelHeight - terrainHeight; // + : above, - : below
-	int distanceFromSeaLevel = voxelHeight - GROUND_LEVEL;
+	
 	
 	if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT && inTunnel)
 		result = VoxelType::WATER;

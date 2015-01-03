@@ -33,9 +33,9 @@ void Npc::destroy(GameWindow* gl) {
 
 void Npc::update(GameWindow* gl, int dt) {
     if (m_body->onGround) {
-        Coords current = worldToVoxel(m_body->position);
+        Coords current = GetVoxelPosFromWorldPos(m_body->position);
         if (m_path.size() == 0) {
-            m_path = m_pathfinding->getPath(current, worldToVoxel(gl->getCamera().getPosition()));
+            m_path = m_pathfinding->getPath(current, GetVoxelPosFromWorldPos(gl->getCamera().getPosition()));
         }
         if (m_path.size() > 0) {
             Coords next = m_path.back();

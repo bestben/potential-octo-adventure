@@ -52,7 +52,7 @@ void Player::draw() {
     float delta = 0.5f;
     float maxSquareDistance = m_maxBlockDistance * m_maxBlockDistance;
 
-    Coords startVoxel = worldToVoxel(camPos);
+    Coords startVoxel = GetVoxelPosFromWorldPos(camPos);
     Coords lastVoxel = startVoxel;
     Coords currentVoxel = startVoxel;
 
@@ -60,7 +60,7 @@ void Player::draw() {
     ChunkManager& chunkManager = m_game.getChunkManager();
     bool hit = false;
     while (((rayPos - camPos).lengthSquared() < maxSquareDistance)) {
-        currentVoxel = worldToVoxel(rayPos);
+		currentVoxel = GetVoxelPosFromWorldPos(rayPos);
         VoxelType type = chunkManager.getVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k).type;
         if ((type != VoxelType::AIR) && (type != VoxelType::WATER)) {
             hit = true;
@@ -102,7 +102,7 @@ void Player::mousePressEvent(QMouseEvent* event) {
         float delta = 0.5f;
         float maxSquareDistance = m_maxBlockDistance * m_maxBlockDistance;
 
-        Coords startVoxel = worldToVoxel(camPos);
+		Coords startVoxel = GetVoxelPosFromWorldPos(camPos);
         Coords lastVoxel = startVoxel;
         Coords currentVoxel = startVoxel;
 
@@ -110,9 +110,9 @@ void Player::mousePressEvent(QMouseEvent* event) {
         ChunkManager& chunkManager = m_game.getChunkManager();
         bool hit = false;
         while (((rayPos - camPos).lengthSquared() < maxSquareDistance)) {
-            currentVoxel = worldToVoxel(rayPos);
+			currentVoxel = GetVoxelPosFromWorldPos(rayPos);
             VoxelType type = chunkManager.getVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k).type;
-            if ((type != VoxelType::AIR) && (type != VoxelType::WATER)) {
+			if ((type != VoxelType::AIR) && (type != VoxelType::WATER) && (type != VoxelType::IGNORE_TYPE)) {
                 hit = true;
                 break;
             }
@@ -120,10 +120,19 @@ void Player::mousePressEvent(QMouseEvent* event) {
             rayPos = rayPos + dir * delta;
         }
         if (!(lastVoxel == startVoxel) && hit) {
-            if (event->button() & Qt::LeftButton) {
-                chunkManager.setVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k, VoxelType::AIR);
+			if (event->button() & Qt::LeftButton) {
+				chunkManager.removeVoxel({ currentVoxel.i, currentVoxel.j, currentVoxel.k });
+				//chunkManager.getLightManager().placeTorchLight({lastVoxel.i, lastVoxel.j, lastVoxel.k}, 15);
             } else {
-                chunkManager.setVoxel(lastVoxel.i, lastVoxel.j, lastVoxel.k, VoxelType::GRASS);
+				Voxel last = chunkManager.getVoxel(lastVoxel);
+				Voxel current = chunkManager.getVoxel(currentVoxel);
+				//chunkManager.placeVoxel({ lastVoxel.i, lastVoxel.j, lastVoxel.k }, VoxelType::DIRT);
+				//chunkManager.getLightManager().removeTorchLight({ lastVoxel.i, lastVoxel.j, lastVoxel.k });
+
+				Chunk* chunk = chunkManager.getChunk(GetChunkPosFromVoxelPos(currentVoxel));
+				chunk->isDirty = true;
+
+
             }
         }
     }

@@ -11,59 +11,15 @@ uniform vec4 fogColor;
 out vec4 out_color;
 
 in vec3 ex_pos;
-in vec3 voxel_pos;
 
 flat in int ex_voxel;
 in vec3 ex_normal;
 in vec4 view_pos;
 
-uniform usamplerBuffer lightMap;
-
-uniform usamplerBuffer lightMapXP;
-uniform usamplerBuffer lightMapXM;
-
-uniform usamplerBuffer lightMapYP;
-uniform usamplerBuffer lightMapYM;
-
-uniform usamplerBuffer lightMapZP;
-uniform usamplerBuffer lightMapZM;
-
+in float lightVar;
 
 
 void main() {
-    vec3 offset = ex_normal * 0.5;
-
-    int i = int(floor(voxel_pos.x+offset.x));
-    int j = int(floor(voxel_pos.y+offset.y));
-    int k = int(floor(voxel_pos.z+offset.z));
-
-    float lightLevel = texelFetch(lightMap, k*31*31 + j*31 + i).r;  
-    float lightLevelXM = texelFetch(lightMapXM, k*31*31 + j*31 + i + 31).r;  
-    float lightLevelXP = texelFetch(lightMapXP, k*31*31 + j*31 + i - 31).r;  
-    float lightLevelYM = texelFetch(lightMapYM, k*31*31 + (j+31)*31 + i).r;  
-    float lightLevelYP = texelFetch(lightMapYP, k*31*31 + (j-31)*31 + i).r;  
-    float lightLevelZM = texelFetch(lightMapZM, (k+31)*31*31 + j*31 + i).r;  
-    float lightLevelZP = texelFetch(lightMapZP, (k-31)*31*31 + j*31 + i).r;  
-    float light = lightLevel;
-
-    if(i<0){
-        light = lightLevelXM;
-    }
-    else if(i>=31){
-        light = lightLevelXP;
-    }
-    else if(j<0){
-        light = lightLevelYM;
-    }
-    else if(j>=31){
-        light = lightLevelYP;
-    }
-    else if(k<0){
-        light = lightLevelZM;
-    }
-    else if(k>=31){
-        light = lightLevelZP;
-    }
 
     vec2 tileOffset = vec2(ex_voxel % tileCount, (ex_voxel%256) / tileCount);
     tileOffset = tileOffset / tileSize;
@@ -77,15 +33,16 @@ void main() {
     vec4 sampleZ = texture2D(atlas, texCoordZ); // Project along z axis
     
     vec4 texelAll = sampleX * abs(ex_normal.x) + sampleY * abs(ex_normal.y) + sampleZ * abs(ex_normal.z);
-    vec3 texel = texelAll.rgb;
 
-    light = clamp( light / 32.0,0.0,1.0);
+    float light = clamp(lightVar/48.0, 0.0, 1.0);
 
-	vec3 ambiant = vec3(1.0,1.0,1.0) * texel * light;
+    float dotProd = clamp(dot(ex_normal, -normalize(vec3(0.5,-1.0,0.0))), 0.5,1.0);
+
+	vec3 ambiant = texelAll.rgb * light * dotProd;
 
 	float minFogDist = fogDistance*0.5;
 	float fogFactor = clamp((length(-view_pos)-minFogDist)/(fogDistance-minFogDist),0.0,1.0);
 
-    out_color = mix(vec4(ambiant, texelAll.a), fogColor, fogFactor);
+    out_color = mix(vec4(ambiant,1.0), fogColor, fogFactor);
 
 }

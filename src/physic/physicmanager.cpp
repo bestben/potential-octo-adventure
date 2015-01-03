@@ -102,14 +102,14 @@ void PhysicManager::update(GameWindow* gl, int dt) {
 
             // Gestion du passage sous la map
             if (m_hasGravity && ((body->position.y() + body->height) < 0.0f)) {
-                body->position.setY(CHUNK_SIZE * CHUNK_SCALE * 7);
+				body->position.setY(CHUNK_SIZE * CHUNK_SCALE * WORLD_HEIGHT);
             }
             // Gestion du blocage
             QVector3D footVoxel = body->position / (CHUNK_SCALE);
             footVoxel = QVector3D(floor(footVoxel.x()), floor(footVoxel.y()), floor(footVoxel.z()));
             VoxelType type = gl->getChunkManager().getVoxel(footVoxel.x(), footVoxel.y(), footVoxel.z()).type;
-            if (m_hasGravity && (type != VoxelType::AIR) && (type != VoxelType::WATER)) {
-                body->position.setY(CHUNK_SIZE * CHUNK_SCALE * 7);
+			if (m_hasGravity && (type != VoxelType::AIR) && (type != VoxelType::WATER) && (type != VoxelType::IGNORE_TYPE)) {
+                body->position.setY(CHUNK_SIZE * CHUNK_SCALE * WORLD_HEIGHT);
             }
             body->inWater = type == VoxelType::WATER;
 
@@ -150,7 +150,7 @@ bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, con
             do {
                 currentVoxel -= direction;
                 VoxelType type = chunkManager.getVoxel(currentVoxel.x(), currentVoxel.y(), currentVoxel.z()).type;
-                if ((type != VoxelType::AIR) && (type != VoxelType::WATER)) {
+				if ((type != VoxelType::AIR) && (type != VoxelType::WATER) && (type != VoxelType::IGNORE_TYPE)) {
                     isColliding = true;
                     break;
                 }

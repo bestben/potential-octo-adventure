@@ -105,28 +105,23 @@ inline Coords operator%(Coords l, int d){
 }
 
 
-inline Coords chunkIdToChunkIdInMap(Coords const& chunkId) {
-	int i = chunkId.i % BIOMEMAP_CHUNKS;
-	int k = chunkId.k % BIOMEMAP_CHUNKS;
-	return{ i<0 ? i + BIOMEMAP_CHUNKS : i, chunkId.j, k<0 ? k + BIOMEMAP_CHUNKS : k };
+inline Coords GetChunkRelPosInBiomeMap(Coords const& chunkId) {
+	return{ mod_floor(chunkId.i, BIOMEMAP_CHUNKS), mod_floor(chunkId.j, BIOMEMAP_CHUNKS), mod_floor(chunkId.k, BIOMEMAP_CHUNKS) };
 }
 
-inline Coords voxelCoordsToChunkCoords(Coords const& c) {
-	int i = c.i % CHUNK_SIZE;
-	int j = c.j % CHUNK_SIZE;
-	int k = c.k % CHUNK_SIZE;
-	return{ i<0 ? i + CHUNK_SIZE : i, j<0 ? j + CHUNK_SIZE : j, k<0 ? k + CHUNK_SIZE : k };
+inline Coords GetVoxelRelPos(Coords const& c) {
+	return{ mod_floor(c.i, CHUNK_SIZE), mod_floor(c.j, CHUNK_SIZE), mod_floor(c.k, CHUNK_SIZE) };
 }
 
-inline Coords voxelGetChunk(Coords const& c) {
+inline Coords GetChunkPosFromVoxelPos(Coords const& c) {
 	return{ div_floor(c.i, CHUNK_SIZE), div_floor(c.j, CHUNK_SIZE), div_floor(c.k, CHUNK_SIZE) };
 }
 
-inline Coords chunkIdToMapId(Coords const& chunkId) {
+inline Coords GetChunkBiomeMap(Coords const& chunkId) {
 	return{ div_floor(chunkId.i, BIOMEMAP_CHUNKS), 0, div_floor(chunkId.k, BIOMEMAP_CHUNKS) };
 }
 
-inline Coords worldToVoxel(const QVector3D &pos) {
+inline Coords GetVoxelPosFromWorldPos(const QVector3D &pos) {
 	return{ div_floor(pos.x(), (CHUNK_SCALE)), div_floor(pos.y(), (CHUNK_SCALE)), div_floor(pos.z(), (CHUNK_SCALE)) };
 }
 
@@ -134,6 +129,12 @@ inline QVector3D voxelToWorld(const Coords& pos) {
         return QVector3D((pos.i + 0.5) * CHUNK_SCALE, (pos.j + 0.5) * CHUNK_SCALE, (pos.k + 0.5) * CHUNK_SCALE);
 }
 
-inline int getIndexInChunkData(Coords const& c) {
+inline int IndexVoxelRelPos(Coords const& c) {
 	return ((c.k * CHUNK_SIZE) + c.j)*CHUNK_SIZE + c.i;
+}
+
+inline bool atChunkBounds(Coords const& c) {
+	return c.i == 0 || c.i == CHUNK_SIZE - 1 ||
+		c.j == 0 || c.j == CHUNK_SIZE - 1 ||
+		c.k == 0 || c.k == CHUNK_SIZE - 1;
 }
