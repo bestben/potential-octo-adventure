@@ -45,7 +45,7 @@ public:
      * @brief Met à jour la caméra.
      * @param dt La durée écoulée depuis la dernière mise à jour.
      */
-    void update(int dt);
+    void update(GameWindow* gl, int dt);
     /**
      * @brief Fonction de mise à jour après le calcule de la physique.
      */
@@ -81,6 +81,10 @@ public:
 
     bool sphereInFrustum(const QVector3D& p, float radius);
     bool boxInFrustum(int x, int y, int z, int size);
+
+    bool isInWater() const;
+    void setFPSMode(bool isFPS);
+    bool isFPSMode() const;
 
     /*
      * Fonctions gérant les événements.
@@ -125,4 +129,6 @@ private:
     QMatrix4x4 m_viewMatrix; // La matrice de vue
     QMatrix4x4 m_projMatrix; // La matrice de projection
     QMatrix4x4 m_viewProjMatrix; // La matrice de vue/projection
+
+    bool m_isFPS;
 };

@@ -1,0 +1,22 @@
+#version 330
+
+uniform sampler2D texture;
+uniform float time;
+
+in vec2 ex_textCoord;
+
+out vec4 out_color;
+
+void main() {
+    vec2 texCoord = ex_textCoord;
+    texCoord.x = texCoord.x + sin(texCoord.y*10.+time*0.1)*0.01;
+    texCoord.y = texCoord.y + sin(texCoord.x*10.+time*0.1)*0.01;
+    
+    vec4 texel = texture2D(texture, texCoord);
+    vec3 src = vec3(0.0, 0.0, 0.25);
+    vec3 dst = texel.xyz;
+    
+    float alpha = 0.5;
+    
+    out_color = vec4(src * alpha + dst * (1.0 - alpha), 1.0);
+}

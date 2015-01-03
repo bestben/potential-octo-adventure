@@ -325,7 +325,7 @@ void ChunkManager::draw(GameWindow* gl) {
 				buffer->vao->release();
 			}
 		}
-		//glDisable(GL_CULL_FACE);
+		glDisable(GL_CULL_FACE);
 		m_waterProgram->bind();
 		m_waterProgram->setUniformValue(m_waterMatrixUniform, mat * scale);
 		m_waterProgram->setUniformValue("time", (float)m_animationTime.elapsed());
@@ -340,7 +340,7 @@ void ChunkManager::draw(GameWindow* gl) {
 				buffer->vao->release();
 			}
 		}
-		//glEnable(GL_CULL_FACE);
+		glEnable(GL_CULL_FACE);
 		//m_mutexChunkManagerList.unlock();
 
 	}

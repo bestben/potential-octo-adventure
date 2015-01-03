@@ -11,7 +11,10 @@
 
 		<file alias="cross.vs">shaders/cross.vs</file>
 		<file alias="cross.ps">shaders/cross.ps</file>
-
+        
+        <file alias="postProcess.vs">shaders/postProcess.vs</file>
+		<file alias="waterPostProcess.ps">shaders/waterPostProcess.ps</file>
+        
 		<file alias="atlas.png">textures/atlas.png</file>
 		<file alias="cross.png">textures/cross.png</file>
 	</qresource>

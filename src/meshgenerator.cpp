@@ -79,7 +79,14 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
 
 
 	Coords offset = chunkPos * CHUNK_SIZE;
-    for (int axis = 0; axis < 3; ++axis) {
+    int start = 0;
+    int end = 3;
+    if (waterPass) {
+        start = 1;
+        end = 2;
+    }
+
+    for (int axis = start; axis < end; ++axis) {
         const int u = (axis + 1) % 3;
         const int v = (axis + 2) % 3;
 
@@ -195,6 +202,9 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
                         } else {
 							du[v] = 1;//height;
 							dv[u] = 1;//width;
+                            if (waterPass) {
+                                break;
+                            }
                         }
 						
 
