@@ -179,6 +179,7 @@ void ChunkManager::update(GameWindow* gl) {
 		float camY = gl->getCamera().getPosition().y();
 		float camZ = gl->getCamera().getPosition().z();
 
+		uint16 remesh_count = 0;
 
 		for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end();) {
 			auto chunk = *ite;
@@ -218,7 +219,7 @@ void ChunkManager::update(GameWindow* gl) {
 			}
 			else {
 				bool remesh = false;
-				if (chunk->isDirty || chunk->isLightDirty){
+				if ((chunk->isDirty || chunk->isLightDirty) && remesh_count < MAX_REMESH_PER_UPDATE){
 					chunk->isDirty = false;
 					chunk->isLightDirty = false;
 					remesh = true;
@@ -226,7 +227,7 @@ void ChunkManager::update(GameWindow* gl) {
 
 				// Regénération du mesh pour ce chunk
 				if (remesh && chunk->vboIndex != -1 && chunk->chunkBufferIndex != -1 && chunk->generated) {
-
+					remesh_count++;
 					Buffer* buffer = m_oglBuffers + chunk->vboIndex;
 					Voxel *data = getBufferAdress(chunk->chunkBufferIndex);
 					unsigned int totalCount = 0;
@@ -423,10 +424,18 @@ void ChunkManager::run() {
 		
 
 		if (m_toGenerateChunkData.size() > 0) {
-			// Le chunk à créer
+			
 			m_mutexGenerateQueue.lock();
-			auto* newChunk = m_toGenerateChunkData.front();
-			m_toGenerateChunkData.pop_front();
+			Coords here = m_currentChunk;
+			std::sort(m_toGenerateChunkData.begin(), m_toGenerateChunkData.end(), [here](Chunk* c1, Chunk* c2)->bool{
+				int a = (c1->i - here.i)*(c1->i - here.i) + (c1->j - here.j)*(c1->j - here.j) + (c1->k - here.k)*(c1->k - here.k);
+				int b = (c2->i - here.i)*(c2->i - here.i) + (c2->j - here.j)*(c2->j - here.j) + (c2->k - here.k)*(c2->k - here.k);
+				return a>b;
+			});
+
+			
+			auto* newChunk = m_toGenerateChunkData.back();
+			m_toGenerateChunkData.pop_back();
 			m_mutexGenerateQueue.unlock();
 			// On enlève les doubles
 			

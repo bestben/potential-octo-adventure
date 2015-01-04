@@ -115,7 +115,7 @@ void LightManager::removeVoxel(Coords pos, QSet<Coords> &modifiedChunks) {
 	mChunkManager->setVoxel(pos, n.type, 0);
 
 
-	spreadLight(lightSources, modifiedChunks);
+	//spreadLight(lightSources, modifiedChunks);
 
 	modifiedChunks.insert(GetChunkPosFromVoxelPos(pos));
 
@@ -132,7 +132,8 @@ void LightManager::removeVoxel(Coords pos, QSet<Coords> &modifiedChunks) {
 			if (newVoxel.type == VoxelType::IGNORE_TYPE)
 				break;
 
-			lightNeighbors(newPos, modifiedChunks);
+			lightSources.insert(newPos);
+			//lightNeighbors(newPos, modifiedChunks);
 
 		}
 
@@ -172,9 +173,9 @@ void LightManager::removeVoxel(Coords pos, QSet<Coords> &modifiedChunks) {
 	}
 
 	if (found) {
-		lightNeighbors(maxLightPos, modifiedChunks);
+		lightSources.insert(maxLightPos);
 	}
-	
+	spreadLight(lightSources, modifiedChunks);
 
 }
 

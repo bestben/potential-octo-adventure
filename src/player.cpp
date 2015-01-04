@@ -122,17 +122,8 @@ void Player::mousePressEvent(QMouseEvent* event) {
         if (!(lastVoxel == startVoxel) && hit) {
 			if (event->button() & Qt::LeftButton) {
 				chunkManager.removeVoxel({ currentVoxel.i, currentVoxel.j, currentVoxel.k });
-				//chunkManager.getLightManager().placeTorchLight({lastVoxel.i, lastVoxel.j, lastVoxel.k}, 15);
             } else {
-				Voxel last = chunkManager.getVoxel(lastVoxel);
-				Voxel current = chunkManager.getVoxel(currentVoxel);
-				//chunkManager.placeVoxel({ lastVoxel.i, lastVoxel.j, lastVoxel.k }, VoxelType::DIRT);
-				//chunkManager.getLightManager().removeTorchLight({ lastVoxel.i, lastVoxel.j, lastVoxel.k });
-
-				Chunk* chunk = chunkManager.getChunk(GetChunkPosFromVoxelPos(currentVoxel));
-				chunk->isDirty = true;
-
-
+				chunkManager.placeVoxel({ lastVoxel.i, lastVoxel.j, lastVoxel.k }, VoxelType::LAVA);
             }
         }
     }

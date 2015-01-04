@@ -3,6 +3,8 @@
 
 #include "chunkmanager.h"
 
+#define JOIN_FACES
+
 // TODO(antoine): Meilleur endroit pour cette initialisation ?
 
 VoxelTextureMap VoxelTextures[(uint)VoxelType::COUNT];
@@ -108,14 +110,14 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
 						a = getVoxel(data, x[0], x[1], x[2]);
 					else {
 						a = m_ChunkManager->getVoxel(offset + Coords{ x[0], x[1], x[2] });
-						//a.type = VoxelType::AIR;
+						a.type = VoxelType::AIR;
 					}
 					if (x[axis] < CHUNK_SIZE - 1) {
 						b = getVoxel(data, x[0] + q[0], x[1] + q[1], x[2] + q[2]);
 					}
 					else {
 						b = m_ChunkManager->getVoxel(offset + Coords{ x[0] + q[0], x[1] + q[1], x[2] + q[2] });
-						//b.type = VoxelType::AIR;
+						b.type = VoxelType::AIR;
 					}
 
 						
@@ -169,9 +171,10 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
                 for (int i = 0; i < CHUNK_SIZE;) {
                     Voxel c = m_mask[counter];
                     if (c.type != VoxelType::AIR) {
-						/*
-                        // Calcule de la largeur
-                        for (width = 1; (c == m_mask[counter + width]) && (m_offsetNormal[counter] == m_offsetNormal[counter + width]) &&
+#ifdef JOIN_FACES
+						uint8 light = m_light[counter];
+						// Calcule de la largeur
+						for (width = 1; (c.type == m_mask[counter + width].type) && (light == m_light[counter + width]) && (m_offsetNormal[counter] == m_offsetNormal[counter + width]) &&
                              i + width < CHUNK_SIZE; ++width) {
                         }
 
@@ -179,14 +182,14 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
                         bool done = false;
                         for (height = 1; j + height < CHUNK_SIZE; ++height) {
                             for (int k = 0; k < width; ++k)
-                                if (!(c == m_mask[counter + k + height * CHUNK_SIZE] && (m_offsetNormal[counter] == m_offsetNormal[counter + k + height * CHUNK_SIZE]))) {
+								if (!(c.type == m_mask[counter + k + height * CHUNK_SIZE].type && (light == m_light[counter + k + height * CHUNK_SIZE]) && (m_offsetNormal[counter] == m_offsetNormal[counter + k + height * CHUNK_SIZE]))) {
                                     done = true;
                                     break;
                                 }
                             if (done)
                                 break;
                         }
-						*/
+#endif
 
                         // Ajout d'une face
                         x[u] = i;
@@ -196,12 +199,22 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
 
                         int nIndex = axis * 2;
                         if (m_offsetNormal[counter]) {
-							dv[v] = 1;// height;
-							du[u] = 1;// width;
+#ifdef JOIN_FACES
+							dv[v] = height;
+							du[u] = width;
+#else
+							dv[v] = 1;
+							du[u] = 1;
+#endif
                             nIndex++;
                         } else {
-							du[v] = 1;//height;
-							dv[u] = 1;//width;
+#ifdef JOIN_FACES
+							du[v] = height;
+							dv[u] = width;
+#else
+							du[v] = 1;
+							dv[u] = 1;
+#endif
                             if (waterPass) {
                                 break;
                             }
@@ -218,7 +231,7 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
 						else if (nIndex == 4) t = textureMap.front;
 						else if (nIndex == 5) t = textureMap.back;						
 
-						uint8 light = m_light[counter];
+						
 
 						vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, t, light);
 						vertices[vertexCount++] = getVertex(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2], nIndex, t, light);
@@ -226,16 +239,17 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
 						vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, t, light);
 						vertices[vertexCount++] = getVertex(x[0] + du[0], x[1] + du[1], x[2] + du[2], nIndex, t, light);
 						vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, t, light);
-						/*
+#ifdef JOIN_FACES
                         for (int b = 0; b < width; ++b)
                             for (int a = 0; a < height; ++a)
                                 m_mask[counter + b + a * CHUNK_SIZE] = emptyVoxel;
 						
                         i += width; counter += width;
-						*/
+#else
 						m_mask[counter].type = VoxelType::AIR;
 						i++;
 						counter++;
+#endif
                     } else {
                         ++i;
                         ++counter;
