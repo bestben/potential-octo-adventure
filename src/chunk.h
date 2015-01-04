@@ -57,7 +57,7 @@ enum class VoxelType : uint8
 	LAVA,
 	LEAVES,
 	IGNORE_TYPE,
-	COUNT // On ajoute un elmeent pour avoir la taille de l'enum
+	COUNT 
 };
 
 inline uint8 lightSource(VoxelType type) {
@@ -79,6 +79,9 @@ struct Voxel
 		return source > _light ? source : _light;
 	}
 };
+
+
+
 
 
 
@@ -130,6 +133,19 @@ struct Chunk {
 
 };
 
+
+struct ChunkPile{
+	Chunk* pile[WORLD_HEIGHT];
+
+	// Cache access
+	Chunk* _lastChunk;
+	uint16 _lastChunkId;
+
+	uint16 pileI;
+	uint16 pileJ;
+
+	bool modified = false;
+};
 
 
 inline bool operator==(const Voxel &lhs, const Voxel &rhs){

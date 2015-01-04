@@ -49,7 +49,8 @@ SOURCES += \
     postprocess/framebuffer.cpp \
     postprocess/postprocess.cpp \
     npc/npc.cpp \
-    npc/pathfinding.cpp
+    npc/pathfinding.cpp \
+    save.cpp
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -130,4 +131,5 @@ HEADERS += \
     postprocess/framebuffer.h \
     postprocess/postprocess.h \
     npc/npc.h \
-    npc/pathfinding.hpp
+    npc/pathfinding.hpp \
+    save.h
