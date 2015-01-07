@@ -59,6 +59,8 @@ public:
      * Renvoie la position de la camera.
      */
     QVector3D getPosition() const;
+
+    QVector3D getFootPosition() const;
     /**
      * Renvoie la direction de DEPLACEMENT de la caméra.
      * NOTE : La direction de déplacement peut être différente de la direction

@@ -5,6 +5,8 @@
 
 #include "../chunk.h"
 
+#include <QTimer>
+
 class GameWindow;
 struct Body;
 class Pathfinding;
@@ -20,11 +22,18 @@ public:
     void draw(GameWindow* gl);
 
 private:
+    void updatePath();
+
     Body* m_body;
 
     Pathfinding* m_pathfinding;
     std::vector<Coords> m_path;
+    Coords m_playerPosition;
 
     WireframeBox m_box;
+
+    int m_lengthOfSight;
+    int m_pathRefreshRate; // Le nombre de millisecondes entre chaque mise à jour du pathfinding
+    QTimer m_refreshTimer;
 };
 

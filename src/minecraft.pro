@@ -50,6 +50,14 @@ SOURCES += \
     postprocess/postprocess.cpp \
     npc/npc.cpp \
     npc/pathfinding.cpp
+    
+QMAKE_CFLAGS_RELEASE  -= -O2
+QMAKE_CFLAGS_RELEASE  -= -O1
+QMAKE_CXXFLAGS_RELEASE  -= -O2
+QMAKE_CXXFLAGS_RELEASE  -= -O1
+QMAKE_CFLAGS_RELEASE  *= -O3
+QMAKE_LFLAGS_RELEASE  *= -O3
+QMAKE_CXXFLAGS_RELEASE  *= -O3
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp

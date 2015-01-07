@@ -5,7 +5,9 @@
 #include "../gamewindow.h"
 #include "pathfinding.hpp"
 
-Npc::Npc() {
+#include <iostream>
+
+Npc::Npc() : m_lengthOfSight{36}, m_pathRefreshRate{1000} {
 
 }
 
@@ -18,11 +20,20 @@ void Npc::init(GameWindow* gl) {
     int bodyID = gl->getPhysicManager().allocBody();
     m_body = gl->getPhysicManager().getBody(bodyID);
 
+    m_body->jumpSpeed = 150.0f;
     m_body->position = QVector3D(0.0f, CHUNK_SCALE*CHUNK_SIZE*5.5f, 0.0f );
 
     m_box.init(gl);
 
     m_pathfinding = new Pathfinding(gl->getChunkManager());
+
+    m_refreshTimer.setInterval(m_pathRefreshRate);
+    m_refreshTimer.connect(&m_refreshTimer, &QTimer::timeout, [this]() {
+        updatePath();
+    });
+
+    m_playerPosition = GetVoxelPosFromWorldPos(gl->getCamera().getFootPosition());
+    m_refreshTimer.start();
 }
 
 void Npc::destroy(GameWindow* gl) {
@@ -32,11 +43,14 @@ void Npc::destroy(GameWindow* gl) {
 }
 
 void Npc::update(GameWindow* gl, int dt) {
-    if (m_body->onGround) {
-        Coords current = GetVoxelPosFromWorldPos(m_body->position);
-        if (m_path.size() == 0) {
-            m_path = m_pathfinding->getPath(current, GetVoxelPosFromWorldPos(gl->getCamera().getPosition()));
-        }
+    m_playerPosition = GetVoxelPosFromWorldPos(gl->getCamera().getFootPosition());
+
+    Coords current = GetVoxelPosFromWorldPos(m_body->position);
+    if ((std::abs(current.i - m_playerPosition.i) < m_lengthOfSight) &&
+        (std::abs(current.j - m_playerPosition.j) < m_lengthOfSight) &&
+        (std::abs(current.k - m_playerPosition.k) < m_lengthOfSight)) {
+        m_box.setColor(1.0f, 0.0f, 0.0f);
+
         if (m_path.size() > 0) {
             Coords next = m_path.back();
             if (next == current) {
@@ -59,13 +73,29 @@ void Npc::update(GameWindow* gl, int dt) {
                 m_body->force = move;
                 if (next.j > current.j) {
                     m_body->jump = true;
+                } else {
+                    m_body->jump = false;
                 }
             }
         }
+    } else {
+        m_box.setColor(0.0f, 0.0f, 1.0f);
+        m_path.clear();
     }
 }
 
 void Npc::draw(GameWindow* gl) {
     m_box.setPosition(m_body->position);
     m_box.draw(gl);
+}
+
+void Npc::updatePath() {
+    if (m_body->onGround) {
+        Coords current = GetVoxelPosFromWorldPos(m_body->position);
+        if ((std::abs(current.i - m_playerPosition.i) < m_lengthOfSight) &&
+            (std::abs(current.j - m_playerPosition.j) < m_lengthOfSight) &&
+            (std::abs(current.k - m_playerPosition.k) < m_lengthOfSight)) {
+            m_path = m_pathfinding->getPath(current, m_playerPosition);
+        }
+    }
 }

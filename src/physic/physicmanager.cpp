@@ -15,6 +15,7 @@ PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{fa
         m_bodies[i].height = 12;
         m_bodies[i].width = 1;
         m_bodies[i].mass = 1;
+        m_bodies[i].jumpSpeed = JUMP_SPEED;
         m_bodies[i].onGround = false;
         m_bodies[i].inWater = false;
         m_bodies[i].isFullyInWater = false;
@@ -85,9 +86,9 @@ void PhysicManager::update(GameWindow* gl, int dt) {
 
                 // Gére le saut
                 if (body->jump && body->onGround && !body->inWater) {
-                    body->velocity.setY(JUMP_SPEED);
+                    body->velocity.setY(body->jumpSpeed);
                 } else if (body->jump && body->inWater) {
-                    body->velocity.setY(JUMP_SPEED / 10.0f);
+                    body->velocity.setY(body->jumpSpeed / 10.0f);
                 }
             } else {
                 avgAcceleration = QVector3D(0.0f, 0.0f, 0.0f);

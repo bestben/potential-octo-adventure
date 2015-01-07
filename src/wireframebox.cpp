@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-WireframeBox::WireframeBox() {
+WireframeBox::WireframeBox() : m_position{0.0f, 0.0f, 0.0f}, m_color{0.0f, 0.0f, 1.0f} {
 
 }
 
@@ -23,6 +23,7 @@ void WireframeBox::init(GameWindow* gl) {
 
     m_matrixUniform = m_program->uniformLocation("viewProj");
     m_posUniform = m_program->uniformLocation("boxPosition");
+    m_colorUniform = m_program->uniformLocation("color");
 
     m_program->bind();
     m_program->setUniformValue("boxScale", (float)(CHUNK_SCALE));
@@ -66,6 +67,7 @@ void WireframeBox::draw(GameWindow* gl) {
     m_program->bind();
     m_program->setUniformValue(m_matrixUniform, gl->getCamera().getViewProjMatrix());
     m_program->setUniformValue(m_posUniform, m_position);
+    m_program->setUniformValue(m_colorUniform, m_color);
 
     m_vao->bind();
 
@@ -77,4 +79,8 @@ void WireframeBox::draw(GameWindow* gl) {
 
 void WireframeBox::setPosition(const QVector3D& position) {
     m_position = position;
+}
+
+void WireframeBox::setColor(float r, float g, float b) {
+    m_color = QVector3D(r, g, b);
 }

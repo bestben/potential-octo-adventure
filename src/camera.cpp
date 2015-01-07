@@ -101,6 +101,11 @@ QVector3D Camera::getPosition() const {
     return m_body->position + QVector3D(0.0f, m_body->height, 0.0f);
 }
 
+QVector3D Camera::getFootPosition() const {
+    return m_body->position;
+}
+
+
 QVector3D Camera::getDirection() {
     QVector3D frontdir = frontDir();
     QVector3D rightdir = QVector3D::crossProduct(frontDir(), QVector3D{0.0f, 1.0f, 0.0f});

@@ -19,15 +19,19 @@ public:
 
     void setPosition(const QVector3D& position);
 
+    void setColor(float r, float g, float b);
+
 private:
     QOpenGLShaderProgram* m_program;
     QOpenGLBuffer* m_indices;
     QOpenGLVertexArrayObject* m_vao;
 
     int m_posUniform;
+    int m_colorUniform;
     int m_matrixUniform;
 
     QVector3D m_position;
+    QVector3D m_color;
 };
 
 #endif // WIREFRAMEBOX_H

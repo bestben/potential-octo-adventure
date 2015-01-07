@@ -148,10 +148,15 @@ bool Pathfinding::addNeighbors(Cell cell) {
         if (!isInside(mClosedNodes, pos)) {
             VoxelType type = mGrid.getVoxel(pos.i, pos.j, pos.k, &loaded).type;
             if (!loaded) {
-                std::cout << "not loaded" << std::endl;
                 return true;
             }
-            if ((type == VoxelType::AIR) || ((type != VoxelType::AIR) && (pos == mEnd))) {
+            VoxelType bottomType = mGrid.getVoxel(pos.i, pos.j - 1, pos.k, &loaded).type;
+            if (!loaded) {
+                return true;
+            }
+            bool isWalkable = (bottomType != VoxelType::WATER);
+            if (((type == VoxelType::AIR) && isWalkable) ||
+                ((type != VoxelType::AIR) && (pos == mEnd))) {
                 Node n;
                 n.cout_g = mClosedNodes[cell].cout_g + distance(cell, pos);
                     /* calcul du cout H du noeud à la destination */

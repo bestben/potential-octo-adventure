@@ -12,6 +12,7 @@ struct Body {
     float height;
     float width;
     float mass;
+    float jumpSpeed;
     bool jump;
     bool onGround;
     bool inWater;
