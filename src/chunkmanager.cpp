@@ -439,20 +439,25 @@ void ChunkManager::run() {
 			int bufferIndex = newChunk->chunkBufferIndex;
 			int vboIndex = newChunk->vboIndex;
 
+			bool newBuffer = false;
+			bool newVBO = false;
 
 			if (bufferIndex == -1){
 				bufferIndex = seekFreeChunkData();
-				if (bufferIndex != -1)
-					m_chunkDataLeft--;
+				newBuffer = true;
 			}
 			if (vboIndex == -1){
 				vboIndex = seekFreeBuffer();
-				if (vboIndex != -1)
-					m_vboLeft--;
+				newVBO = true;
 			}
 
 			if (bufferIndex != -1 && vboIndex != -1) {
 				
+				if(newBuffer)
+					m_chunkDataLeft--;
+				if(newVBO)
+					m_vboLeft--;
+
 				m_availableChunkData[bufferIndex] = false;
 				m_availableBuffer[vboIndex] = false;
 
