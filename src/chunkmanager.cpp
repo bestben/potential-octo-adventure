@@ -1,6 +1,6 @@
 #include "chunkmanager.h"
-
 #include "gamewindow.h"
+#include "save.h"
 
 #include <iostream>
 
@@ -164,7 +164,6 @@ void ChunkManager::destroy(GameWindow* gl) {
 	m_program = nullptr;
 	delete m_waterProgram;
 	m_waterProgram = nullptr;
-
 }
 
 void ChunkManager::update(GameWindow* gl) {
@@ -179,6 +178,7 @@ void ChunkManager::update(GameWindow* gl) {
 		float camY = gl->getCamera().getPosition().y();
 		float camZ = gl->getCamera().getPosition().z();
 
+		uint16 remesh_count = 0;
 
 		for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end();) {
 			auto chunk = *ite;
@@ -218,7 +218,7 @@ void ChunkManager::update(GameWindow* gl) {
 			}
 			else {
 				bool remesh = false;
-				if (chunk->isDirty || chunk->isLightDirty){
+				if ((chunk->isDirty || chunk->isLightDirty) && remesh_count < MAX_REMESH_PER_UPDATE){
 					chunk->isDirty = false;
 					chunk->isLightDirty = false;
 					remesh = true;
@@ -226,7 +226,7 @@ void ChunkManager::update(GameWindow* gl) {
 
 				// Regénération du mesh pour ce chunk
 				if (remesh && chunk->vboIndex != -1 && chunk->chunkBufferIndex != -1 && chunk->generated) {
-
+					remesh_count++;
 					Buffer* buffer = m_oglBuffers + chunk->vboIndex;
 					Voxel *data = getBufferAdress(chunk->chunkBufferIndex);
 					unsigned int totalCount = 0;
@@ -298,7 +298,6 @@ void ChunkManager::update(GameWindow* gl) {
 
 		m_FirstUpdate = false;
 	}
-
 }
 
 void ChunkManager::draw(GameWindow* gl) {
@@ -384,7 +383,6 @@ void ChunkManager::checkChunk(Coords pos) {
 		m_mutexGenerateQueue.unlock();
 	}
 	chunk->visible = true;
-
 }
 
 Voxel* ChunkManager::getBufferAdress(int index) {
@@ -423,29 +421,45 @@ void ChunkManager::run() {
 		
 
 		if (m_toGenerateChunkData.size() > 0) {
-			// Le chunk à créer
+			
 			m_mutexGenerateQueue.lock();
-			auto* newChunk = m_toGenerateChunkData.front();
-			m_toGenerateChunkData.pop_front();
+			Coords here = m_currentChunk;
+			std::sort(m_toGenerateChunkData.begin(), m_toGenerateChunkData.end(), [here](Chunk* c1, Chunk* c2)->bool{
+				int a = (c1->i - here.i)*(c1->i - here.i) + (c1->j - here.j)*(c1->j - here.j) + (c1->k - here.k)*(c1->k - here.k);
+				int b = (c2->i - here.i)*(c2->i - here.i) + (c2->j - here.j)*(c2->j - here.j) + (c2->k - here.k)*(c2->k - here.k);
+				return a>b;
+			});
+
+			
+			auto* newChunk = m_toGenerateChunkData.back();
+			m_toGenerateChunkData.pop_back();
 			m_mutexGenerateQueue.unlock();
-			// On enlève les doubles
+			
 			
 			int bufferIndex = newChunk->chunkBufferIndex;
 			int vboIndex = newChunk->vboIndex;
 
+			bool newBuffer = false;
+			bool newVBO = false;
 
-			if (bufferIndex == -1)
+			if (bufferIndex == -1){
 				bufferIndex = seekFreeChunkData();
-			if (vboIndex == -1)
+				newBuffer = true;
+			}
+			if (vboIndex == -1){
 				vboIndex = seekFreeBuffer();
+				newVBO = true;
+			}
 
 			if (bufferIndex != -1 && vboIndex != -1) {
 				
+				if(newBuffer)
+					m_chunkDataLeft--;
+				if(newVBO)
+					m_vboLeft--;
+
 				m_availableChunkData[bufferIndex] = false;
 				m_availableBuffer[vboIndex] = false;
-
-				m_vboLeft--;
-				m_chunkDataLeft--;
 
 				newChunk->vboIndex = vboIndex;
 				newChunk->chunkBufferIndex = bufferIndex;
@@ -455,11 +469,21 @@ void ChunkManager::run() {
 					// TODO Générer le nouveau chunk et le prendre du DD si déja présent
 					Voxel* data = getBufferAdress(bufferIndex);
 					if (data != nullptr){
-						newChunk->onlyAir = m_ChunkGenerator.generateChunk(data, newChunk->i, newChunk->j, newChunk->k);
+
+						bool skipGeneration = false;
+						if(ChunkExistsOnDisk(Coords{newChunk->i, newChunk->j, newChunk->k})){
+							skipGeneration = LoadChunkFromDisk(data, Coords{ newChunk->i, newChunk->j, newChunk->k }, &(newChunk->onlyAir));
+						}
+
+						if(!skipGeneration){
+							newChunk->onlyAir = m_ChunkGenerator.generateChunk(data, newChunk->i, newChunk->j, newChunk->k);
+							SaveChunkToDisk(data, Coords{newChunk->i, newChunk->j, newChunk->k}, newChunk->onlyAir);
+						}
+
 						m_LightManager->updateLighting(newChunk);
-						newChunk->isDirty = true;
+
 						newChunk->generated = true;
-						
+						newChunk->isDirty = true;
 					}
 					else {
 						// ?
@@ -473,9 +497,9 @@ void ChunkManager::run() {
 				m_toGenerateChunkData.push_back(newChunk);
 				m_mutexGenerateQueue.unlock();
 				
-#ifdef QT_DEBUG
+				#ifdef QT_DEBUG
 				std::cout << "Plus assez de blocs libre pour charger un chunk" << std::endl;
-#endif
+				#endif
 			}
 
 		}
@@ -582,6 +606,7 @@ VoxelType ChunkManager::placeVoxel(Coords pos, VoxelType type) {
 	Chunk* thisChunk = getChunk(GetChunkPosFromVoxelPos(pos));
 	
 
+
 	for (auto coords : modifiedChunks) {
 		Chunk* chunk = getChunk(coords);
 		if (chunk != nullptr) {
@@ -595,6 +620,9 @@ VoxelType ChunkManager::placeVoxel(Coords pos, VoxelType type) {
 		//m_toGenerateChunkData.push_front(thisChunk);
 		thisChunk->isLightDirty = true;
 		thisChunk->isDirty = true;
+
+		if(thisChunk->onlyAir && type != VoxelType::AIR)
+			thisChunk->onlyAir = false;
 	}
 
 	return oldType;
@@ -623,5 +651,4 @@ void ChunkManager::removeVoxel(Coords pos) {
 		thisChunk->isLightDirty = true;
 		thisChunk->isDirty = true;
 	}
-
 }

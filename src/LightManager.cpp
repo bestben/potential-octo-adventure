@@ -132,6 +132,7 @@ void LightManager::removeVoxel(Coords pos, QSet<Coords> &modifiedChunks) {
 			if (newVoxel.type == VoxelType::IGNORE_TYPE)
 				break;
 
+			//lightSources.insert(newPos);
 			lightNeighbors(newPos, modifiedChunks);
 
 		}
@@ -172,9 +173,10 @@ void LightManager::removeVoxel(Coords pos, QSet<Coords> &modifiedChunks) {
 	}
 
 	if (found) {
+		//lightSources.insert(maxLightPos);
 		lightNeighbors(maxLightPos, modifiedChunks);
 	}
-	
+	//spreadLight(lightSources, modifiedChunks);
 
 }
 
@@ -298,12 +300,13 @@ bool LightManager::propagateSunLight(Chunk* chunk, QSet<Coords> &lightSources, Q
 			uint8 oldlight = v.getLight();
 			if (currentLight > oldlight) {
 				mChunkManager->setVoxel(offset + pos, v.type, currentLight);
-				modifiedChunks.insert(GetChunkPosFromVoxelPos(offset + pos));
 			}
 
 			if (reduce_light(currentLight) != 0) {
 				lightSources.insert(offset + pos);
 			}
+
+			modifiedChunks.insert(GetChunkPosFromVoxelPos(offset + pos));
 
 		}
 
@@ -339,8 +342,8 @@ uint16 LightManager::propagateSunLight(Coords start, QSet<Coords> &modifiedChunk
 
 		if (!isOpaque(v)) {
 			mChunkManager->setVoxel(pos, v.type, SUN_LIGHT);
-			modifiedChunks.insert(GetChunkPosFromVoxelPos(pos));
 		}
+		modifiedChunks.insert(GetChunkPosFromVoxelPos(pos));
 
 	}
 
@@ -361,10 +364,7 @@ void LightManager::unspreadLight(QHash<Coords, uint8> &from, QSet<Coords> &light
 	if (from.isEmpty())
 		return;
 
-
-	QHash<Coords, uint8> unlightedSun;
-
-
+	QHash<Coords, uint8> unlighted;
 
 	for (auto it = from.begin(); it != from.end(); ++it) {
 
@@ -380,28 +380,27 @@ void LightManager::unspreadLight(QHash<Coords, uint8> &from, QSet<Coords> &light
 
 			if (v.getLight() < oldlight && v.getLight() != 0) {
 				if (!isOpaque(v)) {
-					unlightedSun[newPos] = v.getLight();
+					unlighted[newPos] = v.getLight();
 					mChunkManager->setVoxel(newPos, v.type, 0);
-					modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
 				}
 			}
 			else if (v.getLight() >= oldlight){
 				lightSources.insert(newPos);
 			}
-
+			modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
 		}
 
 	}
 
 	
 
-	if (!unlightedSun.isEmpty()) {
-		unspreadLight(unlightedSun, lightSources, modifiedChunks);
+	if (!unlighted.isEmpty()) {
+		unspreadLight(unlighted, lightSources, modifiedChunks);
 	}
 
 }
 
-void LightManager::unlightNeighbors(Coords coords, uint8 old_light, QSet<Coords> light_sources, QSet<Coords> &modifiedChunks) {
+void LightManager::unlightNeighbors(Coords coords, uint8 old_light, QSet<Coords> &light_sources, QSet<Coords> &modifiedChunks) {
 
 	QHash<Coords, uint8> fromSun;
 	fromSun[coords] = old_light;
@@ -451,14 +450,12 @@ void LightManager::spreadLight(QSet<Coords> &lightSources, QSet<Coords> &modifie
 
 			if (newVoxel.getLight() > unreduce_light(oldlight)) {
 				lighted.insert(newPos);
-				modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
 			}
 			if (newVoxel.getLight() < newlight && !isOpaque(newVoxel)) {
 				mChunkManager->setVoxel(newPos, newVoxel.type, newlight);
-				modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
 				lighted.insert(newPos);
 			}
-
+			modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
 
 		}
 
@@ -476,558 +473,3 @@ void LightManager::lightNeighbors(Coords coords, QSet<Coords> &modifiedChunks) {
 }
 
 
-
-
-
-
-#if 0
-
-void LightManager::processChunk(Chunk* chunk) {
-	Coords c = { chunk->i, chunk->j, chunk->k };
-
-	auto it = torchLightUnloadedQueues.find(c);
-	if (it != torchLightUnloadedQueues.end()){
-		for (LightNode node : *it) {
-			node.chunk = chunk;
-			torchLightQueue.enqueue(node);
-		}
-		torchLightUnloadedQueues.remove({ chunk->i, chunk->j, chunk->k });
-	}
-
-	auto itr = torchLightRemovalUnloadedQueues.find(c);
-	if (itr != torchLightRemovalUnloadedQueues.end()){
-		for (LightRemovalNode node : *itr) {
-			node.chunk = chunk;
-			torchLightRemovalQueue.enqueue(node);
-		}
-		torchLightRemovalUnloadedQueues.remove({ chunk->i, chunk->j, chunk->k });
-	}
-
-	auto its = lightUnloadedQueues.find(c);
-	if (its != lightUnloadedQueues.end()){
-		for (LightNode node : *its) {
-			node.chunk = chunk;
-			lightQueue.enqueue(node);
-		}
-		lightUnloadedQueues.remove({ chunk->i, chunk->j, chunk->k });
-	}
-
-	auto itsr = lightRemovalUnloadedQueues.find(c);
-	if (itsr != lightRemovalUnloadedQueues.end()){
-		for (LightRemovalNode node : *itsr) {
-			node.chunk = chunk;
-			lightRemovalQueue.enqueue(node);
-		}
-		lightRemovalUnloadedQueues.remove({ chunk->i, chunk->j, chunk->k });
-	}
-	
-}
-
-void LightManager::initializelight(Chunk* chunk) {
-	// Calcul de la lumière du soleil
-	Voxel* data = nullptr;
-
-	if (chunk->j < 6) {
-		if (chunk->chunkYP) {
-			// On assume que le light est déjà calculé pour le chunk au dessus
-			Chunk* top = chunk->chunkYP;
-			data = mChunkManager->getBufferAdress(top->chunkBufferIndex);
-			
-			if (data != nullptr) {
-				for (int i = 0; i < CHUNK_SIZE; i++) {
-					for (int k = 0; k < CHUNK_SIZE; k++) {
-						int index = IndexVoxelRelPos({ i, 0, k });
-						if (data[index].light != 0) {
-							lightQueue.enqueue({ { i, 0, k }, top });
-						}
-					}
-				}
-			}
-		}
-		else {
-			// Que faire ?
-		}
-	}
-	else {
-		// On est le chunk le plus haut, la couche la plus haut du monde génère la lumière du soleil
-		data = mChunkManager->getBufferAdress(chunk->chunkBufferIndex);
-		if (data != nullptr) {
-			for (int i = 0; i < CHUNK_SIZE; i++) {
-				for (int k = 0; k < CHUNK_SIZE; k++) {
-					int index = IndexVoxelRelPos({ i, CHUNK_SIZE - 1, k });
-					data[index].light = 15;
-					lightQueue.enqueue({ { i, CHUNK_SIZE - 1, k }, chunk });
-				}
-			}
-		}
-	}
-
-	
-}
-
-void LightManager::placeTorchLight(Coords voxelCoords, uint8 amount) {
-
-
-	Coords chunkCoords = GetChunkPosFromVoxelPos(voxelCoords);
-	auto* chunk = mChunkManager->getChunk(chunkCoords);
-
-	if (chunk == nullptr)
-		return;
-	
-	// Si l'utilisateur essaye de placer une lumière sur un chunk pas chargé ya un problème !
-	if (chunk->chunkBufferIndex == -1)
-		return;
-
-	Voxel* data = mChunkManager->getBufferAdress(chunk->chunkBufferIndex);
-
-	auto pos = GetVoxelRelPos(voxelCoords);
-	if (amount >= 16) amount = 15;
-
-	data[IndexVoxelRelPos(pos)].torchLight = amount;
-	torchLightQueue.enqueue({ pos, chunk });
-	
-	
-}
-
-void LightManager::voxelChanged(Coords voxelCoords) {
-
-
-	Coords chunkCoords = GetChunkPosFromVoxelPos(voxelCoords);
-	auto* chunk = mChunkManager->getChunk(chunkCoords);
-
-	if (chunk == nullptr)
-		return;
-
-	if (chunk->chunkBufferIndex == -1)
-		return;
-
-	Voxel* data = mChunkManager->getBufferAdress(chunk->chunkBufferIndex);
-
-	auto pos = GetVoxelRelPos(voxelCoords);
-	int index = IndexVoxelRelPos(pos);
-
-	uint8 sun = data[index].light;
-	uint8 torch = data[index].torchLight;
-	if (isOpaque(data[index])) {
-		data[IndexVoxelRelPos(pos)].light = 0;
-		lightRemovalQueue.enqueue({ pos, chunk, sun });
-
-		data[IndexVoxelRelPos(pos)].torchLight = 0;
-		torchLightRemovalQueue.enqueue({ pos, chunk, torch });
-	}
-	else {
-		//TODO: Repropager la lumière
-	}
-	
-
-
-}
-
-void LightManager::removeTorchLight(Coords voxelCoords) {
-
-
-	Coords chunkCoords = GetChunkPosFromVoxelPos(voxelCoords);
-	auto* chunk = mChunkManager->getChunk(chunkCoords);
-
-	if (chunk == nullptr)
-		return;
-
-	if (chunk->chunkBufferIndex == -1)
-		return;
-
-	Voxel* data = mChunkManager->getBufferAdress(chunk->chunkBufferIndex);
-
-	auto pos = GetVoxelRelPos(voxelCoords);
-
-	int index = IndexVoxelRelPos(pos);
-	uint8 value = data[index].torchLight;
-	torchLightRemovalQueue.enqueue({ pos, chunk, value});
-	data[index].torchLight = 0;
-
-}
-
-void LightManager::update(GameWindow* gl) {
-	int cnt = 0;
-	dirtyLightMaps.clear();
-
-	while (!torchLightRemovalQueue.isEmpty() && cnt < MAX_LIGHT_UPDATES_PER_FRAME) {
-		cnt++;
-		auto node = torchLightRemovalQueue.front();
-		torchLightRemovalQueue.pop_front();
-
-		if (node.chunk == nullptr) {
-			//TODO: DO something maybe ?
-			continue;
-		}
-
-		Voxel* data = mChunkManager->getBufferAdress(node.chunk->chunkBufferIndex);
-
-		if (data == nullptr) {
-			torchLightRemovalUnloadedQueues[{node.chunk->i, node.chunk->j, node.chunk->k}].enqueue(node);
-			continue;
-		}
-
-
-		processNodeRemovalNeighbor(node, { -1, 0, 0 }, data);
-		processNodeRemovalNeighbor(node, { 1, 0, 0 }, data);
-		processNodeRemovalNeighbor(node, { 0, -1, 0 }, data);
-		processNodeRemovalNeighbor(node, { 0, 1, 0 }, data);
-		processNodeRemovalNeighbor(node, { 0, 0, -1 }, data);
-		processNodeRemovalNeighbor(node, { 0, 0, 1 }, data);
-
-	}
-
-	while (!torchLightQueue.isEmpty() && cnt < MAX_LIGHT_UPDATES_PER_FRAME) {
-		cnt++;
-		auto node = torchLightQueue.front();
-		torchLightQueue.pop_front();
-
-		if (node.chunk == nullptr) {
-			// Ya un gros problème la !
-			continue;
-		}
-
-		Voxel* data = mChunkManager->getBufferAdress(node.chunk->chunkBufferIndex);
-
-		if (data == nullptr) {
-			torchLightUnloadedQueues[{node.chunk->i, node.chunk->j, node.chunk->k}].enqueue(node);
-			continue;
-		}
-		int index = IndexVoxelRelPos(node.pos);
-		uint8 light = data[index].torchLight;
-
-		processNodeNeighbor(node, { -1, 0, 0 }, light, data);
-		processNodeNeighbor(node, { 1, 0, 0 }, light, data);
-		processNodeNeighbor(node, { 0, -1, 0 }, light, data);
-		processNodeNeighbor(node, { 0, 1, 0 }, light, data);
-		processNodeNeighbor(node, { 0, 0, -1 }, light, data);
-		processNodeNeighbor(node, { 0, 0, 1 }, light, data);
-
-
-	} // End loop
-
-
-	while (!lightRemovalQueue.isEmpty() && cnt < MAX_LIGHT_UPDATES_PER_FRAME) {
-		cnt++;
-		auto node = lightRemovalQueue.front();
-		lightRemovalQueue.pop_front();
-
-		if (node.chunk == nullptr) {
-			//TODO: DO something maybe ?
-			continue;
-		}
-
-		Voxel* data = mChunkManager->getBufferAdress(node.chunk->chunkBufferIndex);
-
-		if (data == nullptr) {
-			lightRemovalUnloadedQueues[{node.chunk->i, node.chunk->j, node.chunk->k}].enqueue(node);
-			continue;
-		}
-
-		processSunNodeRemovalNeighbor(node, { -1, 0, 0 }, data);
-		processSunNodeRemovalNeighbor(node, { 1, 0, 0 }, data);
-		processSunNodeRemovalNeighbor(node, { 0, -1, 0 }, data);
-		processSunNodeRemovalNeighbor(node, { 0, 1, 0 }, data);
-		processSunNodeRemovalNeighbor(node, { 0, 0, -1 }, data);
-		processSunNodeRemovalNeighbor(node, { 0, 0, 1 }, data);
-
-	}
-
-
-	while (!lightQueue.isEmpty() && cnt < MAX_LIGHT_UPDATES_PER_FRAME) {
-		cnt++;
-		auto node = lightQueue.front();
-		lightQueue.pop_front();
-
-		if (node.chunk == nullptr) {
-			// Ya un gros problème la !
-			continue;
-		}
-
-		Voxel* data = mChunkManager->getBufferAdress(node.chunk->chunkBufferIndex);
-
-		if (data == nullptr) {
-			lightUnloadedQueues[{node.chunk->i, node.chunk->j, node.chunk->k}].enqueue(node);
-			continue;
-		}
-		int index = IndexVoxelRelPos(node.pos);
-		uint8 light = data[index].light;
-
-		processSunNodeNeighbor(node, { -1, 0, 0 }, light, data);
-		processSunNodeNeighbor(node, { 1, 0, 0 }, light, data);
-		processSunNodeNeighbor(node, { 0, -1, 0 }, light, data);
-		processSunNodeNeighbor(node, { 0, 1, 0 }, light, data);
-		processSunNodeNeighbor(node, { 0, 0, -1 }, light, data);
-		processSunNodeNeighbor(node, { 0, 0, 1 }, light, data);
-
-
-	} // End loop
-
-
-	while (!dirtyLightMaps.isEmpty()) {
-		Chunk *chunk = dirtyLightMaps.front();
-		dirtyLightMaps.pop_front();
-
-		if (chunk->isDirty)
-			mChunkManager->uploadLightMap(gl, chunk);
-
-	}
-}
-
-void LightManager::processNodeNeighbor(LightNode& node, Coords dir, uint8 light, Voxel* currentData) {
-	
-	Voxel* data = currentData;
-
-	Coords newPos = node.pos + dir;
-	Chunk* newChunk = node.chunk;
-
-	if (newPos.i < 0) {
-		newPos.i += CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i - 1, newChunk->j, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.i >= CHUNK_SIZE) {
-		newPos.i -= CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i + 1, newChunk->j, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.j < 0) {
-		newPos.j += CHUNK_SIZE;
-		if (newChunk->j == 0) {
-			return;
-		}
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j - 1, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.j >= CHUNK_SIZE) {
-		newPos.j -= CHUNK_SIZE;
-		if (newChunk->j == 6) {
-			return;
-		}
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j + 1, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.k < 0) {
-		newPos.k += CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k - 1 });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.k >= CHUNK_SIZE) {
-		newPos.k -= CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k + 1 });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-
-
-	if (data != nullptr) {
-		int newIndex = IndexVoxelRelPos(newPos);
-		Voxel* newVoxel = &data[newIndex];
-		if (!isOpaque(*newVoxel) && newVoxel->torchLight + 2 <= light) {
-			newVoxel->torchLight = light - 1;
-			dirtyLightMaps.push_back(newChunk);
-			newChunk->isDirty = true;
-			torchLightQueue.enqueue({ newPos, newChunk });
-		}
-	}
-	else {
-		torchLightUnloadedQueues[{node.chunk->i, node.chunk->j, node.chunk->k}].enqueue(node);
-	}
-
-}
-
-void LightManager::processNodeRemovalNeighbor(LightRemovalNode& node, Coords dir, Voxel* currentData) {
-
-	Voxel* data = currentData;
-
-	Coords newPos = node.pos + dir;
-	Chunk* newChunk = node.chunk;
-
-	if (newPos.i < 0) {
-		newPos.i += CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i - 1, newChunk->j, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.i >= CHUNK_SIZE) {
-		newPos.i -= CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i + 1, newChunk->j, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.j < 0) {
-		newPos.j += CHUNK_SIZE;
-		if (newChunk->j == 0) {
-			return;
-		}
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j - 1, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.j >= CHUNK_SIZE) {
-		newPos.j -= CHUNK_SIZE;
-		if (newChunk->j == 6) {
-			return;
-		}
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j + 1, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.k < 0) {
-		newPos.k += CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k - 1 });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.k >= CHUNK_SIZE) {
-		newPos.k -= CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k + 1 });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-
-	if (data != nullptr) {
-		int newIndex = IndexVoxelRelPos(newPos);
-		Voxel* newVoxel = &data[newIndex];
-		uint8 neighborLevel = newVoxel->torchLight;
-
-		if (neighborLevel != 0 && neighborLevel < node.value) {
-			newVoxel->torchLight = 0;
-			dirtyLightMaps.push_back(newChunk);
-			newChunk->isDirty = true;
-			torchLightRemovalQueue.enqueue({ newPos, newChunk, neighborLevel });
-		}
-		else if (neighborLevel >= node.value) {
-			torchLightQueue.enqueue({newPos, newChunk});
-		}
-	}
-	else {
-		torchLightRemovalUnloadedQueues[{node.chunk->i, node.chunk->j, node.chunk->k}].enqueue(node);
-	}
-
-}
-
-void LightManager::processSunNodeNeighbor(LightNode& node, Coords dir, uint8 light, Voxel* currentData) {
-
-	Voxel* data = currentData;
-
-	Coords newPos = node.pos + dir;
-	Chunk* newChunk = node.chunk;
-
-	if (newPos.i < 0) {
-		newPos.i += CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i - 1, newChunk->j, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.i >= CHUNK_SIZE) {
-		newPos.i -= CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i + 1, newChunk->j, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.j < 0) {
-		newPos.j += CHUNK_SIZE;
-		if (newChunk->j == 0) {
-			return;
-		}
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j - 1, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.j >= CHUNK_SIZE) {
-		newPos.j -= CHUNK_SIZE;
-		if (newChunk->j == 6) {
-			return;
-		}
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j + 1, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.k < 0) {
-		newPos.k += CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k - 1 });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.k >= CHUNK_SIZE) {
-		newPos.k -= CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k + 1 });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-
-
-	if (data != nullptr) {
-		int newIndex = IndexVoxelRelPos(newPos);
-		Voxel* newVoxel = &data[newIndex];
-		if (!isOpaque(*newVoxel) && newVoxel->light + 2 <= light) {
-			if (dir != Coords{0,-1,0})
-				newVoxel->light = light - 1;
-			else
-				newVoxel->light = light;
-
-			dirtyLightMaps.push_back(newChunk);
-			newChunk->isDirty = true;
-			lightQueue.enqueue({ newPos, newChunk });
-		}
-	}
-	else {
-		lightUnloadedQueues[{node.chunk->i, node.chunk->j, node.chunk->k}].enqueue(node);
-	}
-
-}
-
-void LightManager::processSunNodeRemovalNeighbor(LightRemovalNode& node, Coords dir, Voxel* currentData) {
-
-	Voxel* data = currentData;
-
-	Coords newPos = node.pos + dir;
-	Chunk* newChunk = node.chunk;
-
-	if (newPos.i < 0) {
-		newPos.i += CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i - 1, newChunk->j, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.i >= CHUNK_SIZE) {
-		newPos.i -= CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i + 1, newChunk->j, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.j < 0) {
-		newPos.j += CHUNK_SIZE;
-		if (newChunk->j == 0) {
-			return;
-		}
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j - 1, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.j >= CHUNK_SIZE) {
-		newPos.j -= CHUNK_SIZE;
-		if (newChunk->j == 6) {
-			return;
-		}
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j + 1, newChunk->k });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.k < 0) {
-		newPos.k += CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k - 1 });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-	else if (newPos.k >= CHUNK_SIZE) {
-		newPos.k -= CHUNK_SIZE;
-		newChunk = mChunkManager->getChunk({ newChunk->i, newChunk->j, newChunk->k + 1 });
-		data = mChunkManager->getBufferAdress(newChunk->chunkBufferIndex);
-	}
-
-	if (data != nullptr) {
-		int newIndex = IndexVoxelRelPos(newPos);
-		Voxel* newVoxel = &data[newIndex];
-		uint8 neighborLevel = newVoxel->light;
-
-		if ((node.value == 15 && dir == Coords{ 0, -1, 0 } )|| (neighborLevel != 0 && neighborLevel < node.value)) {
-			newVoxel->light = 0;
-			dirtyLightMaps.push_back(newChunk);
-			newChunk->isDirty = true;
-			lightRemovalQueue.enqueue({ newPos, newChunk, neighborLevel });
-		}
-		else if (neighborLevel >= node.value) {
-			lightQueue.enqueue({ newPos, newChunk });
-		}
-	}
-	else {
-		lightRemovalUnloadedQueues[{node.chunk->i, node.chunk->j, node.chunk->k}].enqueue(node);
-	}
-
-}
-
-#endif

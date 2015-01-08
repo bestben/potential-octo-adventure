@@ -52,6 +52,7 @@ SOURCES += \
     npc/pathfinding.cpp \
     npc/npcmanager.cpp \
     npc/creeper.cpp
+    save.cpp
     
 QMAKE_CFLAGS_RELEASE  -= -O2
 QMAKE_CFLAGS_RELEASE  -= -O1
@@ -143,3 +144,4 @@ HEADERS += \
     npc/pathfinding.hpp \
     npc/npcmanager.h \
     npc/creeper.h
+    save.h

@@ -2,8 +2,6 @@
 
 #include <QtGui/QOpenGLFunctions>
 #include <atomic>
-#include <vector>
-#include <tuple>
 #include <QThread>
 #include <QLinkedList>
 #include <QTime>
@@ -12,6 +10,7 @@
 #include "meshgenerator.h"
 #include "biomes/ChunkGenerator.h"
 #include "LightManager.h"
+#include <QtCore/qvector.h>
 
 class QOpenGLVertexArrayObject;
 class QOpenGLShaderProgram;
@@ -19,6 +18,8 @@ class QOpenGLTexture;
 class GameWindow;
 class MeshGenerator;
 
+
+#define MAX_REMESH_PER_UPDATE 8
 struct Buffer {
     QOpenGLVertexArrayObject* vao;
     GLuint vbo;
@@ -138,7 +139,8 @@ private:
 	
 	QLinkedList<Chunk*> m_toInvalidateBuffer;
 	*/
-	QLinkedList<Chunk*> m_toGenerateChunkData;
+	//QLinkedList<Chunk*> m_toGenerateChunkData;
+	QVector<Chunk*> m_toGenerateChunkData;
 	QLinkedList<Chunk*> m_toGenerateBuffer;
 	
 
