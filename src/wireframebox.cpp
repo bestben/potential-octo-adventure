@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-WireframeBox::WireframeBox() : m_position{0.0f, 0.0f, 0.0f}, m_color{0.0f, 0.0f, 1.0f} {
+WireframeBox::WireframeBox() : m_position{0.0f, 0.0f, 0.0f}, m_color{0.0f, 0.0f, 1.0f}, m_width(CHUNK_SCALE), m_height(CHUNK_SCALE) {
 
 }
 
@@ -26,7 +26,8 @@ void WireframeBox::init(GameWindow* gl) {
     m_colorUniform = m_program->uniformLocation("color");
 
     m_program->bind();
-    m_program->setUniformValue("boxScale", (float)(CHUNK_SCALE));
+    m_program->setUniformValue("boxWidth", m_width);
+    m_program->setUniformValue("boxHeight", m_height);
     m_program->release();
 
     GLushort indices[24] = {
@@ -84,3 +85,9 @@ void WireframeBox::setPosition(const QVector3D& position) {
 void WireframeBox::setColor(float r, float g, float b) {
     m_color = QVector3D(r, g, b);
 }
+
+void WireframeBox::setSize(float width, float height) {
+    m_width = width;
+    m_height = height;
+}
+

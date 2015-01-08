@@ -18,8 +18,8 @@ public:
     void draw(GameWindow* gl);
 
     void setPosition(const QVector3D& position);
-
     void setColor(float r, float g, float b);
+    void setSize(float width, float height);
 
 private:
     QOpenGLShaderProgram* m_program;
@@ -32,6 +32,8 @@ private:
 
     QVector3D m_position;
     QVector3D m_color;
+    float m_width;
+    float m_height;
 };
 
 #endif // WIREFRAMEBOX_H
