@@ -7,8 +7,8 @@
 
 using Cell = Pathfinding::Cell;
 
-Pathfinding::Pathfinding(ChunkManager& grid) : mGrid{grid}, mLastDir{} {
-
+Pathfinding::Pathfinding(ChunkManager& grid, int maxLength) : mGrid{grid}, mLastDir{}, m_maxLength{maxLength}{
+    m_path.reserve(m_maxLength);
 }
 
 std::vector<Cell> Pathfinding::getPath(Cell start, Cell end) {
@@ -39,53 +39,46 @@ std::vector<Cell> Pathfinding::getPath(Cell start, Cell end) {
         error = addNeighbors(current);
     }
 
-    std::vector<Cell> path;
     /* si la destination est atteinte, on remonte le chemin */
     if (current == end) {
-        path = getPathFromClosedMap();
-    } else{
-        path.clear();
+        getPathFromClosedMap();
+    } else {
+        m_path.clear();
         #ifdef QT_DEBUG
         std::cout << "Impossible de trouver un chemin dans la grille" << std::endl;
         #endif
     }
 
 
-    return path;
+    return m_path;
 }
 
-std::vector<Cell> Pathfinding::getPathFromClosedMap() {
-    std::vector<Cell> path;
+void Pathfinding::getPathFromClosedMap() {
+    m_path.clear();
+    if (m_path.capacity() < m_maxLength) {
+        m_path.reserve(m_maxLength);
+    }
     /* l'arrivée est le dernier élément de la liste fermée */
     Node& tmp = mClosedNodes[mEnd];
 
-    path.push_back(mEnd);
+    m_path.push_back(mEnd);
 
     while (tmp.parent != mStart) {
-        path.push_back(tmp.parent);
+        m_path.push_back(tmp.parent);
         tmp = mClosedNodes[tmp.parent];
     }
-
-    //path.push_back(mStart);
-
-    /*for (unsigned int i = 0; i < path.size() / 2; ++i) {
-        Cell tmpCell = path[i];
-        path[i] = path[path.size() - i - 1];
-        path[path.size() - i - 1] = tmpCell;
-    }*/
-
-    return path;
 }
 
 Cell Pathfinding::getBestNode() {
     long m_coutf = mOpenedNodes.begin()->second.cout_f;
     Cell cell = mOpenedNodes.begin()->first;
 
-    for (auto& it : mOpenedNodes)
+    for (auto& it : mOpenedNodes) {
         if (it.second.cout_f < m_coutf){
             m_coutf = it.second.cout_f;
             cell = it.first;
         }
+    }
 
     return cell;
 }
@@ -96,7 +89,7 @@ long Pathfinding::distance(Cell c1, Cell c2) {
             std::abs(c1.k - c2.k);
 }
 
-bool Pathfinding::isInside(std::map<Cell, Node>& nodeMap, Cell cell) {
+bool Pathfinding::isInside(std::unordered_map<Cell, Node>& nodeMap, Cell cell) {
     return nodeMap.find(cell) != nodeMap.end();
 }
 
@@ -114,36 +107,26 @@ std::vector<Cell> Pathfinding::getLastNodes(Cell cell, int n) {
 }
 
 bool Pathfinding::addNeighbors(Cell cell) {
-    std::vector<Cell> dir{
-        {0,  0, -1}
+    static std::vector<Cell> dir{
+        {0,  -1, 0},
+        {0,  0,  1},
+        {0,  0,  -1},
+        {1,  0,  0},
+        {-1,  0,  0},
+        {0,  1,  0}
     };
+    int dirCount = 5;
     bool loaded = true;
     VoxelType type = mGrid.getVoxel(cell.i, cell.j - 1, cell.k, &loaded).type;
     if (!loaded) {
-        std::cout << "not loaded" << std::endl;
         return true;
     }
-    //if (type != VoxelType::AIR) {
-        dir.push_back({0,  1,  0});
-        dir.push_back({0,  -1,  0});
-        dir.push_back({1,  0,  0});
-        dir.push_back({-1,  0,  0});
-    //}
-
-    int maxUpCell = 2;
-    std::vector<Cell> cells = getLastNodes(cell, maxUpCell);
-    int n = 1;
-    for (unsigned int i = 0; i < (cells.size() - 1); ++i) {
-        int dz = cells[i].k - cells[i + 1].k;
-        if (dz != 0) {
-            n++;
-        }
-    }
-    if (n < maxUpCell) {
-        dir.push_back({0,  0,  1});
+    if (type != VoxelType::AIR) {
+        dirCount = 6;
     }
 
-    for (Coords& d : dir) {
+    for (int i = 0; i < dirCount; ++i) {
+        Cell& d = dir[i];
         Cell pos = cell + d;
         if (!isInside(mClosedNodes, pos)) {
             VoxelType type = mGrid.getVoxel(pos.i, pos.j, pos.k, &loaded).type;
@@ -159,7 +142,10 @@ bool Pathfinding::addNeighbors(Cell cell) {
                 ((type != VoxelType::AIR) && (pos == mEnd))) {
                 Node n;
                 n.cout_g = mClosedNodes[cell].cout_g + distance(cell, pos);
-                    /* calcul du cout H du noeud à la destination */
+                if (n.cout_g > m_maxLength) {
+                    break;
+                }
+                /* calcul du cout H du noeud à la destination */
                 n.cout_h = distance(pos, mEnd);
                 n.cout_f = n.cout_g + n.cout_h;
                 n.parent = cell;

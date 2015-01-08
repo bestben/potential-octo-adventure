@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 #include "../chunk.h"
 
@@ -14,7 +14,7 @@ class Pathfinding {
 public:
     using Cell = Coords;
 
-    Pathfinding(ChunkManager& grid);
+    Pathfinding(ChunkManager& grid, int maxLength);
     /**
      * Renvoie un chemin entre start et end.
      * NOTE : renvoie une exception si aucun chemin n'est trouvé.
@@ -39,7 +39,7 @@ private:
     /**
      * Test si un noeud est déjà présent dans une map.
      */
-    bool isInside(std::map<Cell, Node>& nodeMap, Cell cell);
+    bool isInside(std::unordered_map<Cell, Node>& nodeMap, Cell cell);
     /**
      *
      */
@@ -49,18 +49,23 @@ private:
      */
     void addToClosedMap(Cell cell);
 
-    std::vector<Cell> getPathFromClosedMap();
+    void getPathFromClosedMap();
 
     std::vector<Cell> getLastNodes(Cell cell, int n);
 
     // ATTRIBUTS
 
     ChunkManager& mGrid;
-    std::map<Cell, Node> mOpenedNodes;
-    std::map<Cell, Node> mClosedNodes;
+    std::unordered_map<Cell, Node> mOpenedNodes;
+    std::unordered_map<Cell, Node> mClosedNodes;
     Cell mStart;
     Cell mEnd;
 
     Cell mLastDir;
+
+    // La longueur maximum du chemin à rechercher
+    int m_maxLength;
+
+    std::vector<Cell> m_path;
 };
 

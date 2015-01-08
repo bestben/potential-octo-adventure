@@ -13,27 +13,19 @@ class Pathfinding;
 
 class Npc {
 public:
-    Npc();
-    ~Npc();
+    virtual ~Npc() {}
 
-    void init(GameWindow* gl);
-    void destroy(GameWindow* gl);
-    void update(GameWindow* gl, int dt);
-    void draw(GameWindow* gl);
+    virtual void init(GameWindow* gl) = 0;
+    virtual void destroy(GameWindow* gl) = 0;
+    virtual void update(GameWindow* gl, int dt) = 0;
+    virtual void draw(GameWindow* gl) = 0;
+
+    virtual bool isDead() = 0;
+    virtual bool canBeDestroyed() = 0;
+
+    virtual void setPosition(const QVector3D& pos) = 0;
 
 private:
-    void updatePath();
 
-    Body* m_body;
-
-    Pathfinding* m_pathfinding;
-    std::vector<Coords> m_path;
-    Coords m_playerPosition;
-
-    WireframeBox m_box;
-
-    int m_lengthOfSight;
-    int m_pathRefreshRate; // Le nombre de millisecondes entre chaque mise à jour du pathfinding
-    QTimer m_refreshTimer;
 };
 

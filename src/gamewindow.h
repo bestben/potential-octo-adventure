@@ -11,6 +11,7 @@
 
 #include "chunkmanager.h"
 #include "physic/physicmanager.h"
+#include "npc/npcmanager.h"
 #include "postprocess/framebuffer.h"
 #include "postprocess/postprocess.h"
 
@@ -80,11 +81,10 @@ private:
 
     ChunkManager m_chunkManager;
     PhysicManager m_physicManager;
-    FrameBuffer m_framebuffer;
+    NpcManager m_npcManager;
 
+    FrameBuffer m_framebuffer;
     PostProcess m_waterPostProcess;
 
     bool m_hasPhysic;
-
-    Npc m_testNpc;
 };

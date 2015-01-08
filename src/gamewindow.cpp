@@ -23,7 +23,7 @@ GameWindow::~GameWindow() {
 #ifdef QT_DEBUG
     delete m_logger;
 #endif
-    m_testNpc.destroy(this);
+    m_npcManager.destroy(this);
     m_waterPostProcess.destroy(this);
     m_framebuffer.destroy(this);
     m_chunkManager.destroy(this);
@@ -70,7 +70,7 @@ void GameWindow::initializeGL() {
         setCursor(QCursor(Qt::ArrowCursor));
     }
 
-    m_testNpc.init(this);
+    m_npcManager.init(this);
 
     m_isInitialized = true;
 }
@@ -90,18 +90,18 @@ void GameWindow::paintGL() {
 
     // On met à jour la position de la caméra
     m_camera.update(this, m_lastDelta);
-    m_testNpc.update(this, m_lastDelta);
+    m_npcManager.update(this, m_lastDelta);
     m_physicManager.update(this, m_lastDelta);
 
     m_camera.postUpdate();
     m_player.update(m_lastDelta);
     m_chunkManager.update(this);
 
-
+    // On commence l'affichage
     m_framebuffer.begin(this);
     m_chunkManager.draw(this);
     m_player.draw();
-    m_testNpc.draw(this);
+    m_npcManager.draw(this);
     if (m_camera.isInWater()) {
         m_waterPostProcess.render(this);
     }

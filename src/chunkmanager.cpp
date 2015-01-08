@@ -399,10 +399,10 @@ Chunk* ChunkManager::getChunk(Coords pos) {
 	if (pos.j < 0 || pos.j >= WORLD_HEIGHT)
 		return nullptr;
 
-	m_mutexChunkManagerList.lock();
+    m_mutexChunkManagerList.lock();
 	auto it = m_ChunkMap.find(pos);
 	auto end = m_ChunkMap.end();
-	m_mutexChunkManagerList.unlock();
+    m_mutexChunkManagerList.unlock();
 	if (it == end) {
 		return nullptr;
 	}

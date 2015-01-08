@@ -49,7 +49,9 @@ SOURCES += \
     postprocess/framebuffer.cpp \
     postprocess/postprocess.cpp \
     npc/npc.cpp \
-    npc/pathfinding.cpp
+    npc/pathfinding.cpp \
+    npc/npcmanager.cpp \
+    npc/creeper.cpp
     
 QMAKE_CFLAGS_RELEASE  -= -O2
 QMAKE_CFLAGS_RELEASE  -= -O1
@@ -138,4 +140,6 @@ HEADERS += \
     postprocess/framebuffer.h \
     postprocess/postprocess.h \
     npc/npc.h \
-    npc/pathfinding.hpp
+    npc/pathfinding.hpp \
+    npc/npcmanager.h \
+    npc/creeper.h

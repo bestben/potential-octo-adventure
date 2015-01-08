@@ -113,7 +113,7 @@ private:
     int m_chunkToDrawCount;
 
     //std::map<std::tuple<int, int, int>, Chunk> m_ChunkMap;
-	QHash<Coords, Chunk*> m_ChunkMap;
+    QHash<Coords, Chunk*> m_ChunkMap;
 
     int m_currentChunkI;
     int m_currentChunkJ;

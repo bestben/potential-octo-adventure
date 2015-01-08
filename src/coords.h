@@ -42,6 +42,21 @@ struct Coords
 	Coords& operator%=(const int& v) { i = mod_floor(i, v); j = mod_floor(j, v); k = mod_floor(k, v); return *this; }
 };
 
+namespace std {
+    template <>
+    struct hash<Coords>
+    {
+        std::size_t operator()(const Coords& c) const
+        {
+            int hash = 23;
+            hash = hash * 31 + c.i;
+            hash = hash * 31 + c.j;
+            hash = hash * 31 + c.k;
+            return hash;
+        }
+    };
+}
+
 // Permet d'utiliser Coords dans un container qt
 inline uint qHash(Coords c) {
 	QString str = "";
