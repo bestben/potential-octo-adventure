@@ -8,7 +8,8 @@
 #include <QtGui/QOpenGLTexture>
 #include <QtGui/QOpenGLVertexArrayObject>
 
-Player::Player(GameWindow& game, Camera& camera) : m_game{game}, m_camera{camera}, m_maxBlockDistance{40.0f} {
+Player::Player(GameWindow& game, Camera& camera) : m_game{game}, m_camera{camera}, m_maxBlockDistance{40.0f},
+                                                  m_isHitting{false}, m_targetTime{2000} {
 
 }
 
@@ -17,6 +18,7 @@ Player::~Player() {
 
 void Player::init() {
     m_box.init(&m_game);
+    m_voxel.init(&m_game);
 
     m_crossProgram = new QOpenGLShaderProgram(&m_game);
     m_crossProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/cross.vs"));
@@ -39,6 +41,7 @@ void Player::destroy() {
     delete m_crossProgram;
     delete m_crossTexture;
     m_box.destroy(&m_game);
+    m_voxel.destroy(&m_game);
 }
 
 void Player::update(int dt) {
@@ -62,7 +65,7 @@ void Player::draw() {
     while (((rayPos - camPos).lengthSquared() < maxSquareDistance)) {
 		currentVoxel = GetVoxelPosFromWorldPos(rayPos);
         VoxelType type = chunkManager.getVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k).type;
-        if ((type != VoxelType::AIR) && (type != VoxelType::WATER)) {
+        if ((type != VoxelType::AIR) && (type != VoxelType::WATER) && (type != VoxelType::IGNORE_TYPE)) {
             hit = true;
             break;
         }
@@ -72,6 +75,22 @@ void Player::draw() {
     if (!(lastVoxel == startVoxel) && hit) {
         m_box.setPosition(QVector3D(currentVoxel.i, currentVoxel.j, currentVoxel.k) * CHUNK_SCALE);
         m_box.draw(&m_game);
+
+        if (currentVoxel != m_targetVoxel) {
+            m_targetVoxel = currentVoxel;
+            m_startTimer.start();
+        }
+        if (m_isHitting) {
+            if (m_startTimer.elapsed() >= m_targetTime) {
+                chunkManager.removeVoxel({ currentVoxel.i, currentVoxel.j, currentVoxel.k });
+            } else {
+                m_game.glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
+                m_voxel.setDamage((float)m_startTimer.elapsed() / (float)m_targetTime);
+                m_voxel.setPosition(QVector3D(currentVoxel.i, currentVoxel.j, currentVoxel.k) * CHUNK_SCALE);
+                m_voxel.draw(&m_game);
+                m_game.glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }
+        }
     }
 }
 
@@ -95,7 +114,11 @@ void Player::keyReleaseEvent(QKeyEvent* event) {
 
 void Player::mousePressEvent(QMouseEvent* event) {
     m_camera.mousePressEvent(event);
-    if ((event->button() & Qt::MiddleButton) || (event->button() & Qt::LeftButton)) {
+    if (event->button() == Qt::LeftButton) {
+        m_isHitting = true;
+        m_startTimer.start();
+    }
+    if (event->button() & Qt::MiddleButton) {
         QVector3D camPos = m_camera.getPosition();
         QVector3D dir = m_camera.frontDir();
         dir.normalize();
@@ -120,21 +143,21 @@ void Player::mousePressEvent(QMouseEvent* event) {
             rayPos = rayPos + dir * delta;
         }
         if (!(lastVoxel == startVoxel) && hit) {
-			if (event->button() & Qt::LeftButton) {
-				chunkManager.removeVoxel({ currentVoxel.i, currentVoxel.j, currentVoxel.k });
-            } else {
-                if (lastVoxel != GetVoxelPosFromWorldPos(m_camera.getFootPosition()) &&
-                    lastVoxel != GetVoxelPosFromWorldPos(m_camera.getPosition())) {
-                    Voxel last = chunkManager.getVoxel(lastVoxel);
-                    Voxel current = chunkManager.getVoxel(currentVoxel);
-                    chunkManager.placeVoxel({ lastVoxel.i, lastVoxel.j, lastVoxel.k }, VoxelType::DIRT);
-                }
+            if (lastVoxel != GetVoxelPosFromWorldPos(m_camera.getFootPosition()) &&
+                lastVoxel != GetVoxelPosFromWorldPos(m_camera.getPosition())) {
+                Voxel last = chunkManager.getVoxel(lastVoxel);
+                Voxel current = chunkManager.getVoxel(currentVoxel);
+                chunkManager.placeVoxel({ lastVoxel.i, lastVoxel.j, lastVoxel.k }, VoxelType::DIRT);
             }
         }
     }
 }
 
 void Player::mouseReleaseEvent(QMouseEvent* event) {
+    if (event->button() == Qt::LeftButton) {
+        m_isHitting = false;
+        m_voxel.setDamage(0.0f);
+    }
     m_camera.mouseReleaseEvent(event);
 }
 

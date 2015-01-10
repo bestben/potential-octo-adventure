@@ -1,6 +1,10 @@
 #pragma once
 
 #include "wireframebox.h"
+#include "voxelbuffer.h"
+#include "chunk.h"
+
+#include <QTime>
 
 class GameWindow;
 class Camera;
@@ -42,6 +46,8 @@ private:
 
     // La box à afficher autours du bloc selectionné
     WireframeBox m_box;
+    // La box à afficher autours du bloc en cours de demolition
+    VoxelBuffer m_voxel;
     // La distance max à laquelle le joueur peut poser / retirer un bloc
     float m_maxBlockDistance;
 
@@ -50,4 +56,10 @@ private:
     QOpenGLVertexArrayObject* m_crossVao;
     int m_crossXSizeUniform;
     int m_crossYSizeUniform;
+
+    // Le voxel visé
+    bool m_isHitting;
+    Coords m_targetVoxel;
+    int m_targetTime;
+    QTime m_startTimer;
 };

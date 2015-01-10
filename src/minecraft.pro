@@ -51,7 +51,8 @@ SOURCES += \
     npc/npc.cpp \
     npc/pathfinding.cpp \
     npc/npcmanager.cpp \
-    npc/creeper.cpp
+    npc/creeper.cpp \
+    voxelbuffer.cpp \
     save.cpp
     
 QMAKE_CFLAGS_RELEASE  -= -O2
@@ -143,5 +144,6 @@ HEADERS += \
     npc/npc.h \
     npc/pathfinding.hpp \
     npc/npcmanager.h \
-    npc/creeper.h
+    npc/creeper.h \
+    voxelbuffer.h<\
     save.h
