@@ -2,6 +2,7 @@
 
 #include <QtGui/QVector3D>
 #include <cstdint>
+#include <atomic>
 
 typedef int8_t int8;
 typedef uint8_t uint8;
@@ -13,7 +14,7 @@ typedef int64_t int64;
 typedef uint64_t uint64;
 
 #define CHUNK_NUMBER 2048
-#define VBO_NUMBER 2048
+#define VBO_NUMBER 4096
 
 #define FREE_BUFFERS_THRESHOLD 32
 
@@ -89,14 +90,19 @@ struct Voxel
 
 #define IGNORE_VOXEL Voxel(VoxelType::IGNORE_TYPE)
 
+#define CHUNK_NOT_LOADED 0
+#define CHUNK_RECYCLE 1
+#define CHUNK_LOADING 2
+#define CHUNK_LOADED_FREE 3
+#define CHUNK_LOADED_LOCK 4
+
 struct Chunk {
 
 	Chunk() {
-		inQueue = false;
 		onlyAir = false;
 
-		isDirty = false;
-		isLightDirty = false;
+        isDirty = true;
+        isLightDirty = true;
 
 		ready = false;
 
@@ -106,6 +112,7 @@ struct Chunk {
 
 		generated = false;
 
+        state = CHUNK_NOT_LOADED;
 	}
 
     // Les coordonnées du chunk
@@ -116,7 +123,9 @@ struct Chunk {
     bool visible;
     float distanceFromCamera;
 
+    // L'index du buffer des voxels
     int chunkBufferIndex;
+    // l'index du vbo
     int vboIndex;
 
 	bool ready;
@@ -130,7 +139,7 @@ struct Chunk {
 
 	bool onlyAir;
 
-
+    std::atomic<int> state;
 };
 
 

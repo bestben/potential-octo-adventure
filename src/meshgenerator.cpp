@@ -259,14 +259,14 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
         }
     }
     if (!waterPass) {
-		buffer->toUpOpaqueCount = vertexCount;
+        buffer->opaqueCount = vertexCount;
     } else {
-		buffer->toUpWaterCount = vertexCount;
+        buffer->waterCount = vertexCount;
     }
     if ((!waterPass) && (hasWater)) {
 		vertexCount += generate(m_waterPassGrid, chunkPos, buffer, vertices + vertexCount, true);
     } else if (!waterPass) {
-		buffer->toUpWaterCount = 0;
+        buffer->waterCount = 0;
     }
     return vertexCount;
 }

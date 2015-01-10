@@ -51,7 +51,11 @@ SOURCES += \
     npc/npc.cpp \
     npc/pathfinding.cpp \
     npc/npcmanager.cpp \
-    npc/creeper.cpp
+    npc/creeper.cpp \
+    save.cpp \
+    chunkmanager/chunkworker.cpp \
+    chunkmanager/vectorthreadsafe.cpp \
+    chunkmanager/meshworker.cpp
     save.cpp
     
 QMAKE_CFLAGS_RELEASE  -= -O2
@@ -143,5 +147,10 @@ HEADERS += \
     npc/npc.h \
     npc/pathfinding.hpp \
     npc/npcmanager.h \
-    npc/creeper.h
+    npc/creeper.h \
+    save.h \
+    chunkmanager/chunkworker.h \
+    chunkmanager/semaphore.h \
+    chunkmanager/vectorthreadsafe.h \
+    chunkmanager/meshworker.h
     save.h

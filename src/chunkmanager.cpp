@@ -8,52 +8,62 @@
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QOpenGLTexture>
 
-ChunkManager::ChunkManager() : m_isInit{ false },
-m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_ChunkGenerator(), m_FirstUpdate{ true }{
+ChunkManager::ChunkManager() : m_isInit{ false }, m_chunkWorker{this}, m_meshWorker{this}, m_chunkBuffers{ nullptr },
+                            m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
 	m_LightManager = new LightManager(this);
-	m_meshGenerator = new MeshGenerator(this);
 	m_chunkBuffers = new Voxel[CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 	memset(m_chunkBuffers, 0, CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
 
 	m_chunkToDrawCount = 0;
-	m_chunkToDraw = new Chunk*[VBO_NUMBER];
-	for (int i = 0; i < VBO_NUMBER; ++i) {
+    m_chunkToRecycleCount = 0;
+    m_chunkToGenerateCount = 0;
+    m_chunkToDraw = new Chunk*[CHUNK_NUMBER];
+    m_chunkToRecycle = new Chunk*[CHUNK_NUMBER];
+    m_chunkToGenerate = new Chunk*[CHUNK_NUMBER];
+    for (int i = 0; i < CHUNK_NUMBER; ++i) {
 		m_chunkToDraw[i] = nullptr;
+        m_chunkToRecycle[i] = nullptr;
+        m_chunkToGenerate[i] = nullptr;
 	}
+    m_chunkCommandsBuffer = new ChunkWorkerCommand[CHUNK_NUMBER];
 
-	m_needRegen = true;
-	m_generationIsRunning = false;
+    m_nextFreeBuffers.reserve(VBO_NUMBER);
+    for (int i = 0; i < VBO_NUMBER; ++i) {
+        m_nextFreeBuffers.push_back(i);
+    }
 
-	m_availableChunkData = new std::atomic<bool>[CHUNK_NUMBER];
-	m_inUseChunkData = new std::atomic<bool>[CHUNK_NUMBER];
-	for (int i = 0; i < CHUNK_NUMBER; ++i) {
-		m_availableChunkData[i] = true;
-		m_inUseChunkData[i] = false;
-	}
-	m_availableBuffer = new std::atomic<bool>[VBO_NUMBER];
-	for (int i = 0; i < VBO_NUMBER; ++i) {
-		m_availableBuffer[i] = true;
-	}
-	m_tempVertexData = new GLuint[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 6];
-	m_vboToUpload = 0;
-	m_canGenerateMesh = true;
-	m_canUploadMesh = false;
-	m_countToUpload = 0;
+    m_currentChunk = { 0, -1, 0 };
+    m_chunkDataLeft = CHUNK_NUMBER;
 
-	m_currentChunk = { 0, -1, 0 };
+    m_chunkWorker.setCommandQueue(&m_chunkCommands);
+    m_chunkWorker.setOutputCommandQueue(&m_meshCommands);
+    m_meshWorker.setCommandQueue(&m_meshCommands);
+
+    m_chunkWorker.start();
+    m_meshWorker.start();
+
 	m_animationTime.start();
 }
 
 ChunkManager::~ChunkManager() {
-	m_mutexChunkManagerList.lock();
-	for (auto* c : m_ChunkMap)
-		delete c;
-	m_mutexChunkManagerList.unlock();
+
+    m_chunkWorker.requestStop();
+    m_chunkCommands.unlock();
+    m_chunkWorker.terminate();
+    m_chunkWorker.wait(2000);
+
+    m_meshWorker.requestStop();
+    m_meshCommands.unlock();
+    m_meshWorker.terminate();
+    m_meshWorker.wait(2000);
+
+    for (std::pair<Coords, Chunk*> c : m_ChunkMap) {
+        delete c.second;
+    }
+    delete[] m_chunkCommandsBuffer;
 	delete[] m_chunkBuffers;
-	delete[] m_availableChunkData;
-	delete[] m_inUseChunkData;
-	delete[] m_availableBuffer;
-	delete[] m_tempVertexData;
+    delete[] m_chunkToGenerate;
+    delete[] m_chunkToRecycle;
 	delete[] m_chunkToDraw;
 }
 
@@ -109,7 +119,7 @@ void ChunkManager::initialize(GameWindow* gl) {
 		Buffer* buffer = m_oglBuffers + i;
 		buffer->opaqueCount = 0;
 		buffer->waterCount = 0;
-		buffer->draw = false;
+        buffer->draw = true;
 
 		buffer->vbo = vbos[i];
 		buffer->vao = new QOpenGLVertexArrayObject(gl);
@@ -121,25 +131,17 @@ void ChunkManager::initialize(GameWindow* gl) {
 		gl->glVertexAttribIPointer(m_posAttr, 1, GL_UNSIGNED_INT, 0, 0);
 		buffer->vao->release();
 
-		buffer->toUpData = nullptr; 
-
+        buffer->loaded = false;
 	}
-	m_chunkDataLeft = CHUNK_NUMBER;
-	m_vboLeft = VBO_NUMBER;
+    m_meshWorker.setBuffers(m_oglBuffers);
 
 	m_isInit = true;
-	
-	start();
 }
 
 void ChunkManager::destroy(GameWindow* gl) {
-	
-	m_needRegen = false;
-	QThread::terminate();
-	wait();
+    // On supprime les threads
 
 	m_isInit = false;
-
 
 	// On nettoie les ressources opengl
 	for (int i = 0; i < VBO_NUMBER; ++i) {
@@ -148,10 +150,6 @@ void ChunkManager::destroy(GameWindow* gl) {
 		buffer->vao->destroy();
 		delete buffer->vao;
 		gl->glDeleteBuffers(1, &buffer->vbo);
-
-
-		if (buffer->toUpData)
-			delete buffer->toUpData;
 	}
 
 	// On supprime les tableaux
@@ -167,8 +165,9 @@ void ChunkManager::destroy(GameWindow* gl) {
 }
 
 void ChunkManager::update(GameWindow* gl) {
-	m_chunkToDrawCount = 0;
 	if (m_isInit) {
+        // On upload les buffers chargés
+        m_meshWorker.uploadBuffers(gl);
 
 		QVector3D camPos = gl->getCamera().getPosition();
 
@@ -178,123 +177,144 @@ void ChunkManager::update(GameWindow* gl) {
 		float camY = gl->getCamera().getPosition().y();
 		float camZ = gl->getCamera().getPosition().z();
 
-		uint16 remesh_count = 0;
+        // Le joueur a changé de position -> on recalcule tout
+        if ((chunkHere.i != m_currentChunk.i) || (chunkHere.k != m_currentChunk.k)) {
+            m_currentChunk = chunkHere;
+            // On vide les commandes
+            m_chunkCommands.reset();
+            m_meshCommands.reset();
+            m_chunkWorker.reset();
 
-		for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end();) {
-			auto chunk = *ite;
-			if (chunk == nullptr){ ++ite; continue; }
+            while (!m_chunkWorker.isWaiting() || !m_meshWorker.isWaiting()) {
+                // On attend que les autres threads aient fini leur commande en cours
+            }
 
-			// Les chunks hors de la vue 
-			if ((std::abs(chunk->i - m_currentChunk.i) > VIEW_SIZE) ||
-				(std::abs(chunk->k - m_currentChunk.k) > VIEW_SIZE)) {
-				chunk->visible = false;
-				m_mutexGenerateQueue.lock();
-				m_toGenerateChunkData.removeAll(chunk);
-				chunk->inQueue = false;
-				m_mutexGenerateQueue.unlock();
-				// Si nombre de buffers libres est sous le seuil, on libère de la mémoire
-				if (m_vboLeft < FREE_BUFFERS_THRESHOLD || m_chunkDataLeft < FREE_BUFFERS_THRESHOLD){
-					if (chunk->chunkBufferIndex != -1) {
-						m_availableChunkData[chunk->chunkBufferIndex] = true;
-						chunk->chunkBufferIndex = -1;
-						m_chunkDataLeft++;
-					}
-					if (chunk->vboIndex != -1) {
-						m_oglBuffers[chunk->vboIndex].draw = false;
-						m_availableBuffer[chunk->vboIndex] = true;
-						chunk->vboIndex = -1;
-						m_vboLeft++;
-					}
-					chunk->generated = false;
-					m_mutexChunkManagerList.lock();
-					ite = m_ChunkMap.erase(ite);
-					m_mutexChunkManagerList.unlock();
-				}
-				else{
-					m_mutexChunkManagerList.lock();
-					++ite;
-					m_mutexChunkManagerList.unlock();
-				}
-			}
-			else {
-				bool remesh = false;
-				if ((chunk->isDirty || chunk->isLightDirty) && remesh_count < MAX_REMESH_PER_UPDATE){
-					chunk->isDirty = false;
-					chunk->isLightDirty = false;
-					remesh = true;
-				}
+            m_chunkToRecycleCount = 0;
+            m_chunkToGenerateCount = 0;
+            m_chunkToDrawCount = 0;
+            // On reset tous les chunks qui étaient en cours de chargement
+            for (auto& p : m_ChunkMap) {
+                if ((p.second != nullptr) && (p.second->state == CHUNK_LOADING)) {
+                    p.second->state = CHUNK_NOT_LOADED;
+                }
+            }
 
-				// Regénération du mesh pour ce chunk
-				if (remesh && chunk->vboIndex != -1 && chunk->chunkBufferIndex != -1 && chunk->generated) {
-					remesh_count++;
-					Buffer* buffer = m_oglBuffers + chunk->vboIndex;
-					Voxel *data = getBufferAdress(chunk->chunkBufferIndex);
-					unsigned int totalCount = 0;
-					if (data != nullptr){
-						totalCount = m_meshGenerator->generate(data, Coords{ chunk->i, chunk->j, chunk->k }, buffer, m_tempVertexData);
-					}
-					if (totalCount > 0){
-						gl->glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-						// On alloue un buffer plus grand si besoin
-						if (totalCount > (buffer->opaqueCount + buffer->waterCount))
-							gl->glBufferData(GL_ARRAY_BUFFER, totalCount * sizeof(GLuint), 0, GL_DYNAMIC_DRAW);
+            // On ajoute tous les chunks dont on a besoin dans la map
+            m_mutexChunkManagerList.lock();
+            requestChunks();
+            m_mutexChunkManagerList.unlock();
 
-						void *dataMap = gl->glMapBufferRange(GL_ARRAY_BUFFER, 0, totalCount*sizeof(GLuint), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-						if (dataMap != nullptr){
-							memcpy(dataMap, m_tempVertexData, totalCount*sizeof(GLuint));
-							chunk->ready = false;
-							chunk->visible = true;
-							buffer->opaqueCount = buffer->toUpOpaqueCount;
-							buffer->waterCount = buffer->toUpWaterCount;
-							buffer->draw = true;
-							chunk->ready = false;
-							chunk->visible = true;
+            // Pour tous les chunks
+            for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end();) {
+                Chunk* chunk = ite->second;
+                if (chunk == nullptr) {
+                    m_mutexChunkManagerList.lock();
+                    ite = m_ChunkMap.erase(ite);
+                    m_mutexChunkManagerList.unlock();
+                    continue;
+                }
+                // Chunk hors de la vue
+                if ((std::abs(chunk->i - m_currentChunk.i) > VIEW_SIZE) ||
+                    (std::abs(chunk->k - m_currentChunk.k) > VIEW_SIZE)) {
+                    if (chunk->state != CHUNK_NOT_LOADED) {
+                        chunk->state = CHUNK_RECYCLE;
 
-							remesh = false;
-						}
-						gl->glUnmapBuffer(GL_ARRAY_BUFFER);
-						gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+                        m_chunkToRecycle[m_chunkToRecycleCount++] = chunk;
+                    }
+                    if (chunk->vboIndex != -1) {
+                        m_nextFreeBuffers.push_back(chunk->vboIndex);
+                        Buffer* buffer = m_oglBuffers + chunk->vboIndex;
+                        buffer->loaded = false;
+                        chunk->vboIndex = -1;
+                    }
+                    int dx = camX - chunk->i*CHUNK_SIZE*CHUNK_SCALE;
+                    int dy = camY - chunk->j*CHUNK_SIZE*CHUNK_SCALE;
+                    int dz = camZ - chunk->k*CHUNK_SIZE*CHUNK_SCALE;
+                    chunk->distanceFromCamera = dx * dx + dy * dy + dz * dz;
+                } else { // Le chunk est dans la vue
+                    if (chunk->state == CHUNK_RECYCLE) { // Les données sont déjà chargées
+                        chunk->state = CHUNK_LOADED_FREE; // On restore juste l'état
+                        m_chunkToGenerate[m_chunkToGenerateCount++] = chunk;
+                    } else if(chunk->state == CHUNK_NOT_LOADED) { // Les données ne sont pas chargées
+                        chunk->state = CHUNK_LOADING;
+                        m_chunkToGenerate[m_chunkToGenerateCount++] = chunk;
+                    } else {
+                        m_chunkToDraw[m_chunkToDrawCount++] = chunk;
+                    }
+                    int dx = camX - chunk->i*CHUNK_SIZE*CHUNK_SCALE;
+                    int dy = camY - chunk->j*CHUNK_SIZE*CHUNK_SCALE;
+                    int dz = camZ - chunk->k*CHUNK_SIZE*CHUNK_SCALE;
+                    chunk->distanceFromCamera = dx * dx + dy * dy + dz * dz;
+                }
+                ++ite;
+            }
+            for (int i = 0; i < m_chunkToGenerateCount; ++i) {
+                if (m_chunkToGenerate[i]->vboIndex == -1) {
+                    m_chunkToGenerate[i]->vboIndex = m_nextFreeBuffers.back();
+                    m_nextFreeBuffers.pop_back();
+                }
+            }
+            // Il ne reste plus assez de chunks vide -> on doit recycler les anciens
+            if (m_chunkToGenerateCount > m_chunkDataLeft) {
+                // On trie les anciens chunks pour ne supprimer les plus loins en premier
+                std::sort(m_chunkToRecycle, m_chunkToRecycle + m_chunkToRecycleCount, [this](Chunk* i, Chunk* j)->bool{
+                    return i->distanceFromCamera > j->distanceFromCamera;
+                });
+            }
+            // On trie les nouveau chunks pour générer les plus près en premier
+            std::sort(m_chunkToGenerate, m_chunkToGenerate + m_chunkToGenerateCount, [this](Chunk* i, Chunk* j)->bool{
+                return i->distanceFromCamera < j->distanceFromCamera;
+            });
 
-						m_vboToUpload = -1;
-					} else {
-						buffer->draw = true;
-						chunk->ready = false;
-						chunk->visible = true;
-					}
-				}
+            int recycle = 0;
+            for (int i = 0; i < m_chunkToGenerateCount; ++i) {
+                if (m_chunkDataLeft > 0) {
+                    m_chunkToGenerate[i]->chunkBufferIndex = CHUNK_NUMBER - m_chunkDataLeft;
+                    m_chunkDataLeft--;
+                } else if (recycle < m_chunkToRecycleCount) {
+                    m_chunkToRecycle[recycle]->state = CHUNK_NOT_LOADED;
+                    m_chunkToGenerate[i]->chunkBufferIndex = m_chunkToRecycle[recycle]->chunkBufferIndex;
+                    m_chunkToRecycle[recycle]->chunkBufferIndex = -1;
 
+                    Coords c = {m_chunkToRecycle[recycle]->i, m_chunkToRecycle[recycle]->j, m_chunkToRecycle[recycle]->k};
+                    m_ChunkMap[c] = nullptr;
 
-				if (chunk->vboIndex != -1 && chunk->visible && !chunk->onlyAir) {
-					m_chunkToDraw[m_chunkToDrawCount++] = chunk;
-					int dx = camX - chunk->i*CHUNK_SIZE*CHUNK_SCALE;
-					int dy = camY - chunk->j*CHUNK_SIZE*CHUNK_SCALE;
-					int dz = camZ - chunk->k*CHUNK_SIZE*CHUNK_SCALE;
-					chunk->distanceFromCamera = dx * dx + dy * dy + dz * dz;
-				}
-				m_mutexChunkManagerList.lock();
-				++ite;
-				m_mutexChunkManagerList.unlock();
-			}
-			// TODO: Save le chunk sur le DD pour réutilisation
-			//++ite;
-		}
-		//m_mutexChunkManagerList.unlock();
+                    recycle++;
+                } else {
+                    #ifdef QT_DEBUG
+                    std::cout << "plus assez de buffer pour generer le mesh" << std::endl;
+                    #endif
+                }
+            }
+            for (int i = 0; i < m_chunkToGenerateCount; ++i) {
+                m_chunkCommandsBuffer[i].chunk = m_chunkToGenerate[m_chunkToGenerateCount - i - 1];
+                m_chunkCommandsBuffer[i].data = m_chunkBuffers + m_chunkToGenerate[m_chunkToGenerateCount - i - 1]->chunkBufferIndex * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+                m_chunkCommandsBuffer[i].onlyLight = false;
+            }
+            m_chunkCommands.push(m_chunkCommandsBuffer, m_chunkToGenerateCount);
 
-		// Si on change de chunk on demande des nouveaux chunks
-		if ((chunkHere.i != m_currentChunk.i) || (chunkHere.k != m_currentChunk.k) || m_FirstUpdate) {
-
-			m_currentChunk = chunkHere;
-
-			requestChunks();
-		}
-
-		//m_mutexChunkManagerList.lock();
+            for (int i = 0; i < m_chunkToGenerateCount; ++i) {
+                m_chunkToDraw[m_chunkToDrawCount++] = m_chunkToGenerate[i];
+            }
+        } else {
+            // On met à jour les lumières
+            /*m_chunkToGenerateCount = 0;
+            for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end(); ++ite) {
+                if ((ite->second != nullptr) && ite->second->isLightDirty && (ite->second->state == CHUNK_LOADED_FREE)) {
+                    ite->second->state = CHUNK_LOADING;
+                    ite->second->isLightDirty = false;
+                    m_chunkCommandsBuffer[m_chunkToGenerateCount].chunk = ite->second;
+                    m_chunkCommandsBuffer[m_chunkToGenerateCount].data = m_chunkBuffers + ite->second->chunkBufferIndex * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+                    m_chunkCommandsBuffer[m_chunkToGenerateCount].onlyLight = true;
+                    m_chunkToGenerateCount++;
+                }
+            }
+            m_chunkCommands.push(m_chunkCommandsBuffer, m_chunkToGenerateCount);*/
+        }
 
 		std::sort(m_chunkToDraw, m_chunkToDraw + m_chunkToDrawCount, [this](Chunk* i, Chunk* j)->bool{
 			return i->distanceFromCamera < j->distanceFromCamera;
 		});
-
-		//m_mutexChunkManagerList.unlock();
 
 		m_FirstUpdate = false;
 	}
@@ -315,7 +335,7 @@ void ChunkManager::draw(GameWindow* gl) {
 			Chunk* chunk = m_chunkToDraw[i];
 			Buffer* buffer = m_oglBuffers + chunk->vboIndex;
 
-			if (buffer->draw && buffer->opaqueCount > 0) {
+            if (buffer->loaded && buffer->draw && buffer->opaqueCount > 0) {
 				buffer->vao->bind();
 
 				m_program->setUniformValue(m_chunkPosUniform, QVector3D(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
@@ -331,7 +351,7 @@ void ChunkManager::draw(GameWindow* gl) {
 		for (int i = m_chunkToDrawCount - 1; i >= 0; --i) {
 			Chunk* chunk = m_chunkToDraw[i];
 			Buffer* buffer = m_oglBuffers + chunk->vboIndex;
-			if (buffer->draw && buffer->waterCount > 0) {
+            if (buffer->loaded && buffer->draw && buffer->waterCount > 0) {
 				buffer->vao->bind();
 
 				m_waterProgram->setUniformValue(m_waterChunkPosUniform, QVector3D(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
@@ -346,8 +366,6 @@ void ChunkManager::draw(GameWindow* gl) {
 }
 
 void ChunkManager::requestChunks() {
-
-	//m_mutexChunkManagerList.lock();
 	for (int i = 0; i <= VIEW_SIZE; ++i) {
 		for (int k = 0; k <= VIEW_SIZE; ++k) {
 			for (int j = WORLD_HEIGHT-1; j >= 0; --j) {
@@ -358,12 +376,11 @@ void ChunkManager::requestChunks() {
 			}
 		}
 	}
-	//m_mutexChunkManagerList.unlock();
 }
 
 void ChunkManager::checkChunk(Coords pos) {
 
-	Chunk* chunk = getChunk(pos);
+    Chunk* chunk = getChunkNoLock(pos);
 
 	if (chunk == nullptr) {
 		chunk = new Chunk();
@@ -371,18 +388,8 @@ void ChunkManager::checkChunk(Coords pos) {
 		chunk->j = pos.j;
 		chunk->k = pos.k;
 
-		m_mutexChunkManagerList.lock();
 		m_ChunkMap[pos] = chunk;
-		m_mutexChunkManagerList.unlock();
 	}
-
-	if (!chunk->generated && !chunk->inQueue) {
-		chunk->inQueue = true;
-		m_mutexGenerateQueue.lock();
-		m_toGenerateChunkData.push_back(chunk);
-		m_mutexGenerateQueue.unlock();
-	}
-	chunk->visible = true;
 }
 
 Voxel* ChunkManager::getBufferAdress(int index) {
@@ -405,128 +412,38 @@ Chunk* ChunkManager::getChunk(Coords pos) {
 		return nullptr;
 	}
 
-	m_lastChunkId = pos;
-	m_lastChunk = *it;
-	return *it;
+    if ((it->second != nullptr) && (it->second->state == CHUNK_LOADED_FREE)) {
+        m_lastChunkId = pos;
+        m_lastChunk = it->second;
+        return m_lastChunk;
+    }
+    return nullptr;
+}
+
+Chunk* ChunkManager::getChunkNoLock(Coords pos) {
+
+    if(m_lastChunkId == pos && m_lastChunk != nullptr)
+        return m_lastChunk;
+
+    if (pos.j < 0 || pos.j >= WORLD_HEIGHT)
+        return nullptr;
+
+    auto it = m_ChunkMap.find(pos);
+    auto end = m_ChunkMap.end();
+    if (it == end) {
+        return nullptr;
+    }
+
+    if ((it->second != nullptr) && (it->second->state == CHUNK_LOADED_FREE)) {
+        m_lastChunkId = pos;
+        m_lastChunk = it->second;
+        return m_lastChunk;
+    }
+    return nullptr;
 }
 
 Chunk* ChunkManager::getChunk(int i, int j, int k) {
 	return getChunk({ i, j, k });
-}
-
-void ChunkManager::run() {
-
-	while (m_needRegen) {
-		// On génére tous les chunks requis
-		
-
-		if (m_toGenerateChunkData.size() > 0) {
-			
-			m_mutexGenerateQueue.lock();
-			Coords here = m_currentChunk;
-			std::sort(m_toGenerateChunkData.begin(), m_toGenerateChunkData.end(), [here](Chunk* c1, Chunk* c2)->bool{
-				int a = (c1->i - here.i)*(c1->i - here.i) + (c1->j - here.j)*(c1->j - here.j) + (c1->k - here.k)*(c1->k - here.k);
-				int b = (c2->i - here.i)*(c2->i - here.i) + (c2->j - here.j)*(c2->j - here.j) + (c2->k - here.k)*(c2->k - here.k);
-				return a>b;
-			});
-
-			
-			auto* newChunk = m_toGenerateChunkData.back();
-			m_toGenerateChunkData.pop_back();
-			m_mutexGenerateQueue.unlock();
-			
-			
-			int bufferIndex = newChunk->chunkBufferIndex;
-			int vboIndex = newChunk->vboIndex;
-
-			bool newBuffer = false;
-			bool newVBO = false;
-
-			if (bufferIndex == -1){
-				bufferIndex = seekFreeChunkData();
-				newBuffer = true;
-			}
-			if (vboIndex == -1){
-				vboIndex = seekFreeBuffer();
-				newVBO = true;
-			}
-
-			if (bufferIndex != -1 && vboIndex != -1) {
-				
-				if(newBuffer)
-					m_chunkDataLeft--;
-				if(newVBO)
-					m_vboLeft--;
-
-				m_availableChunkData[bufferIndex] = false;
-				m_availableBuffer[vboIndex] = false;
-
-				newChunk->vboIndex = vboIndex;
-				newChunk->chunkBufferIndex = bufferIndex;
-
-
-				if (!newChunk->generated){
-					// TODO Générer le nouveau chunk et le prendre du DD si déja présent
-					Voxel* data = getBufferAdress(bufferIndex);
-					if (data != nullptr){
-
-						bool skipGeneration = false;
-						if(ChunkExistsOnDisk(Coords{newChunk->i, newChunk->j, newChunk->k})){
-							skipGeneration = LoadChunkFromDisk(data, Coords{ newChunk->i, newChunk->j, newChunk->k }, &(newChunk->onlyAir));
-						}
-
-						if(!skipGeneration){
-							newChunk->onlyAir = m_ChunkGenerator.generateChunk(data, newChunk->i, newChunk->j, newChunk->k);
-							SaveChunkToDisk(data, Coords{newChunk->i, newChunk->j, newChunk->k}, newChunk->onlyAir);
-						}
-
-						m_LightManager->updateLighting(newChunk);
-
-						newChunk->generated = true;
-						newChunk->isDirty = true;
-					}
-					else {
-						// ?
-					}
-				}
-				newChunk->inQueue = false;
-			}
-			else {
-				// Plus assez de blocs libres
-				m_mutexGenerateQueue.lock();
-				m_toGenerateChunkData.push_back(newChunk);
-				m_mutexGenerateQueue.unlock();
-				
-				#ifdef QT_DEBUG
-				std::cout << "Plus assez de blocs libre pour charger un chunk" << std::endl;
-				#endif
-			}
-
-		}
-
-
-
-		// Eviter de faire fondre le cpu dans des boucles vides ;)
-		QThread::msleep(33);
-	}
-}
-
-int ChunkManager::seekFreeChunkData() {
-	for (int i = 0; i < CHUNK_NUMBER; ++i) {
-		if (m_availableChunkData[i] == true) {
-			return i;
-		}
-	}
-	return -1;
-}
-
-int ChunkManager::seekFreeBuffer() {
-	for (int i = 0; i < VBO_NUMBER; ++i) {
-		if (m_availableBuffer[i] == true) {
-			return i;
-		}
-	}
-	return -1;
 }
 
 Voxel ChunkManager::getVoxel(int x, int y, int z, bool* loaded) {
@@ -639,15 +556,11 @@ void ChunkManager::removeVoxel(Coords pos) {
 	for (auto coords : modifiedChunks) {
 		Chunk* chunk = getChunk(coords);
 		if (chunk != nullptr) {
-			chunk->inQueue = true;
-			//m_toGenerateChunkData.push_front(chunk);
 			chunk->isLightDirty = true;
 		}
 	}
 
 	if (thisChunk != nullptr) {
-		thisChunk->inQueue = true;
-		//m_toGenerateChunkData.push_front(thisChunk);
 		thisChunk->isLightDirty = true;
 		thisChunk->isDirty = true;
 	}

@@ -3,8 +3,6 @@
 #include <QtCore/qhash.h>
 #include <QtCore/QString>
 
-// TODO: Merge defines
-#define CHUNK_SIZE 31
 #define GROUND_LEVEL 128
 
 typedef unsigned int uint;

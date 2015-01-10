@@ -48,11 +48,15 @@ namespace std {
     {
         std::size_t operator()(const Coords& c) const
         {
-            int hash = 23;
+            /*int hash = 23;
             hash = hash * 31 + c.i;
             hash = hash * 31 + c.j;
             hash = hash * 31 + c.k;
-            return hash;
+            return hash;*/
+            int smallPrime = 311;
+            int mediumPrime = 571;
+            int largePrimeAndArraySize = 1021;
+            return  (c.i * mediumPrime + c.j * smallPrime + c.k) % largePrimeAndArraySize;
         }
     };
 }

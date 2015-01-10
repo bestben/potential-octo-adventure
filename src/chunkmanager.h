@@ -5,6 +5,8 @@
 #include <QThread>
 #include <QLinkedList>
 #include <QTime>
+#include <unordered_map>
+#include <mutex>
 
 #include "chunk.h"
 #include "meshgenerator.h"
@@ -12,29 +14,29 @@
 #include "LightManager.h"
 #include <QtCore/qvector.h>
 
+#include "chunkmanager/chunkworker.h"
+#include "chunkmanager/vectorthreadsafe.h"
+#include "chunkmanager/meshworker.h"
+
 class QOpenGLVertexArrayObject;
 class QOpenGLShaderProgram;
 class QOpenGLTexture;
 class GameWindow;
 class MeshGenerator;
 
-
-#define MAX_REMESH_PER_UPDATE 8
 struct Buffer {
     QOpenGLVertexArrayObject* vao;
     GLuint vbo;
     unsigned int opaqueCount;
     unsigned int waterCount;
-	unsigned int toUpOpaqueCount;
-	unsigned int toUpWaterCount;
     bool draw;
-	GLuint* toUpData;
+    std::atomic<bool> loaded;
 };
 
 /**
  * @brief Classe gérant les chunks devant être chargés/déchargés/affichés.
  */
-class ChunkManager : QThread {
+class ChunkManager {
 public:
     ChunkManager();
     ~ChunkManager();
@@ -42,7 +44,6 @@ public:
 	void initialize(GameWindow* gl);
     void update(GameWindow* gl);
 	void draw(GameWindow* gl);
-	void checkChunk(Coords tuple);
 	
 	void requestChunks();
 	Voxel* getBufferAdress(int index);
@@ -68,23 +69,59 @@ public:
 	VoxelType setVoxel(int x, int y, int z, VoxelType newType, uint light = NO_CHANGE);
 	VoxelType setVoxel(Coords c, VoxelType newType, uint light = NO_CHANGE);
 
-
-protected:
-    void run();
-
 private:
-    
-    Coords m_lastChunkId;
-    Chunk* m_lastChunk;
-
-    int seekFreeChunkData();
-    int seekFreeBuffer();
-
-	
+    void checkChunk(Coords tuple);
+    Chunk* getChunkNoLock(Coords pos);
 
     bool m_isInit;
 
-    MeshGenerator* m_meshGenerator;
+    // Le dernier chunk utilisé (optimisation pour éviter de rechercher le même à chaque fois)
+    Coords m_lastChunkId;
+    Chunk* m_lastChunk;
+
+    // La position actuelle du joueur
+    Coords m_currentChunk;
+
+    // Le thread générant la création des chunks
+    ChunkWorker m_chunkWorker;
+    // Le thread générant la transformation des chunks
+    MeshGeneratorWorker m_meshWorker;
+    VectorThreadSafe<ChunkWorkerCommand> m_chunkCommands;
+    VectorThreadSafe<MeshWorkerCommand> m_meshCommands;
+
+    LightManager* m_LightManager;
+
+    // Le tableau contenant tous les voxels des chunks
+    Voxel* m_chunkBuffers;
+    uint16 m_chunkDataLeft;
+
+    std::unordered_map<Coords, Chunk*> m_ChunkMap;
+
+    // Le tableau des buffers opengl
+    Buffer* m_oglBuffers;
+    std::vector<int> m_nextFreeBuffers;
+    // Les chunk à dessiner
+    Chunk** m_chunkToDraw;
+    int m_chunkToDrawCount;
+
+
+    ////////////////////////////////////////////////////////////////////
+    /// Les tableaux stockants des données temporaires (évite les new/delete)
+    ////////////////////////////////////////////////////////////////////
+
+    // Les chunks à recycler (reset à chaque frame)
+    Chunk** m_chunkToRecycle;
+    int m_chunkToRecycleCount;
+    // Les chunks à générer (reset à chaque frame)
+    Chunk** m_chunkToGenerate;
+    int m_chunkToGenerateCount;
+
+    ChunkWorkerCommand* m_chunkCommandsBuffer;
+
+    //////////////////////////////////
+    /// Les variables de shaders
+    //////////////////////////////////
+
     // Le shader affichant un chunk
     QOpenGLShaderProgram* m_program;
     // Le shader affichant l'eau
@@ -100,71 +137,10 @@ private:
     int m_waterMatrixUniform;
     int m_waterChunkPosUniform;
 
-    // Le tableau contenant tous les voxels des chunks
-    Voxel* m_chunkBuffers;
-    std::atomic<bool>* m_availableChunkData;
-    std::atomic<bool>* m_inUseChunkData;
-
-	uint16 m_chunkDataLeft;
-	uint16 m_vboLeft;
-
-    // Le tableau des buffers opengl
-    Buffer* m_oglBuffers;
-    Chunk** m_chunkToDraw;
-    int m_chunkToDrawCount;
-
-    //std::map<std::tuple<int, int, int>, Chunk> m_ChunkMap;
-    QHash<Coords, Chunk*> m_ChunkMap;
-
-    int m_currentChunkI;
-    int m_currentChunkJ;
-    int m_currentChunkK;
-
-	Coords m_currentChunk;
-
-    /////////////////////////
-    /// Variables du second thread
-    /////////////////////////
-
-    std::atomic<bool> m_needRegen;
-    std::atomic<bool> m_generationIsRunning;
-
-    std::atomic<bool>* m_availableBuffer;
-
-	QMutex m_mutexChunkManagerList;
-	QMutex m_mutexGenerateQueue;
-
-	/*
-	QLinkedList<Chunk*> m_toInvalidateChunkData;
-	
-	QLinkedList<Chunk*> m_toInvalidateBuffer;
-	*/
-	//QLinkedList<Chunk*> m_toGenerateChunkData;
-	QVector<Chunk*> m_toGenerateChunkData;
-	QLinkedList<Chunk*> m_toGenerateBuffer;
-	
-
-	/*
-    std::vector<std::tuple<int, int, int>> m_toInvalidateChunkData;
-    std::vector<std::tuple<int, int, int>> m_toGenerateChunkData;
-
-    std::vector<std::tuple<int, int, int>> m_toInvalidateBuffer;
-    std::vector<std::tuple<int, int, int>> m_toGenerateBuffer;
-	*/
-
-    GLuint* m_tempVertexData;
-    Buffer m_tempBufferToUpload;
-    int m_vboToUpload;
-    int m_countToUpload;
-	Chunk* m_chunkToUpload;
-
-    std::atomic<bool> m_canGenerateMesh;
-    std::atomic<bool> m_canUploadMesh;
-
-	ChunkGenerator m_ChunkGenerator;
-	LightManager* m_LightManager;
+    std::mutex m_mutexChunkManagerList;
 
 	bool m_FirstUpdate;
 
+    // Le timer servant à animer l'eau
     QTime m_animationTime;
 };

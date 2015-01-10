@@ -3,11 +3,9 @@
 #include <QtGui/QOpenGLFunctions>
 
 #include "chunk.h"
-#include "chunkmanager.h"
 
-
-struct Buffer;
 class ChunkManager;
+struct Buffer;
 
 class MeshGenerator
 {

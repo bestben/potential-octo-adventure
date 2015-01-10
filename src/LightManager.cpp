@@ -269,7 +269,7 @@ bool LightManager::propagateSunLight(Chunk* chunk, QSet<Coords> &lightSources, Q
 		if (above.type == VoxelType::IGNORE_TYPE) {
 			// On assume qu'il y a du soleil au dessus
 			// TODO: Définir à la génération si le chunk est considéré sous-terre ou non et l'utiliser ici
-			sunAbove = (chunk->j+1)*CHUNK_SIZE >= GROUND_LEVEL;
+            sunAbove = (chunk->j+1)*CHUNK_SIZE >= GROUND_LEVEL;
 		} else {
 			if (above.getLight() == SUN_LIGHT)
 				sunAbove = true;
