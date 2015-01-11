@@ -222,3 +222,11 @@ inline uint8 unreduce_light(uint8 light)
 		return light;
 	return light + 1;
 }
+
+
+
+void initializeTextureMaps();
+
+TextureID getTexture(VoxelType type, int side);
+VoxelTextureMap getTextureMap(VoxelType type);
+

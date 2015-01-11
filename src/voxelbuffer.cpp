@@ -37,8 +37,6 @@ void VoxelBuffer::init(GameWindow* gl) {
     m_program->release();
 
     QImage image(":/atlas.png");
-    QColor color(127, 127, 127);
-    //m_atlas = new QOpenGLTexture(image.createMaskFromColor(color.rgb()));
     m_atlas = new QOpenGLTexture(image);
     m_atlas->setMagnificationFilter(QOpenGLTexture::Nearest);
 

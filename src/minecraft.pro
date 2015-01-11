@@ -53,13 +53,10 @@ SOURCES += \
     npc/npcmanager.cpp \
     npc/creeper.cpp \
     voxelbuffer.cpp \
-    save.cpp
-    
-QMAKE_CFLAGS_RELEASE  -= -O1
-QMAKE_CXXFLAGS_RELEASE  -= -O1
+    save.cpp \
+    particlesystem.cpp \
+    chunk.cpp
 
-QMAKE_CFLAGS_RELEASE  *= -O2
-QMAKE_CXXFLAGS_RELEASE  *= -O2
 
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
@@ -143,5 +140,6 @@ HEADERS += \
     npc/pathfinding.hpp \
     npc/npcmanager.h \
     npc/creeper.h \
-    voxelbuffer.h<\
-    save.h
+    voxelbuffer.h \
+    save.h \
+    particlesystem.h

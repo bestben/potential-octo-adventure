@@ -8,8 +8,8 @@
 #include <QtGui/QOpenGLTexture>
 #include <QtGui/QOpenGLVertexArrayObject>
 
-Player::Player(GameWindow& game, Camera& camera) : m_game{game}, m_camera{camera}, m_maxBlockDistance{40.0f},
-                                                  m_isHitting{false}, m_targetTime{2000} {
+Player::Player(GameWindow& game, Camera& camera) : m_game{game}, m_camera{camera}, m_particles{20, 750},
+                                                  m_maxBlockDistance{40.0f}, m_isHitting{false}, m_targetTime{2000} {
 
 }
 
@@ -35,6 +35,8 @@ void Player::init() {
 
     m_crossVao = new QOpenGLVertexArrayObject(&m_game);
     m_crossVao->create();
+
+    m_particles.init(&m_game);
 }
 
 void Player::destroy() {
@@ -42,10 +44,11 @@ void Player::destroy() {
     delete m_crossTexture;
     m_box.destroy(&m_game);
     m_voxel.destroy(&m_game);
+    m_particles.destroy(&m_game);
 }
 
 void Player::update(int dt) {
-
+    m_particles.update(&m_game, dt);
 }
 
 void Player::draw() {
@@ -59,12 +62,14 @@ void Player::draw() {
     Coords lastVoxel = startVoxel;
     Coords currentVoxel = startVoxel;
 
+    VoxelType type;
+
     QVector3D rayPos = camPos + dir * delta;
     ChunkManager& chunkManager = m_game.getChunkManager();
     bool hit = false;
     while (((rayPos - camPos).lengthSquared() < maxSquareDistance)) {
 		currentVoxel = GetVoxelPosFromWorldPos(rayPos);
-        VoxelType type = chunkManager.getVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k).type;
+        type = chunkManager.getVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k).type;
         if ((type != VoxelType::AIR) && (type != VoxelType::WATER) && (type != VoxelType::IGNORE_TYPE)) {
             hit = true;
             break;
@@ -90,8 +95,15 @@ void Player::draw() {
                 m_voxel.draw(&m_game);
                 m_game.glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
+            m_particles.setVoxelType(type);
+            m_particles.setSpawnPosition(voxelToWorld(currentVoxel));
+            if (m_particles.isOver()) {
+                m_particles.spawn();
+            }
         }
     }
+
+    m_particles.draw(&m_game);
 }
 
 void Player::postDraw() {

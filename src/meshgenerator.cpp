@@ -5,53 +5,6 @@
 
 #define JOIN_FACES
 
-// TODO(antoine): Meilleur endroit pour cette initialisation ?
-
-VoxelTextureMap VoxelTextures[(uint)VoxelType::COUNT];
-
-
-inline void initializeTextureMaps(){
-
-	// On ne devrait jamais demander la texture de l'air
-	VoxelTextures[(uint)VoxelType::AIR] = { TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE};
-
-	VoxelTextures[(uint)VoxelType::GRASS] = {
-		TextureID::GRASS,
-		TextureID::DIRT,
-		TextureID::GRASS_SIDE,
-		TextureID::GRASS_SIDE,
-		TextureID::GRASS_SIDE,
-		TextureID::GRASS_SIDE
-	};
-
-	FULL_BLOCK(DIRT)
-	FULL_BLOCK(ROCK)
-	FULL_BLOCK(SAND)
-	FULL_BLOCK(GRAVEL)
-	FULL_BLOCK(LAVA)
-	FULL_BLOCK(WATER)
-	FULL_BLOCK(LEAVES)
-
-	VoxelTextures[(uint)VoxelType::STONE] = {
-		TextureID::STONE_TOP,
-		TextureID::STONE_TOP,
-		TextureID::STONE_SIDE,
-		TextureID::STONE_SIDE,
-		TextureID::STONE_SIDE,
-		TextureID::STONE_SIDE
-	};
-
-	VoxelTextures[(uint)VoxelType::TRUNK] = {
-		TextureID::TRUNK_TOP,
-		TextureID::TRUNK_TOP,
-		TextureID::TRUNK_SIDE,
-		TextureID::TRUNK_SIDE,
-		TextureID::TRUNK_SIDE,
-		TextureID::TRUNK_SIDE
-	};
-
-}
-
 MeshGenerator::MeshGenerator(ChunkManager* manager) : m_ChunkManager{manager}
 {
     m_mask = new Voxel[CHUNK_SIZE * CHUNK_SIZE];
@@ -59,8 +12,6 @@ MeshGenerator::MeshGenerator(ChunkManager* manager) : m_ChunkManager{manager}
 
     m_waterPassGrid = new Voxel[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
     m_offsetNormal = new bool[CHUNK_SIZE * CHUNK_SIZE];
-
-	initializeTextureMaps();
 }
 
 MeshGenerator::~MeshGenerator() {
@@ -221,7 +172,7 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
                         }
 						
 
-						VoxelTextureMap textureMap = VoxelTextures[(uint8)c.type];
+                        VoxelTextureMap textureMap = getTextureMap(c.type);
 						TextureID t = TextureID::ERROR_TEXTURE;
 
 							 if (nIndex == 0) t = textureMap.right;

@@ -8,7 +8,7 @@
 
 #define JUMP_SPEED 150
 
-PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{false} {
+PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{true} {
     m_bodies = new Body[BODY_COUNT];
     for (int i = 0; i < BODY_COUNT; ++i) {
         m_bodies[i].jump = false;

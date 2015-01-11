@@ -2,6 +2,7 @@
 
 #include "wireframebox.h"
 #include "voxelbuffer.h"
+#include "particlesystem.h"
 #include "chunk.h"
 
 #include <QTime>
@@ -48,6 +49,8 @@ private:
     WireframeBox m_box;
     // La box à afficher autours du bloc en cours de demolition
     VoxelBuffer m_voxel;
+    // Les particules à afficher lorsque le joueur casse un bloc
+    ParticleSystem m_particles;
     // La distance max à laquelle le joueur peut poser / retirer un bloc
     float m_maxBlockDistance;
 
