@@ -23,8 +23,8 @@ enum Direction {
 struct Body;
 class GameWindow;
 
-#define CAMERA_WALK_SPEED 150.0f
-#define CAMERA_RUN_SPEED 250.0f
+#define CAMERA_WALK_SPEED 30.0f
+#define CAMERA_RUN_SPEED 60.0f
 
 #define CAMERA_WALK_FOV 60.0f
 #define CAMERA_RUN_FOV 90.0f

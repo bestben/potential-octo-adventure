@@ -59,13 +59,20 @@ namespace std {
 
 // Permet d'utiliser Coords dans un container qt
 inline uint qHash(Coords c) {
-	QString str = "";
+	
+	int hash = 23;
+	hash = hash * 31*31*31 + c.i;
+	hash = hash * 31*31 + c.j;
+	hash = hash * 31 + c.k;
+	return hash;
+
+	/*QString str = "";
 	str += c.i;
 	str += "-";
 	str += c.j;
 	str += "-";
 	str += c.k;
-	return qHash(str);
+	return qHash(str);*/
 }
 
 inline bool operator< (const Coords& lhs, const Coords& rhs) {

@@ -1,0 +1,37 @@
+#version 330
+
+uniform sampler2D atlas;
+
+uniform float damage;
+
+uniform int tileSize = 16;
+uniform int tileCount = 16;
+
+in vec3 ex_pos;
+in vec3 ex_normal;
+out vec4 out_color;
+
+void main() {
+    int ex_voxel = 15 * 16;
+    
+    ex_voxel = ex_voxel + int(damage * 9.0);
+    
+    vec2 tileOffset = vec2(ex_voxel % tileCount, (ex_voxel%256) / tileCount);
+    tileOffset = tileOffset / tileSize;
+
+    vec2 texCoordX = tileOffset + fract(-ex_pos.zy) / tileSize;
+    vec2 texCoordY = tileOffset + fract(-ex_pos.xz) / tileSize;
+    vec2 texCoordZ = tileOffset + fract(-ex_pos.xy) / tileSize;
+    
+    vec4 sampleX = texture2D(atlas, texCoordX); // Project along x axis
+    vec4 sampleY = texture2D(atlas, texCoordY); // Project along y axis
+    vec4 sampleZ = texture2D(atlas, texCoordZ); // Project along z axis
+    
+    vec4 color = sampleX * abs(ex_normal.x) + sampleY * abs(ex_normal.y) + sampleZ * abs(ex_normal.z);
+    
+    if (color.a == 0.0) {
+        discard;
+    }
+    
+    out_color = vec4(color.rgb, 0.5);
+}

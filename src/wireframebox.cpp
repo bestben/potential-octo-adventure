@@ -7,7 +7,8 @@
 
 #include <iostream>
 
-WireframeBox::WireframeBox() : m_position{0.0f, 0.0f, 0.0f}, m_color{0.0f, 0.0f, 1.0f}, m_width(CHUNK_SCALE), m_height(CHUNK_SCALE) {
+WireframeBox::WireframeBox() : m_position{0.0f, 0.0f, 0.0f}, m_color{0.0f, 0.0f, 1.0f},
+                                m_width(CHUNK_SCALE), m_height(CHUNK_SCALE) {
 
 }
 
@@ -30,6 +31,7 @@ void WireframeBox::init(GameWindow* gl) {
     m_program->setUniformValue("boxHeight", m_height);
     m_program->release();
 
+    // Les indices des sommets à afficher (Les sommets sont calculés dans le shader)
     GLushort indices[24] = {
         0, 1,
         0, 2,

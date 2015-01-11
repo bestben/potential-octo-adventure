@@ -39,7 +39,8 @@ int main(int argc, char* argv[]) {
         #endif
         #ifdef QT_NO_DEBUG
         mainWindow.resize(rec.size().width(), rec.size().height());
-        mainWindow.showFullScreen();
+        mainWindow.show();
+        //mainWindow.showFullScreen();
         #endif
 
         return app.exec();

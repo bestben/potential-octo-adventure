@@ -1,6 +1,4 @@
-#ifndef POSTPROCESS_H
-#define POSTPROCESS_H
-
+#pragma once
 #include <QTime>
 #include <QString>
 #include <QtGui/QOpenGLFunctions>
@@ -10,6 +8,9 @@ class QOpenGLShaderProgram;
 class QOpenGLVertexArrayObject;
 class QString;
 
+/**
+ * @brief Classe permettant d'afficher un effet de post-process sur tout l'écran.
+ */
 class PostProcess {
 public:
     PostProcess(const QString& fragmentShader);
@@ -21,8 +22,9 @@ public:
     void render(GameWindow* gl);
 
 private:
+    // Le nom du fragment shader à utiliser
     QString m_fragmentShader;
-
+    // Le shader affichant l'effet
     QOpenGLShaderProgram* m_program;
     // Le vertex array object
     QOpenGLVertexArrayObject* m_vao;
@@ -30,5 +32,3 @@ private:
     QTime m_time;
     int m_timeUniformLocation;
 };
-
-#endif // POSTPROCESS_H

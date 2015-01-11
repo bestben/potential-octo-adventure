@@ -58,6 +58,8 @@ void GameWindow::initializeGL() {
     glEnable(GL_BLEND);
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    initializeTextureMaps();
+
     m_camera.init(this);
     m_player.init();
     m_chunkManager.initialize(this);

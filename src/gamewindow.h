@@ -70,6 +70,7 @@ public:
 private:
     Camera m_camera;
     Player m_player;
+    // Le logger permettant d'afficher les ereurs d'opengl
     QOpenGLDebugLogger* m_logger;
 
     int m_lastDelta;

@@ -475,9 +475,9 @@ void ChunkManager::run() {
 					if (data != nullptr){
 
 						bool skipGeneration = false;
-						/*if(ChunkExistsOnDisk(Coords{newChunk->i, newChunk->j, newChunk->k})){
+						if(ChunkExistsOnDisk(Coords{newChunk->i, newChunk->j, newChunk->k})){
 							skipGeneration = LoadChunkFromDisk(data, Coords{ newChunk->i, newChunk->j, newChunk->k }, &(newChunk->onlyAir));
-						}*/
+						}
 
 						QSet<Coords> modifiedChunks;
 

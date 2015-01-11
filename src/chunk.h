@@ -20,14 +20,14 @@ typedef uint64_t uint64;
 #define CHUNK_SIZE 16
 #define CHUNK_SCALE 5
 
-#define VIEW_SIZE 4
+#define VIEW_SIZE 8
 
 #define BIOMEMAP_CHUNKS 16
 #define BIOMEMAP_SIZE CHUNK_SIZE*BIOMEMAP_CHUNKS
 
 #define BIOMES_COUNT 4
 
-#define WORLD_HEIGHT 4
+#define WORLD_HEIGHT 7
 
 #define SUN_LIGHT 31
 #define MAX_LIGHT 30
@@ -222,3 +222,11 @@ inline uint8 unreduce_light(uint8 light)
 		return light;
 	return light + 1;
 }
+
+
+
+void initializeTextureMaps();
+
+TextureID getTexture(VoxelType type, int side);
+VoxelTextureMap getTextureMap(VoxelType type);
+

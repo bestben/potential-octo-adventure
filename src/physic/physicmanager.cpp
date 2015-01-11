@@ -6,9 +6,11 @@
 
 #include "body.h"
 
-#define JUMP_SPEED 300
+// La vitesse de saut par défaut
+#define JUMP_SPEED 150
 
-PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{false} {
+PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{true} {
+    // Initialise tous les body
     m_bodies = new Body[BODY_COUNT];
     for (int i = 0; i < BODY_COUNT; ++i) {
         m_bodies[i].jump = false;
@@ -75,8 +77,10 @@ void PhysicManager::update(GameWindow* gl, int dt) {
                 force.setY(0.0f);
                 newAcceleration = g / body->mass;
                 if (body->inWater) {
-                    newAcceleration /= 10.0f;
-                    force = force / 10.0f;
+                    newAcceleration /= 5.0f;
+                    force = force / 3.0f;
+                } else {
+                    newAcceleration /= 2.0f;
                 }
                 //avgAcceleration = (lastAcceleration + newAcceleration) * 0.5;
                 avgAcceleration = newAcceleration;
@@ -88,7 +92,7 @@ void PhysicManager::update(GameWindow* gl, int dt) {
                 if (body->jump && body->onGround && !body->inWater) {
                     body->velocity.setY(body->jumpSpeed);
                 } else if (body->jump && body->inWater) {
-                    body->velocity.setY(body->jumpSpeed / 10.0f);
+                    body->velocity.setY(body->jumpSpeed / 2.0f);
                 }
             } else {
                 avgAcceleration = QVector3D(0.0f, 0.0f, 0.0f);
@@ -125,6 +129,7 @@ void PhysicManager::update(GameWindow* gl, int dt) {
 bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, const QVector3D& delta) {
     const float PADDING = 0.00001f;
     ChunkManager& chunkManager = gl->getChunkManager();
+    // Tous les coins de notre boite
     QVector3D corners[] = {
         QVector3D(body->width + PADDING, - PADDING, body->width + PADDING),
         QVector3D(body->width + PADDING, - PADDING, -body->width - PADDING),

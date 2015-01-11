@@ -12,5 +12,5 @@ void main() {
     		
     vec3 pos = vec3(posX, posY, posZ) * vec3(boxWidth, boxHeight, boxWidth) + boxPosition;
     
-    gl_Position = viewProj * vec4(pos, 1.0);
+    gl_Position = viewProj * vec4(pos, 1.0) - vec4(0.0, 0.0, 0.01, 0.0);
 }
