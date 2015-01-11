@@ -222,14 +222,14 @@ void ChunkManager::update(GameWindow* gl) {
 			}
 			else {
 				bool remesh = false;
-				if ((chunk->isDirty || chunk->isLightDirty) && remesh_count < MAX_REMESH_PER_UPDATE){
+				if ((chunk->isDirty || chunk->isLightDirty) && remesh_count < MAX_REMESH_PER_UPDATE && chunk->vboIndex != -1 && chunk->chunkBufferIndex != -1 && chunk->generated){
 					chunk->isDirty = false;
 					chunk->isLightDirty = false;
 					remesh = true;
 				}
 
 				// Regénération du mesh pour ce chunk
-				if (remesh && chunk->vboIndex != -1 && chunk->chunkBufferIndex != -1 && chunk->generated) {
+				if (remesh) {
 					remesh_count++;
 					Buffer* buffer = m_oglBuffers + chunk->vboIndex;
 					Voxel *data = getBufferAdress(chunk->chunkBufferIndex);
@@ -286,19 +286,16 @@ void ChunkManager::update(GameWindow* gl) {
 
 		// Si on change de chunk on demande des nouveaux chunks
 		if ((chunkHere.i != m_currentChunk.i) || (chunkHere.k != m_currentChunk.k) || m_FirstUpdate) {
-
 			m_currentChunk = chunkHere;
-
 			requestChunks();
 		}
 
-		//m_mutexChunkManagerList.lock();
 
 		std::sort(m_chunkToDraw, m_chunkToDraw + m_chunkToDrawCount, [this](Chunk* i, Chunk* j)->bool{
 			return i->distanceFromCamera < j->distanceFromCamera;
 		});
 
-		//m_mutexChunkManagerList.unlock();
+		
 
 		m_FirstUpdate = false;
 	}
@@ -411,7 +408,7 @@ Chunk* ChunkManager::getChunk(Coords pos) {
 
 	m_lastChunkId = pos;
 	m_lastChunk = *it;
-	return *it;
+	return m_lastChunk;
 }
 
 Chunk* ChunkManager::getChunk(int i, int j, int k) {
@@ -470,7 +467,7 @@ void ChunkManager::run() {
 
 
 				if (!newChunk->generated){
-					// TODO Générer le nouveau chunk et le prendre du DD si déja présent
+					// Générer le nouveau chunk et le prendre du DD si déja présent
 					Voxel* data = getBufferAdress(bufferIndex);
 					if (data != nullptr){
 

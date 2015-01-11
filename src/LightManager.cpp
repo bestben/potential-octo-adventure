@@ -86,7 +86,6 @@ void LightManager::placeVoxel(Coords pos, VoxelType type, QSet<Coords> &modified
 	for (uint16 dir = 0; dir < 6; ++dir) {
 		Coords p2 = pos + neighbors[dir];
 		lightSources.insert(p2);
-		continue;
 	}
 
 	lightSources.insert(pos);
@@ -173,10 +172,9 @@ void LightManager::removeVoxel(Coords pos, QSet<Coords> &modifiedChunks) {
 	}
 
 	if (found) {
-		//lightSources.insert(maxLightPos);
 		lightNeighbors(maxLightPos, modifiedChunks);
 	}
-	//spreadLight(lightSources, modifiedChunks);
+
 
 }
 

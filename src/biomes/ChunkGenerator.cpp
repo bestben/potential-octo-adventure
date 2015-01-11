@@ -47,7 +47,7 @@ bool ChunkGenerator::generateChunk(Voxel* data, Coords chunkId, QSet<Coords> &mo
 				data[index].type = type;
 				if (onlyAir && type != VoxelType::AIR)
 					onlyAir = false;
-				//data[index].sunLight = 15;
+				//data[index]._light = SUN_LIGHT;
 			}
 		}
 	}
