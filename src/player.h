@@ -29,6 +29,9 @@ public:
     void destroy();
     void update(int dt);
     void draw();
+    /**
+     * @brief Affiche les informations extérieures à la scène.
+     */
     void postDraw();
 
     /*
@@ -44,7 +47,6 @@ private:
     GameWindow& m_game;
     // La camera attachée au joueur
     Camera& m_camera;
-
     // La box à afficher autours du bloc selectionné
     WireframeBox m_box;
     // La box à afficher autours du bloc en cours de demolition
@@ -54,15 +56,20 @@ private:
     // La distance max à laquelle le joueur peut poser / retirer un bloc
     float m_maxBlockDistance;
 
+    // Le shader affichant la cible du joueur.
     QOpenGLShaderProgram* m_crossProgram;
+    // La texture de cible
     QOpenGLTexture* m_crossTexture;
     QOpenGLVertexArrayObject* m_crossVao;
     int m_crossXSizeUniform;
     int m_crossYSizeUniform;
 
-    // Le voxel visé
+    // Le joueur est-il en train de taper ?
     bool m_isHitting;
+    // Le voxel visé
     Coords m_targetVoxel;
+    // Le temps nécessaire pour casser le voxel
     int m_targetTime;
+    // Le timer comptant le temps passé depuis que le joueur a commencé à taper le voxel
     QTime m_startTimer;
 };

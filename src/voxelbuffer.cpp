@@ -36,8 +36,7 @@ void VoxelBuffer::init(GameWindow* gl) {
 
     m_program->release();
 
-    QImage image(":/atlas.png");
-    m_atlas = new QOpenGLTexture(image);
+    m_atlas = new QOpenGLTexture(QImage(":/atlas.png"));
     m_atlas->setMagnificationFilter(QOpenGLTexture::Nearest);
 
     GLint vertices[36] = {
@@ -48,7 +47,6 @@ void VoxelBuffer::init(GameWindow* gl) {
         7, 5, 1, 1, 3, 7,
         6, 7, 3, 3, 2, 6
     };
-
 
     GLint normals[36] = {
         0, 0, 0, 0, 0, 0,
@@ -67,7 +65,6 @@ void VoxelBuffer::init(GameWindow* gl) {
     m_normals = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
     m_normals->create();
 
-
     m_vao = new QOpenGLVertexArrayObject(gl);
     m_vao->create();
     m_vao->bind();
@@ -84,12 +81,13 @@ void VoxelBuffer::init(GameWindow* gl) {
     gl->glVertexAttribIPointer(normalIndex, 1, GL_INT, 0, 0);
 
     m_vao->release();
-
 }
 
 void VoxelBuffer::destroy(GameWindow* gl) {
     delete m_program;
+    delete m_atlas;
     delete m_vertices;
+    delete m_normals;
     delete m_vao;
 }
 

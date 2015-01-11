@@ -1,5 +1,4 @@
-#ifndef WIREFRAMEBOX_H
-#define WIREFRAMEBOX_H
+#pragma once
 
 #include <QtGui/QVector3D>
 
@@ -8,6 +7,9 @@ class QOpenGLShaderProgram;
 class QOpenGLVertexArrayObject;
 class QOpenGLBuffer;
 
+/**
+ * @brief Classe permettant d'afficher les contours d'une boite.
+ */
 class WireframeBox {
 public:
     WireframeBox();
@@ -17,12 +19,23 @@ public:
     void destroy(GameWindow* gl);
     void draw(GameWindow* gl);
 
+    /**
+     * @brief Modifie la position de la boite.
+     */
     void setPosition(const QVector3D& position);
+    /**
+     * @brief Modifie la couleur de la boite.
+     */
     void setColor(float r, float g, float b);
+    /**
+     * @brief Modifie la taille de la boite.
+     */
     void setSize(float width, float height);
 
 private:
+    // Le shader affichant la boite
     QOpenGLShaderProgram* m_program;
+    // Les indices des sommets de la boite
     QOpenGLBuffer* m_indices;
     QOpenGLVertexArrayObject* m_vao;
 
@@ -35,5 +48,3 @@ private:
     float m_width;
     float m_height;
 };
-
-#endif // WIREFRAMEBOX_H

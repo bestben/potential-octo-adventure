@@ -11,8 +11,8 @@ ChunkGenerator::ChunkGenerator() : mMaps(), mLog("log.txt", std::ios_base::out)
 
 ChunkGenerator::~ChunkGenerator()
 {
-	for (auto* map : mMaps) {
-		delete map;
+    for (auto& pair : mMaps) {
+        delete pair.second;
 	}
 	mLog.close();
 }
@@ -27,10 +27,10 @@ bool ChunkGenerator::generateChunk(Voxel* data, Coords chunkId) {
 
 	Coords mapCoords = GetChunkBiomeMap(chunkId);
 
-	auto map = mMaps.find(mapCoords);
-	if (map == mMaps.end()) {
+    auto it = mMaps.find(mapCoords);
+    if (it == mMaps.end()) {
 		mMaps[mapCoords] = new BiomeMap(mapCoords.i, mapCoords.k);
-		map = mMaps.find(mapCoords);
+        it = mMaps.find(mapCoords);
 	}/* else {
 		mLog << "reusing cached map : " << mapCoords.i << " - " << mapCoords.k << std::endl;
 	}*/
@@ -39,7 +39,7 @@ bool ChunkGenerator::generateChunk(Voxel* data, Coords chunkId) {
 		for (int y = 0; y < CHUNK_SIZE; ++y) { // Hauteur
 			for (int x = 0; x < CHUNK_SIZE; ++x) {
 				int index = IndexVoxelRelPos({ x, y, z });
-				VoxelType type = (*map)->getVoxelType(chunkId, x, y, z);
+                VoxelType type = it->second->getVoxelType(chunkId, x, y, z);
 				data[index].type = type;
 				if (onlyAir && type != VoxelType::AIR)
 					onlyAir = false;

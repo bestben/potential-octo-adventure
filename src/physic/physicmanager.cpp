@@ -6,9 +6,11 @@
 
 #include "body.h"
 
+// La vitesse de saut par défaut
 #define JUMP_SPEED 150
 
 PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{true} {
+    // Initialise tous les body
     m_bodies = new Body[BODY_COUNT];
     for (int i = 0; i < BODY_COUNT; ++i) {
         m_bodies[i].jump = false;
@@ -127,6 +129,7 @@ void PhysicManager::update(GameWindow* gl, int dt) {
 bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, const QVector3D& delta) {
     const float PADDING = 0.00001f;
     ChunkManager& chunkManager = gl->getChunkManager();
+    // Tous les coins de notre boite
     QVector3D corners[] = {
         QVector3D(body->width + PADDING, - PADDING, body->width + PADDING),
         QVector3D(body->width + PADDING, - PADDING, -body->width - PADDING),

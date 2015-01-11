@@ -10,8 +10,7 @@ class QOpenGLVertexArrayObject;
  * Classe Framebuffer permettant d'avoir accès à un framebuffer perso.
  * Permet d'appliquer des effets sur tout l'écran.
  */
-class FrameBuffer
-{
+class FrameBuffer {
 public:
     FrameBuffer();
     ~FrameBuffer();

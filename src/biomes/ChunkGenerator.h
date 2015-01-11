@@ -1,12 +1,15 @@
 #pragma once
+
 #include "../chunk.h"
 #include <memory>
 #include <fstream>
 #include "BiomeMap.h"
+#include <unordered_map>
 
-
-class ChunkGenerator
-{
+/**
+ * @brief Classe permettant de générer un chunk.
+ */
+class ChunkGenerator {
 public:
 	ChunkGenerator();
 	~ChunkGenerator();
@@ -14,7 +17,7 @@ public:
 	bool generateChunk(Voxel* data, Coords chunkId);
 
 private:
-	QHash<Coords, BiomeMap*> mMaps;
+    std::unordered_map<Coords, BiomeMap*> mMaps;
 	std::ofstream mLog;
 
 };

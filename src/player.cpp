@@ -42,6 +42,7 @@ void Player::init() {
 void Player::destroy() {
     delete m_crossProgram;
     delete m_crossTexture;
+    delete m_crossVao;
     m_box.destroy(&m_game);
     m_voxel.destroy(&m_game);
     m_particles.destroy(&m_game);
@@ -77,15 +78,15 @@ void Player::draw() {
         lastVoxel = currentVoxel;
         rayPos = rayPos + dir * delta;
     }
-    if (!(lastVoxel == startVoxel) && hit) {
+    if (!(lastVoxel == startVoxel) && hit) { // Le joueur a un voxel dans sa cible
         m_box.setPosition(QVector3D(currentVoxel.i, currentVoxel.j, currentVoxel.k) * CHUNK_SCALE);
         m_box.draw(&m_game);
 
-        if (currentVoxel != m_targetVoxel) {
+        if (currentVoxel != m_targetVoxel) { // Le voxel est différent du précédant voxel visé
             m_targetVoxel = currentVoxel;
             m_startTimer.start();
         }
-        if (m_isHitting) {
+        if (m_isHitting) { // Le joueur est en train de taper
             if (m_startTimer.elapsed() >= m_targetTime) {
                 chunkManager.removeVoxel({ currentVoxel.i, currentVoxel.j, currentVoxel.k });
             } else {
@@ -93,7 +94,7 @@ void Player::draw() {
                 m_voxel.setDamage((float)m_startTimer.elapsed() / (float)m_targetTime);
                 m_voxel.setPosition(QVector3D(currentVoxel.i, currentVoxel.j, currentVoxel.k) * CHUNK_SCALE);
                 m_voxel.draw(&m_game);
-                m_game.glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                m_game.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
             m_particles.setVoxelType(type);
             m_particles.setSpawnPosition(voxelToWorld(currentVoxel));
@@ -154,9 +155,11 @@ void Player::mousePressEvent(QMouseEvent* event) {
             lastVoxel = currentVoxel;
             rayPos = rayPos + dir * delta;
         }
-        if (!(lastVoxel == startVoxel) && hit) {
+        if (!(lastVoxel == startVoxel) && hit) { // Le joueur a un voxel dans sa cible
+            // Le voxel est différent du voxel sur lequel il se tient
             if (lastVoxel != GetVoxelPosFromWorldPos(m_camera.getFootPosition()) &&
                 lastVoxel != GetVoxelPosFromWorldPos(m_camera.getPosition())) {
+
                 Voxel last = chunkManager.getVoxel(lastVoxel);
                 Voxel current = chunkManager.getVoxel(currentVoxel);
                 chunkManager.placeVoxel({ lastVoxel.i, lastVoxel.j, lastVoxel.k }, VoxelType::DIRT);
