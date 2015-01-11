@@ -6,7 +6,7 @@
 
 #include "body.h"
 
-#define JUMP_SPEED 300
+#define JUMP_SPEED 150
 
 PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{false} {
     m_bodies = new Body[BODY_COUNT];
@@ -75,8 +75,10 @@ void PhysicManager::update(GameWindow* gl, int dt) {
                 force.setY(0.0f);
                 newAcceleration = g / body->mass;
                 if (body->inWater) {
-                    newAcceleration /= 10.0f;
-                    force = force / 10.0f;
+                    newAcceleration /= 5.0f;
+                    force = force / 3.0f;
+                } else {
+                    newAcceleration /= 2.0f;
                 }
                 //avgAcceleration = (lastAcceleration + newAcceleration) * 0.5;
                 avgAcceleration = newAcceleration;
@@ -88,7 +90,7 @@ void PhysicManager::update(GameWindow* gl, int dt) {
                 if (body->jump && body->onGround && !body->inWater) {
                     body->velocity.setY(body->jumpSpeed);
                 } else if (body->jump && body->inWater) {
-                    body->velocity.setY(body->jumpSpeed / 10.0f);
+                    body->velocity.setY(body->jumpSpeed / 2.0f);
                 }
             } else {
                 avgAcceleration = QVector3D(0.0f, 0.0f, 0.0f);
