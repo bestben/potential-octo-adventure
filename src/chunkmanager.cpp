@@ -287,8 +287,8 @@ void ChunkManager::update(GameWindow* gl) {
                 }
             }
             for (int i = 0; i < m_chunkToGenerateCount; ++i) {
-                m_chunkCommandsBuffer[i].chunk = m_chunkToGenerate[m_chunkToGenerateCount - i - 1];
-                m_chunkCommandsBuffer[i].data = m_chunkBuffers + m_chunkToGenerate[m_chunkToGenerateCount - i - 1]->chunkBufferIndex * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+                m_chunkCommandsBuffer[i].chunk = m_chunkToGenerate[i];
+                m_chunkCommandsBuffer[i].data = m_chunkBuffers + m_chunkToGenerate[i]->chunkBufferIndex * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
                 m_chunkCommandsBuffer[i].onlyLight = false;
             }
             m_chunkCommands.push(m_chunkCommandsBuffer, m_chunkToGenerateCount);
@@ -298,7 +298,7 @@ void ChunkManager::update(GameWindow* gl) {
             }
         } else {
             // On met à jour les lumières
-            /*m_chunkToGenerateCount = 0;
+            m_chunkToGenerateCount = 0;
             for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end(); ++ite) {
                 if ((ite->second != nullptr) && ite->second->isLightDirty && (ite->second->state == CHUNK_LOADED_FREE)) {
                     ite->second->state = CHUNK_LOADING;
@@ -309,7 +309,7 @@ void ChunkManager::update(GameWindow* gl) {
                     m_chunkToGenerateCount++;
                 }
             }
-            m_chunkCommands.push(m_chunkCommandsBuffer, m_chunkToGenerateCount);*/
+            m_chunkCommands.push(m_chunkCommandsBuffer, m_chunkToGenerateCount);
         }
 
 		std::sort(m_chunkToDraw, m_chunkToDraw + m_chunkToDrawCount, [this](Chunk* i, Chunk* j)->bool{

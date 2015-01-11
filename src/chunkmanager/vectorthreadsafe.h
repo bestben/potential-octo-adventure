@@ -1,7 +1,7 @@
 #pragma once
 
 #include "semaphore.h"
-#include <vector>
+#include <queue>
 #include <iostream>
 
 template<class T>
@@ -17,7 +17,7 @@ public:
     void push(T element) {
         m_writeMutex.lock();
 
-        m_vector.push_back(element);
+        m_vector.push(element);
 
         m_readSemaphore.notify();
 
@@ -28,7 +28,7 @@ public:
         m_writeMutex.lock();
 
         for (int i = 0; i < count; ++i) {
-            m_vector.push_back(elements[i]);
+            m_vector.push(elements[i]);
         }
 
         m_readSemaphore.notify(count);
@@ -55,8 +55,8 @@ public:
                 continue;
             }
             found = true;
-            elmnt = m_vector.back();
-            m_vector.pop_back();
+            elmnt = m_vector.front();
+            m_vector.pop();
 
             if (m_vector.size() > 0) {
                 m_readSemaphore.notify();
@@ -71,7 +71,9 @@ public:
     void reset() {
         m_writeMutex.lock();
 
-        m_vector.clear();
+        while (!m_vector.empty()) {
+            m_vector.pop();
+        }
         m_readSemaphore.reset();
 
         m_writeMutex.unlock();
@@ -85,7 +87,7 @@ public:
 private:
     Semaphore m_readSemaphore;
     std::mutex m_writeMutex;
-    std::vector<T> m_vector;
+    std::queue<T> m_vector;
 
     std::atomic<bool> m_needUnlock;
 };

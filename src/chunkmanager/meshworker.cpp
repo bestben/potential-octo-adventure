@@ -70,10 +70,8 @@ void MeshGeneratorWorker::run() {
                 return;
             }
             m_isWaiting = true;
-            std::cout << "wait upload" << std::endl;
             // Fonction bloquante
             m_readSemaphore.wait();
-            std::cout << "end wait upload" << std::endl;
             m_isWaiting = false;
             if (m_needStop) {
                 return;
@@ -90,9 +88,7 @@ void MeshGeneratorWorker::run() {
             }
             m_isWaiting = true;
             // Fonction bloquante
-            std::cout << "wait commande" << std::endl;
             MeshWorkerCommand command = m_commands->pop();
-            std::cout << "end wait commande" << std::endl;
             m_isWaiting = false;
             if (m_needStop) {
                 return;
