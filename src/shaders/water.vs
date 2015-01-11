@@ -42,5 +42,9 @@ void main() {
     ex_normal = normals[normalIndex];
     
     view_pos = viewProj * absolutePosition;
+    /* vec4 offset = vec4(0.0,0.0,0.0,0.0);
+    if(ex_voxel == 223){
+        offset = vec4(0.0,-0.2,0.0,0.0);
+    } */
     gl_Position = viewProj * (absolutePosition + vec4(0.0, -0.2, 0.0, 0.0));
 }

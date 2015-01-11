@@ -13,6 +13,7 @@ class BiomeMap
 public:
 	BiomeMap(int mapX, int mapY);
 	VoxelType getVoxelType(const Coords& chunkId, int i, int j, int k);
+	int getGroundLevel(const Coords& chunkId, int i, int k);
 	~BiomeMap();
 
 private:
@@ -23,9 +24,9 @@ private:
 	noise::module::Perlin mTunnelNoise;
 
 	inline double getTunnelValue(const Coords& chunkId, int x, int y, int z);
-
 	inline double getValue(double* data, Coords chunkIdInMap, int i, int k);
 
+	
 	double *mBiomeSelector;
 	double *mFlatlands;
 	double *mMountains;

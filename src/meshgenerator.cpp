@@ -128,7 +128,7 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
 						b = emptyVoxel;
 
                     if (!waterPass) {
-                        if (a.type == VoxelType::WATER) {
+						if (a.type == VoxelType::WATER) {
                             setVoxel(m_waterPassGrid, x[0], x[1], x[2], a);
 							a.type = VoxelType::AIR;
                             hasWater = true;
@@ -137,7 +137,7 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
 							vox.type = VoxelType::AIR;
 							setVoxel(m_waterPassGrid, x[0], x[1], x[2], vox);
 						}
-                        if (b.type == VoxelType::WATER) {
+						if (b.type == VoxelType::WATER) {
                             setVoxel(m_waterPassGrid, x[0] + q[0], x[1] + q[1], x[2] + q[2], b);
 							b.type = VoxelType::AIR;
                             hasWater = true;

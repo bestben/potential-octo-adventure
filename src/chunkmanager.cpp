@@ -7,11 +7,13 @@
 #include <QtGui/QOpenGLVertexArrayObject>
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QOpenGLTexture>
+#include <QtCore/QSet>
 
 ChunkManager::ChunkManager() : m_isInit{ false },
-m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_ChunkGenerator(), m_FirstUpdate{ true }{
+m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
 	m_LightManager = new LightManager(this);
 	m_meshGenerator = new MeshGenerator(this);
+	m_ChunkGenerator = new ChunkGenerator(this);
 	m_chunkBuffers = new Voxel[CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 	memset(m_chunkBuffers, 0, CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
 
@@ -55,6 +57,8 @@ ChunkManager::~ChunkManager() {
 	delete[] m_availableBuffer;
 	delete[] m_tempVertexData;
 	delete[] m_chunkToDraw;
+
+	delete m_ChunkGenerator;
 }
 
 void ChunkManager::initialize(GameWindow* gl) {
@@ -311,7 +315,7 @@ void ChunkManager::draw(GameWindow* gl) {
 		m_atlas->bind(0);
 		//m_mutexChunkManagerList.lock();
 
-		for (int i = 0; i < m_chunkToDrawCount; ++i) {
+		for (int i = m_chunkToDrawCount - 1; i >= 0; --i) {
 			Chunk* chunk = m_chunkToDraw[i];
 			Buffer* buffer = m_oglBuffers + chunk->vboIndex;
 
@@ -471,16 +475,27 @@ void ChunkManager::run() {
 					if (data != nullptr){
 
 						bool skipGeneration = false;
-						if(ChunkExistsOnDisk(Coords{newChunk->i, newChunk->j, newChunk->k})){
+						/*if(ChunkExistsOnDisk(Coords{newChunk->i, newChunk->j, newChunk->k})){
 							skipGeneration = LoadChunkFromDisk(data, Coords{ newChunk->i, newChunk->j, newChunk->k }, &(newChunk->onlyAir));
-						}
+						}*/
+
+						QSet<Coords> modifiedChunks;
 
 						if(!skipGeneration){
-							newChunk->onlyAir = m_ChunkGenerator.generateChunk(data, newChunk->i, newChunk->j, newChunk->k);
+							newChunk->onlyAir = m_ChunkGenerator->generateChunk(data, newChunk->i, newChunk->j, newChunk->k, modifiedChunks);
 							SaveChunkToDisk(data, Coords{newChunk->i, newChunk->j, newChunk->k}, newChunk->onlyAir);
 						}
 
 						m_LightManager->updateLighting(newChunk);
+						modifiedChunks.remove(Coords{ newChunk->i, newChunk->j, newChunk->k });
+						for (auto pos : modifiedChunks) {
+							auto* c = getChunk(pos);
+							if (c != nullptr){
+								//m_LightManager->updateLighting(c);
+								c->isDirty = true;
+							}
+						}
+						
 
 						newChunk->generated = true;
 						newChunk->isDirty = true;
@@ -540,6 +555,9 @@ Voxel ChunkManager::getVoxel(int x, int y, int z, bool* loaded) {
         if (loaded != nullptr) {
             *loaded = false;
         }
+		if (y >= WORLD_HEIGHT*CHUNK_SIZE)
+			res._light = SUN_LIGHT;
+
 		return res;
     }
 

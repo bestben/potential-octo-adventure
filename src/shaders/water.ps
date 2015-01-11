@@ -29,13 +29,13 @@ void main() {
     tileUV.y = tileUV.y + sin(tileUV.x*10.+time*0.005)*0.01;
     vec2 texCoord = tileOffset + fract(tileUV) / tileSize;
 
-    float light = clamp(lightVar/48.0, 0.0, 1.0);
-    
+    float light = clamp(lightVar/32.0, 0.0, 1.0);
+    light = 1.0 - pow(1.0-light, 0.25);
     vec4 texelAll = texture2D(atlas, texCoord) * light;
     texelAll.a = 0.5;
 
     float minFogDist = fogDistance*0.5;
 	float fogFactor = clamp((length(-view_pos)-minFogDist)/(fogDistance-minFogDist),0.0,1.0);
 
-    out_color = mix(texelAll, fogColor, fogFactor);
+    out_color = mix(texelAll, fogColor * light, fogFactor);
 }

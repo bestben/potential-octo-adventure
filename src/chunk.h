@@ -153,7 +153,7 @@ inline bool operator==(const Voxel &lhs, const Voxel &rhs){
 }
 
 inline bool isOpaque(const Voxel& v) {
-	return v.type != VoxelType::AIR && v.type != VoxelType::WATER && v.type != VoxelType::LAVA;
+	return v.type != VoxelType::AIR && v.type != VoxelType::WATER && v.type != VoxelType::LAVA && v.type != VoxelType::IGNORE_TYPE;
 }
 
 enum class TextureID : uint8

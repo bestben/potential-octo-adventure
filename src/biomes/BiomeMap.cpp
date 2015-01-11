@@ -145,6 +145,28 @@ BiomeMap::~BiomeMap()
 	delete mHeightmap;
 }
 
+int BiomeMap::getGroundLevel(const Coords& chunkId, int i, int k){
+	Coords chunkIdInMap = GetChunkRelPosInBiomeMap(chunkId);
+	double temperature = getValue(mTemperature, chunkIdInMap, i, k);
+	double biasDesert = 1.0 - clamp(range(temperature, 20.0, 35.0), 0.0, 1.0);
+	double value = (double)GROUND_LEVEL;
+	value += getValue(mHeightmap, chunkIdInMap, i, k)*biasDesert;
+
+	int terrainHeight = round(value);
+	int j = terrainHeight;
+	for (;; --j) {
+		double bias = clamp(range(j - GROUND_LEVEL - 12, 0.0, 20.0), -0.05, 1.0);
+		double tunnel = getTunnelValue(chunkId, i, j - chunkId.j*CHUNK_SIZE, k);
+		bool inTunnel = (tunnel + bias) > 0.2;
+
+		if (inTunnel || j == 1);
+			break;
+	}
+	
+
+	return j-1;
+}
+
 
 VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 
@@ -164,21 +186,14 @@ VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 	double temperature = getValue(mTemperature, chunkIdInMap, i, k);
 	VoxelType replace = temperature > 20 ? VoxelType::SAND : VoxelType::GRAVEL;
 
-	// On veut des montagnes pas hautes dans les deserts
 	double biasDesert = 1.0 - clamp(range(temperature, 20.0, 35.0), 0.0, 1.0);
-
-	// Calcul de la hauteur de la surface
 	double value = (double)GROUND_LEVEL;
 	value += getValue(mHeightmap, chunkIdInMap, i, k)*biasDesert;
 
-	/*double sharpHill = getValue(mSharpHills, chunkIdInMap, i, k);
-	if (sharpHill > 1.0) {
-		value += clamp(sharpHill*sharpHill, 0.0, 15.0);
-	}*/
-
-	//value *= biasDesert;
-
+	
+	// Calcul de la hauteur de la surface
 	int terrainHeight = round(value);
+
 
 	double bias = clamp(range(voxelHeight - GROUND_LEVEL - 12, 0.0, 20.0), -0.05, 1.0);
 
@@ -219,6 +234,8 @@ VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 	//Surface
 	if (atGround && inTunnel)
 		result = VoxelType::GRASS;
+	if (result == VoxelType::GRASS && distanceFromSeaLevel < SEA_HEIGHT)
+		result = replace;
 	if ((atGround||result==VoxelType::WATER)&&inTunnelBorder)
 		result = replace;
 

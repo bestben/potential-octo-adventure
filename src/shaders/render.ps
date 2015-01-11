@@ -34,7 +34,9 @@ void main() {
     
     vec4 texelAll = sampleX * abs(ex_normal.x) + sampleY * abs(ex_normal.y) + sampleZ * abs(ex_normal.z);
 
-    float light = clamp(lightVar/48.0, 0.0, 1.0);
+    float light = clamp(lightVar/32.0, 0.0, 1.0);
+
+    light = 1.0 - pow(1.0-light, 0.25);
 
     float dotProd = clamp(dot(ex_normal, -normalize(vec3(0.5,-1.0,0.0))), 0.5,1.0);
 
@@ -43,6 +45,6 @@ void main() {
 	float minFogDist = fogDistance*0.5;
 	float fogFactor = clamp((length(-view_pos)-minFogDist)/(fogDistance-minFogDist),0.0,1.0);
 
-    out_color = mix(vec4(ambiant,1.0), fogColor, fogFactor);
+    out_color = mix(vec4(ambiant,1.0), fogColor * light, fogFactor);
 
 }
