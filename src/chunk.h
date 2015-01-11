@@ -21,7 +21,7 @@ typedef uint64_t uint64;
 #define CHUNK_SIZE 16
 #define CHUNK_SCALE 5
 
-#define VIEW_SIZE 4
+#define VIEW_SIZE 8
 
 #define BIOMEMAP_CHUNKS 16
 #define BIOMEMAP_SIZE CHUNK_SIZE*BIOMEMAP_CHUNKS

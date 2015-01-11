@@ -72,6 +72,7 @@ public:
 private:
     void checkChunk(Coords tuple);
     Chunk* getChunkNoLock(Coords pos);
+    void unlockUnusedChunk();
 
     bool m_isInit;
 
@@ -100,6 +101,7 @@ private:
     // Le tableau des buffers opengl
     Buffer* m_oglBuffers;
     std::vector<int> m_nextFreeBuffers;
+    std::vector<int> m_nextFreeChunk;
     // Les chunk à dessiner
     Chunk** m_chunkToDraw;
     int m_chunkToDrawCount;

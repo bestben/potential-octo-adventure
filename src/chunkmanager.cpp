@@ -31,6 +31,10 @@ ChunkManager::ChunkManager() : m_isInit{ false }, m_chunkWorker{this}, m_meshWor
     for (int i = 0; i < VBO_NUMBER; ++i) {
         m_nextFreeBuffers.push_back(i);
     }
+    m_nextFreeChunk.reserve(CHUNK_NUMBER);
+    for (int i = 0; i < CHUNK_NUMBER; ++i) {
+        m_nextFreeChunk.push_back(i);
+    }
 
     m_currentChunk = { 0, -1, 0 };
     m_chunkDataLeft = CHUNK_NUMBER;
@@ -185,9 +189,9 @@ void ChunkManager::update(GameWindow* gl) {
             m_meshCommands.reset();
             m_chunkWorker.reset();
 
-            while (!m_chunkWorker.isWaiting() || !m_meshWorker.isWaiting()) {
+            /*while (!m_chunkWorker.isWaiting() || !m_meshWorker.isWaiting()) {
                 // On attend que les autres threads aient fini leur commande en cours
-            }
+            }*/
 
             m_chunkToRecycleCount = 0;
             m_chunkToGenerateCount = 0;
@@ -217,9 +221,11 @@ void ChunkManager::update(GameWindow* gl) {
                 if ((std::abs(chunk->i - m_currentChunk.i) > VIEW_SIZE) ||
                     (std::abs(chunk->k - m_currentChunk.k) > VIEW_SIZE)) {
                     if (chunk->state != CHUNK_NOT_LOADED) {
-                        chunk->state = CHUNK_RECYCLE;
-
-                        m_chunkToRecycle[m_chunkToRecycleCount++] = chunk;
+                        chunk->state = CHUNK_NOT_LOADED;
+                    }
+                    if (chunk->chunkBufferIndex != -1) {
+                        m_nextFreeChunk.push_back(chunk->chunkBufferIndex);
+                        chunk->chunkBufferIndex = -1;
                     }
                     if (chunk->vboIndex != -1) {
                         m_nextFreeBuffers.push_back(chunk->vboIndex);
@@ -268,7 +274,7 @@ void ChunkManager::update(GameWindow* gl) {
 
             int recycle = 0;
             for (int i = 0; i < m_chunkToGenerateCount; ++i) {
-                if (m_chunkDataLeft > 0) {
+                /*if (m_chunkDataLeft > 0) {
                     m_chunkToGenerate[i]->chunkBufferIndex = CHUNK_NUMBER - m_chunkDataLeft;
                     m_chunkDataLeft--;
                 } else if (recycle < m_chunkToRecycleCount) {
@@ -281,6 +287,18 @@ void ChunkManager::update(GameWindow* gl) {
 
                     recycle++;
                 } else {
+                    #ifdef QT_DEBUG
+                    std::cout << "plus assez de buffer pour generer le mesh" << std::endl;
+                    #endif
+                }*/
+                if (m_nextFreeChunk.size() == 0) {
+                    unlockUnusedChunk(); // On ne devrait pas arriver ici
+                }
+                if (m_nextFreeChunk.size() > 0) {
+                    m_chunkToGenerate[i]->chunkBufferIndex = m_nextFreeChunk.back();
+                    m_nextFreeChunk.pop_back();
+                } else {
+
                     #ifdef QT_DEBUG
                     std::cout << "plus assez de buffer pour generer le mesh" << std::endl;
                     #endif
@@ -301,8 +319,8 @@ void ChunkManager::update(GameWindow* gl) {
             m_chunkToGenerateCount = 0;
             for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end(); ++ite) {
                 if ((ite->second != nullptr) && ite->second->isLightDirty && (ite->second->state == CHUNK_LOADED_FREE)) {
-                    ite->second->state = CHUNK_LOADING;
-                    ite->second->isLightDirty = false;
+                    //ite->second->state = CHUNK_LOADING;
+                    //ite->second->isLightDirty = false;
                     m_chunkCommandsBuffer[m_chunkToGenerateCount].chunk = ite->second;
                     m_chunkCommandsBuffer[m_chunkToGenerateCount].data = m_chunkBuffers + ite->second->chunkBufferIndex * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
                     m_chunkCommandsBuffer[m_chunkToGenerateCount].onlyLight = true;
@@ -318,6 +336,24 @@ void ChunkManager::update(GameWindow* gl) {
 
 		m_FirstUpdate = false;
 	}
+}
+
+void ChunkManager::unlockUnusedChunk() {
+    bool* free = new bool[CHUNK_NUMBER];
+    for (int i = 0; i < CHUNK_NUMBER; i++) {
+        free[i] = true;
+    }
+    for (auto& pair : m_ChunkMap) {
+        if ((pair.second != nullptr) && (pair.second->chunkBufferIndex != -1)) {
+            free[pair.second->chunkBufferIndex] = false;
+        }
+    }
+    m_nextFreeChunk.clear();
+    for (int i = 0; i < CHUNK_NUMBER; i++) {
+        if (free[i]) {
+            m_nextFreeChunk.push_back(i);
+        }
+    }
 }
 
 void ChunkManager::draw(GameWindow* gl) {
@@ -379,17 +415,16 @@ void ChunkManager::requestChunks() {
 }
 
 void ChunkManager::checkChunk(Coords pos) {
+    auto it = m_ChunkMap.find(pos);
+    auto end = m_ChunkMap.end();
+    if (it == end) {
+        Chunk* chunk = new Chunk();
+        chunk->i = pos.i;
+        chunk->j = pos.j;
+        chunk->k = pos.k;
 
-    Chunk* chunk = getChunkNoLock(pos);
-
-	if (chunk == nullptr) {
-		chunk = new Chunk();
-		chunk->i = pos.i;
-		chunk->j = pos.j;
-		chunk->k = pos.k;
-
-		m_ChunkMap[pos] = chunk;
-	}
+        m_ChunkMap[pos] = chunk;
+    }
 }
 
 Voxel* ChunkManager::getBufferAdress(int index) {
