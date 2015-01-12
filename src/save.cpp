@@ -2,17 +2,18 @@
 #include <string>
 
 
-void SaveChunkToDisk(Voxel* data, const Coords &chunkId, bool onlyAir){
+void SaveChunkToDisk(Voxel* data, const Coords &chunkId, bool onlyAir, int worldSeed){
 
 	uint32 size = CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE;
 
 	
 
 	std::ostringstream filename;
-	filename << "world/" << chunkId.i << "-" << chunkId.j << "-" << chunkId.k;
+	filename << "world/" << worldSeed << "-" << chunkId.i << "-" << chunkId.j << "-" << chunkId.k << ".chunk";
 
 	std::ofstream file;
-	file.open(filename.str(), std::ofstream::out | std::ofstream::binary);
+	file.open(filename.str(), std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+
 
 	if(onlyAir){
 		file.write((char*)&onlyAir, sizeof(bool));
@@ -31,18 +32,19 @@ void SaveChunkToDisk(Voxel* data, const Coords &chunkId, bool onlyAir){
 	file.write((char *)tmp_data, size*sizeof(uint8));
 
 	file.close();
+	file.clear();
 
 	delete tmp_data;
 
 }
 
-bool LoadChunkFromDisk(Voxel *data, const Coords &chunkId, bool *onlyAir){
+bool LoadChunkFromDisk(Voxel *data, const Coords &chunkId, bool *onlyAir, int worldSeed){
 
 	std::ostringstream filename;
-	filename << "world/" << chunkId.i << "-" << chunkId.j << "-" << chunkId.k;
+	filename << "world/" << worldSeed << "-" << chunkId.i << "-" << chunkId.j << "-" << chunkId.k << ".chunk";
 
 	std::ifstream file;
-	file.open(filename.str(), std::ifstream::in | std::ifstream::binary);
+	file.open(filename.str(), std::ios_base::in | std::ios_base::binary);
 
 	if(!file.good()){
 		return false;

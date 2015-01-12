@@ -9,11 +9,12 @@
 #include <QtGui/QOpenGLTexture>
 #include <QtCore/QSet>
 
-ChunkManager::ChunkManager() : m_isInit{ false },
-m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true } {
+ChunkManager::ChunkManager(int worldSeed) : m_isInit{ false },
+m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
+	mWorldSeed = worldSeed;
 	m_LightManager = new LightManager(this);
 	m_meshGenerator = new MeshGenerator(this);
-	m_ChunkGenerator = new ChunkGenerator(this);
+	m_ChunkGenerator = new ChunkGenerator(this, worldSeed);
 	m_chunkBuffers = new Voxel[CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
 	memset(m_chunkBuffers, 0, CHUNK_NUMBER * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
 
@@ -50,8 +51,17 @@ m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true } {
 
 ChunkManager::~ChunkManager() {
 	m_mutexChunkManagerList.lock();
-    for (auto& c : m_ChunkMap)
-        delete c.second;
+    
+	for (auto& pair : m_ChunkMap) {
+        Chunk* chunk = pair.second;
+		if (chunk->chunkBufferIndex != -1 && chunk->generated && chunk->differsFromDisk){
+			Voxel* voxel_data = getBufferAdress(chunk->chunkBufferIndex);
+			SaveChunkToDisk(voxel_data, Coords{ chunk->i, chunk->j, chunk->k }, chunk->onlyAir, mWorldSeed);
+		}
+
+		delete chunk;
+	}
+
 	m_mutexChunkManagerList.unlock();
 	delete[] m_chunkBuffers;
 	delete[] m_availableChunkData;
@@ -146,7 +156,6 @@ void ChunkManager::destroy(GameWindow* gl) {
     this->wait(2000);
 
 	m_isInit = false;
-
 
 	// On nettoie les ressources opengl
 	for (int i = 0; i < VBO_NUMBER; ++i) {
@@ -433,9 +442,12 @@ void ChunkManager::run() {
 			m_mutexGenerateQueue.lock();
 			Coords here = m_currentChunk;
 			std::sort(m_toGenerateChunkData.begin(), m_toGenerateChunkData.end(), [here](Chunk* c1, Chunk* c2)->bool{
-				int a = (c1->i - here.i)*(c1->i - here.i) + (c1->j - here.j)*(c1->j - here.j) + (c1->k - here.k)*(c1->k - here.k);
-				int b = (c2->i - here.i)*(c2->i - here.i) + (c2->j - here.j)*(c2->j - here.j) + (c2->k - here.k)*(c2->k - here.k);
-				return a>b;
+				int a = (c1->i - here.i)*(c1->i - here.i) + (c1->k - here.k)*(c1->k - here.k);
+				int b = (c2->i - here.i)*(c2->i - here.i) + (c2->k - here.k)*(c2->k - here.k);
+				if (a == b) {
+					return c1->j < c2->j;
+				}
+				return a > b;
 			});
 
 			
@@ -479,15 +491,17 @@ void ChunkManager::run() {
 					if (data != nullptr){
 
 						bool skipGeneration = false;
-						if(ChunkExistsOnDisk(Coords{newChunk->i, newChunk->j, newChunk->k})){
-							skipGeneration = LoadChunkFromDisk(data, Coords{ newChunk->i, newChunk->j, newChunk->k }, &(newChunk->onlyAir));
+						if (ChunkExistsOnDisk(Coords{ newChunk->i, newChunk->j, newChunk->k }, mWorldSeed)){
+							skipGeneration = LoadChunkFromDisk(data, Coords{ newChunk->i, newChunk->j, newChunk->k }, &(newChunk->onlyAir), mWorldSeed);
+							newChunk->differsFromDisk = !skipGeneration;
 						}
 
 						QSet<Coords> modifiedChunks;
 
 						if(!skipGeneration){
 							newChunk->onlyAir = m_ChunkGenerator->generateChunk(data, newChunk->i, newChunk->j, newChunk->k, modifiedChunks);
-							SaveChunkToDisk(data, Coords{newChunk->i, newChunk->j, newChunk->k}, newChunk->onlyAir);
+							SaveChunkToDisk(data, Coords{ newChunk->i, newChunk->j, newChunk->k }, newChunk->onlyAir, mWorldSeed);
+							newChunk->differsFromDisk = false;
 						}
 
                         m_LightManager->updateLighting(newChunk);
@@ -495,8 +509,13 @@ void ChunkManager::run() {
 						for (auto pos : modifiedChunks) {
 							auto* c = getChunk(pos);
 							if (c != nullptr){
-								//m_LightManager->updateLighting(c);
-								c->isDirty = true;
+								if (c->chunkBufferIndex != -1 && c->generated){
+									m_LightManager->updateLighting(c);
+									Voxel* voxel_data = getBufferAdress(c->chunkBufferIndex);
+									SaveChunkToDisk(voxel_data, Coords{ c->i, c->j, c->k }, c->onlyAir, mWorldSeed);
+									c->isDirty = true;
+									c->differsFromDisk = false;
+								}
 							}
 						}
 
@@ -629,7 +648,7 @@ VoxelType ChunkManager::placeVoxel(Coords pos, VoxelType type) {
 
 	Chunk* thisChunk = getChunk(GetChunkPosFromVoxelPos(pos));
 	
-
+	thisChunk->differsFromDisk = true;
 
 	for (auto coords : modifiedChunks) {
 		Chunk* chunk = getChunk(coords);
@@ -658,7 +677,7 @@ void ChunkManager::removeVoxel(Coords pos) {
 	m_LightManager->removeVoxel(pos, modifiedChunks);
 
 	Chunk* thisChunk = getChunk(GetChunkPosFromVoxelPos(pos));
-	
+	thisChunk->differsFromDisk = true;
 
 	for (auto coords : modifiedChunks) {
 		Chunk* chunk = getChunk(coords);

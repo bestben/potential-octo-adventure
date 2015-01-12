@@ -5,7 +5,7 @@
 #include <iostream>
 #include <QScreen>
 #include <QtOpenGL/QGLFormat>
-
+#include <fstream>
 
 int main(int argc, char* argv[]) {
     try {
@@ -28,7 +28,13 @@ int main(int argc, char* argv[]) {
         format.setSwapInterval(1); // A changer pour caper ou non à 60FPS
         format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
 
-        GameWindow mainWindow;
+		std::ifstream file;
+		file.open("config.txt", std::ios_base::in);
+
+		int seed = 0;
+		file >> seed;
+
+		GameWindow mainWindow(seed);
         mainWindow.setFormat(format);
 
         QScreen* screen = app.primaryScreen();

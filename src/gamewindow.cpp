@@ -10,8 +10,8 @@
 
 
 
-GameWindow::GameWindow() : QOpenGLWindow(), m_player{*this, m_camera}, m_lastDelta{0},
-                            m_currentDeltaIndex{0}, m_isInitialized{false}, m_waterPostProcess{":/waterPostProcess.ps"}
+GameWindow::GameWindow(int worldSeed) : QOpenGLWindow(), m_player{ *this, m_camera }, m_lastDelta{ 0 },
+m_currentDeltaIndex{ 0 }, m_isInitialized{ false }, m_waterPostProcess{ ":/waterPostProcess.ps" }, m_chunkManager(worldSeed)
 {
     m_deltaTimer.start();
     memset(m_lastDeltas, 0, FPS_FRAME_NUMBER * sizeof(int));
