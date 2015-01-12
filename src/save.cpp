@@ -25,7 +25,7 @@ void SaveChunkToDisk(Voxel* data, const Coords &chunkId, bool onlyAir){
 	uint8 *tmp_data = new uint8[size];
 
 	for(uint32 i=0 ; i<size ;++i){
-		tmp_data[i] = (uint32)data[i].type;
+		tmp_data[i] = (uint8)data[i].type;
 	}
 
 	file.write((char *)tmp_data, size*sizeof(uint8));
@@ -53,8 +53,11 @@ bool LoadChunkFromDisk(Voxel *data, const Coords &chunkId, bool *onlyAir){
 
 	if(onlyAir){
 		if(*onlyAir){
-			memset(data, 0, size*sizeof(Voxel));
 			file.close();
+			for (uint32 i = 0; i < size; ++i){
+				data[i] = Voxel(VoxelType::AIR);
+				data[i]._light = 0;
+			}
 			return true;
 		}
 	}
@@ -65,6 +68,7 @@ bool LoadChunkFromDisk(Voxel *data, const Coords &chunkId, bool *onlyAir){
 
 	for(uint32 i=0; i<size;++i){
 		data[i] = Voxel( (VoxelType)tmp_data[i] );
+		data[i]._light = 0;
 	}
 
 	file.close();
