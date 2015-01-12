@@ -6,3 +6,8 @@
     "Clique droit" pour tourner la vue.
     "Clique Gauche" pour détruire un bloc.
     "Clique millieu" pour poser un bloc.
+    
+============================================
+Utilisation:
+    Créer un fichier config.txt dans le dossier de l'executable avec seulement un nombre dedans pour changer la seed.
+    Créer un dossier world dans le dossier de l'executable pour permettre la sauvegarde.
