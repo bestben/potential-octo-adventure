@@ -106,6 +106,8 @@ struct Chunk {
 
 		generated = false;
 
+		differsFromDisk = false;
+
 	}
 
     // Les coordonnées du chunk
@@ -130,6 +132,7 @@ struct Chunk {
 
 	bool onlyAir;
 
+	bool differsFromDisk;
 
 };
 
