@@ -11,7 +11,7 @@ class BiomeLayer;
 class BiomeMap
 {
 public:
-	BiomeMap(int mapX, int mapY);
+	BiomeMap(int mapX, int mapY, int worldSeed = 0);
 	VoxelType getVoxelType(const Coords& chunkId, int i, int j, int k);
 	int getGroundLevel(const Coords& chunkId, int i, int k);
 	~BiomeMap();
@@ -35,5 +35,6 @@ private:
 	double *mHeightmap;
 
 	std::ofstream mLog;
+	int mWorldSeed;
 };
 

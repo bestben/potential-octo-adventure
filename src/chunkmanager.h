@@ -38,7 +38,7 @@ struct Buffer {
  */
 class ChunkManager : QThread {
 public:
-    ChunkManager();
+	ChunkManager(int worldSeed);
     ~ChunkManager();
 
 	void initialize(GameWindow* gl);
@@ -82,7 +82,7 @@ private:
     int seekFreeChunkData();
     int seekFreeBuffer();
 
-	
+	int mWorldSeed;
 
     bool m_isInit;
 

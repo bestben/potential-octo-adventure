@@ -29,7 +29,7 @@ public:
     /**
      * @brief Constructeur de la classe GameWindow.
      */
-    GameWindow();
+	GameWindow(int worldSeed);
     ~GameWindow();
     /**
      * @brief Initialise la fenêtre.

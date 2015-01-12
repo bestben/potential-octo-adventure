@@ -5,8 +5,9 @@
 
 using namespace noise;
 
-BiomeMap::BiomeMap(int mapX, int mapY)
+BiomeMap::BiomeMap(int mapX, int mapY, int worldSeed)
 {
+	mWorldSeed = worldSeed;
 	mMapX = mapX;
 	mMapY = mapY;
 	
@@ -14,14 +15,14 @@ BiomeMap::BiomeMap(int mapX, int mapY)
 	double xOffset = mMapX*BIOMEMAP_SIZE;
 	double zOffset = mMapY*BIOMEMAP_SIZE;
 
-	mTunnelNoise.SetSeed(42);
+	mTunnelNoise.SetSeed(worldSeed+42);
 	mTunnelNoise.SetFrequency(0.05);
 	mTunnelNoise.SetOctaveCount(1);
 	mTunnelNoise.SetNoiseQuality(NoiseQuality::QUALITY_FAST);
 
 	// Variation des biomes
 	module::Voronoi biomeSelectorNoise;
-	biomeSelectorNoise.SetSeed(1337);
+	biomeSelectorNoise.SetSeed(worldSeed + 1337);
 	biomeSelectorNoise.SetDisplacement(BIOMES_COUNT);
 	biomeSelectorNoise.SetFrequency(0.01);
 	module::ScaleBias biasBiomeSelector;
@@ -33,7 +34,7 @@ BiomeMap::BiomeMap(int mapX, int mapY)
 	mMountains = new double[BIOMEMAP_SIZE*BIOMEMAP_SIZE];
 	module::Perlin moutainsNoise;
 	moutainsNoise.SetNoiseQuality(noise::NoiseQuality::QUALITY_FAST);
-	moutainsNoise.SetSeed(0);
+	moutainsNoise.SetSeed(worldSeed + 0);
 	moutainsNoise.SetOctaveCount(4);
 	moutainsNoise.SetFrequency(0.025);
 	module::ScaleBias biasMoutains;
@@ -51,7 +52,7 @@ BiomeMap::BiomeMap(int mapX, int mapY)
 	mFlatlands = new double[BIOMEMAP_SIZE*BIOMEMAP_SIZE];
 	module::Perlin flatNoise;
 	flatNoise.SetNoiseQuality(noise::NoiseQuality::QUALITY_FAST);
-	flatNoise.SetSeed(1);
+	flatNoise.SetSeed(worldSeed + 1);
 	flatNoise.SetOctaveCount(3);
 	flatNoise.SetFrequency(0.01);
 	module::ScaleBias biasFlatlands;
@@ -84,7 +85,7 @@ BiomeMap::BiomeMap(int mapX, int mapY)
 	mDirtLayer = new double[BIOMEMAP_SIZE*BIOMEMAP_SIZE];
 	module::Perlin dirtNoise;
 	dirtNoise.SetNoiseQuality(noise::NoiseQuality::QUALITY_FAST);
-	dirtNoise.SetSeed(5);
+	dirtNoise.SetSeed(worldSeed + 5);
 	dirtNoise.SetOctaveCount(2);
 	dirtNoise.SetFrequency(0.05);
 	module::ScaleBias dirtFinalNoise;
@@ -101,7 +102,7 @@ BiomeMap::BiomeMap(int mapX, int mapY)
 	mTemperature = new double[BIOMEMAP_SIZE*BIOMEMAP_SIZE];
 	module::Perlin tempNoise;
 	tempNoise.SetNoiseQuality(noise::NoiseQuality::QUALITY_FAST);
-	tempNoise.SetSeed(5);
+	tempNoise.SetSeed(worldSeed + 6);
 	tempNoise.SetOctaveCount(2);
 	tempNoise.SetFrequency(0.005);
 	module::ScaleBias tempFinalNoise;

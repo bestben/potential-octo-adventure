@@ -6,7 +6,7 @@
 #include <random>
 #include <QtCore/QSet>
 
-ChunkGenerator::ChunkGenerator(ChunkManager* cm) : mChunkManager{ cm }, mMaps(), mLog("log.txt", std::ios_base::out)
+ChunkGenerator::ChunkGenerator(ChunkManager* cm, int worldSeed) : mChunkManager{ cm }, mMaps(), mLog("log.txt", std::ios_base::out), mWorldSeed(worldSeed)
 {
 
 }
@@ -34,7 +34,7 @@ bool ChunkGenerator::generateChunk(Voxel* data, Coords chunkId, QSet<Coords> &mo
 
     auto it = mMaps.find(mapCoords);
     if (it == mMaps.end()) {
-		mMaps[mapCoords] = new BiomeMap(mapCoords.i, mapCoords.k);
+		mMaps[mapCoords] = new BiomeMap(mapCoords.i, mapCoords.k, mWorldSeed);
         it = mMaps.find(mapCoords);
 	}
 
@@ -70,7 +70,7 @@ static int rndInt(std::minstd_rand0 &gen, int min, int max){
 bool ChunkGenerator::placeTrees(Voxel* data, Coords chunkId, BiomeMap &map, QSet<Coords> &modifiedChunks){
 
 
-	std::minstd_rand0 rnd(chunkId.i * 100 + chunkId.j * 10000 + chunkId.k * 1000000);
+	std::minstd_rand0 rnd((chunkId.i*773 + chunkId.j*104743 + chunkId.k*15485867)*mWorldSeed);
 
 	Coords chunkPos = chunkId * CHUNK_SIZE;
 
