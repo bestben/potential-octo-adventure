@@ -11,7 +11,8 @@
 #include "biomes/ChunkGenerator.h"
 #include "LightManager.h"
 #include <QtCore/qvector.h>
-#include <QMutex>
+#include <mutex>
+#include <unordered_map>
 
 class QOpenGLVertexArrayObject;
 class QOpenGLShaderProgram;
@@ -82,8 +83,6 @@ private:
     int seekFreeChunkData();
     int seekFreeBuffer();
 
-	
-
     bool m_isInit;
 
     MeshGenerator* m_meshGenerator;
@@ -115,8 +114,7 @@ private:
     Chunk** m_chunkToDraw;
     int m_chunkToDrawCount;
 
-    //std::map<std::tuple<int, int, int>, Chunk> m_ChunkMap;
-    QHash<Coords, Chunk*> m_ChunkMap;
+    std::unordered_map<Coords, Chunk*> m_ChunkMap;
 
     int m_currentChunkI;
     int m_currentChunkJ;
@@ -133,26 +131,11 @@ private:
 
     std::atomic<bool>* m_availableBuffer;
 
-	QMutex m_mutexChunkManagerList;
-	QMutex m_mutexGenerateQueue;
+    std::mutex m_mutexChunkManagerList;
+    std::mutex m_mutexGenerateQueue;
 
-	/*
-	QLinkedList<Chunk*> m_toInvalidateChunkData;
-	
-	QLinkedList<Chunk*> m_toInvalidateBuffer;
-	*/
-	//QLinkedList<Chunk*> m_toGenerateChunkData;
 	QVector<Chunk*> m_toGenerateChunkData;
 	QLinkedList<Chunk*> m_toGenerateBuffer;
-	
-
-	/*
-    std::vector<std::tuple<int, int, int>> m_toInvalidateChunkData;
-    std::vector<std::tuple<int, int, int>> m_toGenerateChunkData;
-
-    std::vector<std::tuple<int, int, int>> m_toInvalidateBuffer;
-    std::vector<std::tuple<int, int, int>> m_toGenerateBuffer;
-	*/
 
     GLuint* m_tempVertexData;
     Buffer m_tempBufferToUpload;

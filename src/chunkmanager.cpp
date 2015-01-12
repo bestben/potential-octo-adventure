@@ -10,7 +10,7 @@
 #include <QtCore/QSet>
 
 ChunkManager::ChunkManager() : m_isInit{ false },
-m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
+m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true } {
 	m_LightManager = new LightManager(this);
 	m_meshGenerator = new MeshGenerator(this);
 	m_ChunkGenerator = new ChunkGenerator(this);
@@ -50,8 +50,8 @@ m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
 
 ChunkManager::~ChunkManager() {
 	m_mutexChunkManagerList.lock();
-	for (auto* c : m_ChunkMap)
-		delete c;
+    for (auto& c : m_ChunkMap)
+        delete c.second;
 	m_mutexChunkManagerList.unlock();
 	delete[] m_chunkBuffers;
 	delete[] m_availableChunkData;
@@ -188,8 +188,8 @@ void ChunkManager::update(GameWindow* gl) {
 		uint16 remesh_count = 0;
 
 		for (auto ite = m_ChunkMap.begin(); ite != m_ChunkMap.end();) {
-			auto chunk = *ite;
-			if (chunk == nullptr){ ++ite; continue; }
+            auto chunk = ite->second;
+            if (chunk == nullptr){ ++ite; continue; }
 
 			// Les chunks hors de la vue 
 			if ((std::abs(chunk->i - m_currentChunk.i) > VIEW_SIZE) ||
@@ -414,8 +414,8 @@ Chunk* ChunkManager::getChunk(Coords pos) {
 	}
 
     m_lastChunkId = pos;
-	m_lastChunk = *it;
-    return *it;
+    m_lastChunk = it->second;
+    return it->second;
 }
 
 Chunk* ChunkManager::getChunk(int i, int j, int k) {

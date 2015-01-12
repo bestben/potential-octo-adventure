@@ -66,10 +66,11 @@ QMAKE_CFLAGS_RELEASE  *= -O3
 QMAKE_LFLAGS_RELEASE  *= -O3
 QMAKE_CXXFLAGS_RELEASE  *= -O3
 
+QMAKE_CXXFLAGS += -std=c++11
+
 unix{
 	QMAKE_CXXFLAGS+=-fopenmp
 	QMAKE_LFLAGS+=-fopenmp
-        QMAKE_CXXFLAGS += -std=c++11
 }
 win32{
 	QMAKE_CXXFLAGS += -openmp
