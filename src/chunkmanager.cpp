@@ -73,14 +73,14 @@ void ChunkManager::initialize(GameWindow* gl) {
 	m_matrixUniform = m_program->uniformLocation("viewProj");
 	m_chunkPosUniform = m_program->uniformLocation("chunkPosition");
 
+	QVector3D skyColor(0.53f, 0.807f, 0.92);
 
 	m_program->bind();
 	m_program->setUniformValue("atlas", 0);
 	m_program->setUniformValue("tileCount", 16);
 	m_program->setUniformValue("tileSize", 16);
-	m_program->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE)*2.0f);
-	// TODO: Utiliser la couleur du ciel à la place
-	m_program->setUniformValue("fogColor", QVector4D(.5f, .5f, .5f, 1.0f));
+	m_program->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE)*3.0f);
+	m_program->setUniformValue("fogColor", skyColor);
 	m_program->release();
 
 	m_waterProgram = new QOpenGLShaderProgram(gl);
@@ -96,9 +96,8 @@ void ChunkManager::initialize(GameWindow* gl) {
 	m_waterProgram->setUniformValue("atlas", 0);
 	m_waterProgram->setUniformValue("tileCount", 16);
 	m_waterProgram->setUniformValue("tileSize", 16);
-	m_waterProgram->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE)*2.0f);
-	// TODO: Utiliser la couleur du ciel à la place
-	m_waterProgram->setUniformValue("fogColor", QVector4D(.5f, .5f, .5f, 1.0f));
+	m_waterProgram->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE)*3.0f);
+	m_waterProgram->setUniformValue("fogColor", skyColor);
 	m_waterProgram->release();
 
 	m_atlas = new QOpenGLTexture(QImage(":/atlas.png"));
@@ -197,7 +196,7 @@ void ChunkManager::update(GameWindow* gl) {
 				chunk->inQueue = false;
 				m_mutexGenerateQueue.unlock();
 				// Si nombre de buffers libres est sous le seuil, on libère de la mémoire
-				if (m_vboLeft < FREE_BUFFERS_THRESHOLD || m_chunkDataLeft < FREE_BUFFERS_THRESHOLD){
+				if (m_vboLeft <= FREE_BUFFERS_THRESHOLD || m_chunkDataLeft <= FREE_BUFFERS_THRESHOLD){
 					if (chunk->chunkBufferIndex != -1) {
 						m_availableChunkData[chunk->chunkBufferIndex] = true;
 						chunk->chunkBufferIndex = -1;
@@ -210,6 +209,7 @@ void ChunkManager::update(GameWindow* gl) {
 						m_vboLeft++;
 					}
 					chunk->generated = false;
+					
 					m_mutexChunkManagerList.lock();
 					ite = m_ChunkMap.erase(ite);
 					m_mutexChunkManagerList.unlock();
@@ -492,13 +492,12 @@ void ChunkManager::run() {
 								c->isDirty = true;
 							}
 						}
-						
 
 						newChunk->generated = true;
 						newChunk->isDirty = true;
 					}
 					else {
-						// ?
+						newChunk->isDirty = true;
 					}
 				}
 				newChunk->inQueue = false;
@@ -519,7 +518,7 @@ void ChunkManager::run() {
 
 
 		// Eviter de faire fondre le cpu dans des boucles vides ;)
-		QThread::msleep(33);
+		QThread::msleep(5);
 	}
 }
 
@@ -590,16 +589,19 @@ VoxelType ChunkManager::setVoxel(int x, int y, int z, VoxelType newType, uint li
 			Coords c = GetVoxelRelPos({ x, y, z });
 			int index = IndexVoxelRelPos(c);
 
-			Voxel& v = voxels[index];
+			Voxel* v = &voxels[index];
 
 			bool changed = false;
-			res = v.type;
+			res = v->type;
 
 			if (light != NO_CHANGE){
-				v._light = light;
+				v->_light = light;
 			}
 
-			v.type = newType;
+			v->type = newType;
+
+			if (chunk->onlyAir && newType != VoxelType::AIR)
+				chunk->onlyAir = false;
 			
 		}
 	}

@@ -39,6 +39,8 @@ bool ChunkGenerator::generateChunk(Voxel* data, Coords chunkId, QSet<Coords> &mo
 
 	bool onlyAir = true;
 
+	//memset(data, 0, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*sizeof(Voxel));
+
 	for (int z = 0; z < CHUNK_SIZE; ++z) {
 		for (int y = 0; y < CHUNK_SIZE; ++y) { // Hauteur
 			for (int x = 0; x < CHUNK_SIZE; ++x) {

@@ -79,7 +79,8 @@ void GameWindow::initializeGL() {
 
 void GameWindow::paintGL() {
 	// Sky color
-	glClearColor(.5f, .5f, .5f, 1.0f);
+	QVector3D skyColor(0.53f, 0.807f, 0.92);
+	glClearColor(skyColor.x(), skyColor.y(), skyColor.z(), 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     
     m_lastDelta = m_deltaTimer.elapsed();

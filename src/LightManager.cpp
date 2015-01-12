@@ -194,7 +194,7 @@ void LightManager::updateLighting(Chunk* chunk) {
 		if (current_chunk->chunkBufferIndex == -1)
 			break;
 
-		Coords chunkPos = { chunk->i, chunk->j, chunk->k };
+		Coords chunkPos = { current_chunk->i, current_chunk->j, current_chunk->k };
 		Coords offset = chunkPos * CHUNK_SIZE;
 
 		modifiedChunks.insert(chunkPos);
@@ -234,7 +234,9 @@ void LightManager::updateLighting(Chunk* chunk) {
 			break;
 		
 		current_chunk = mChunkManager->getChunk(chunkPos + Coords{0, -1, 0});
-		
+
+		if (current_chunk == nullptr)
+			break;
 
 	}
 	

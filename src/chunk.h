@@ -12,22 +12,22 @@ typedef uint32_t uint32;
 typedef int64_t int64;
 typedef uint64_t uint64;
 
-#define CHUNK_NUMBER 2048
-#define VBO_NUMBER 2048
+#define CHUNK_NUMBER 4096
+#define VBO_NUMBER 4096
 
-#define FREE_BUFFERS_THRESHOLD 32
+#define FREE_BUFFERS_THRESHOLD 256
 
 #define CHUNK_SIZE 16
 #define CHUNK_SCALE 5
 
-#define VIEW_SIZE 8
+#define VIEW_SIZE 7
 
 #define BIOMEMAP_CHUNKS 16
 #define BIOMEMAP_SIZE CHUNK_SIZE*BIOMEMAP_CHUNKS
 
 #define BIOMES_COUNT 4
 
-#define WORLD_HEIGHT 7
+#define WORLD_HEIGHT 6
 
 #define SUN_LIGHT 31
 #define MAX_LIGHT 30
