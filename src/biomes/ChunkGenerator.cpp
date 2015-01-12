@@ -40,7 +40,7 @@ bool ChunkGenerator::generateChunk(Voxel* data, Coords chunkId, QSet<Coords> &mo
 
 	bool onlyAir = true;
 
-	//memset(data, 0, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*sizeof(Voxel));
+    //memset(data, 0, CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE*sizeof(Voxel));
 
 	for (int z = 0; z < CHUNK_SIZE; ++z) {
 		for (int y = 0; y < CHUNK_SIZE; ++y) { // Hauteur
@@ -54,8 +54,8 @@ bool ChunkGenerator::generateChunk(Voxel* data, Coords chunkId, QSet<Coords> &mo
 			}
 		}
 	}
-	bool notrees = placeTrees(data, chunkId, *(it->second), modifiedChunks);
-	onlyAir = onlyAir && notrees;
+    bool notrees = placeTrees(data, chunkId, *(it->second), modifiedChunks);
+    onlyAir = onlyAir && notrees;
 
 	return onlyAir;
 }

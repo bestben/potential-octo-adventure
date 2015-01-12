@@ -11,6 +11,7 @@
 #include "biomes/ChunkGenerator.h"
 #include "LightManager.h"
 #include <QtCore/qvector.h>
+#include <QMutex>
 
 class QOpenGLVertexArrayObject;
 class QOpenGLShaderProgram;
@@ -76,7 +77,7 @@ protected:
 private:
     
     Coords m_lastChunkId;
-    Chunk* m_lastChunk;
+    std::atomic<Chunk*> m_lastChunk;
 
     int seekFreeChunkData();
     int seekFreeBuffer();

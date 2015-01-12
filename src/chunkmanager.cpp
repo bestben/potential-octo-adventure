@@ -42,6 +42,8 @@ m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
 	m_canUploadMesh = false;
 	m_countToUpload = 0;
 
+    m_lastChunk = nullptr;
+
 	m_currentChunk = { 0, -1, 0 };
 	m_animationTime.start();
 }
@@ -393,9 +395,12 @@ Voxel* ChunkManager::getBufferAdress(int index) {
 }
 
 Chunk* ChunkManager::getChunk(Coords pos) {
-
-	if(m_lastChunkId == pos && m_lastChunk != nullptr)
-		return m_lastChunk;
+    Chunk* lastChunk = m_lastChunk;
+    if (lastChunk != nullptr) {
+        Coords c = {lastChunk->i, lastChunk->j, lastChunk->k};
+        if (c == pos)
+            return lastChunk;
+    }
 
 	if (pos.j < 0 || pos.j >= WORLD_HEIGHT)
 		return nullptr;
@@ -408,9 +413,9 @@ Chunk* ChunkManager::getChunk(Coords pos) {
 		return nullptr;
 	}
 
-	m_lastChunkId = pos;
+    m_lastChunkId = pos;
 	m_lastChunk = *it;
-	return m_lastChunk;
+    return *it;
 }
 
 Chunk* ChunkManager::getChunk(int i, int j, int k) {
@@ -485,7 +490,7 @@ void ChunkManager::run() {
 							SaveChunkToDisk(data, Coords{newChunk->i, newChunk->j, newChunk->k}, newChunk->onlyAir);
 						}
 
-						m_LightManager->updateLighting(newChunk);
+                        m_LightManager->updateLighting(newChunk);
 						modifiedChunks.remove(Coords{ newChunk->i, newChunk->j, newChunk->k });
 						for (auto pos : modifiedChunks) {
 							auto* c = getChunk(pos);
@@ -582,7 +587,7 @@ VoxelType ChunkManager::setVoxel(Coords c, VoxelType newType, uint light) {
 VoxelType ChunkManager::setVoxel(int x, int y, int z, VoxelType newType, uint light) {
 	VoxelType res = VoxelType::IGNORE_TYPE;
 
-	Chunk* chunk = getChunk(div_floor(x, CHUNK_SIZE), div_floor(y, CHUNK_SIZE), div_floor(z, CHUNK_SIZE));
+    Chunk* chunk = getChunk(div_floor(x, CHUNK_SIZE), div_floor(y, CHUNK_SIZE), div_floor(z, CHUNK_SIZE));
 	if (chunk == nullptr)
 		return res;
 	if (chunk->chunkBufferIndex != -1) {
@@ -597,16 +602,16 @@ VoxelType ChunkManager::setVoxel(int x, int y, int z, VoxelType newType, uint li
 			res = v->type;
 
 			if (light != NO_CHANGE){
-				v->_light = light;
+                v->_light = (uint8)light;
 			}
 
-			v->type = newType;
+            v->type = newType;
 
 			if (chunk->onlyAir && newType != VoxelType::AIR)
 				chunk->onlyAir = false;
 			
 		}
-	}
+    }
 	return res;
 }
 

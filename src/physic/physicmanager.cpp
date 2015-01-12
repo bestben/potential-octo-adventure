@@ -15,7 +15,7 @@ PhysicManager::PhysicManager() : m_freeBodies(BODY_COUNT, true), m_hasGravity{tr
     for (int i = 0; i < BODY_COUNT; ++i) {
         m_bodies[i].jump = false;
         m_bodies[i].height = 12;
-        m_bodies[i].width = 1;
+        m_bodies[i].width = 2;
         m_bodies[i].mass = 1;
         m_bodies[i].jumpSpeed = JUMP_SPEED;
         m_bodies[i].onGround = false;
