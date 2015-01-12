@@ -59,6 +59,8 @@ ChunkManager::~ChunkManager() {
 	delete[] m_chunkToDraw;
 
 	delete m_ChunkGenerator;
+    delete m_LightManager;
+    delete m_meshGenerator;
 }
 
 void ChunkManager::initialize(GameWindow* gl) {
@@ -139,8 +141,8 @@ void ChunkManager::initialize(GameWindow* gl) {
 void ChunkManager::destroy(GameWindow* gl) {
 	
 	m_needRegen = false;
-	QThread::terminate();
-	wait();
+    this->terminate();
+    this->wait(2000);
 
 	m_isInit = false;
 

@@ -16,7 +16,8 @@ ChunkGenerator::~ChunkGenerator()
 {
     for (auto& pair : mMaps) {
         delete pair.second;
-	}
+    }
+    mMaps.clear();
 	mLog.close();
 }
 
