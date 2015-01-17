@@ -136,6 +136,11 @@ bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, con
         QVector3D(-body->width - PADDING, - PADDING, body->width + PADDING),
         QVector3D(-body->width - PADDING, - PADDING, -body->width - PADDING),
 
+        QVector3D(body->width, body->height * 0.5f, body->width),
+        QVector3D(body->width, body->height * 0.5f, -body->width),
+        QVector3D(-body->width, body->height * 0.5f, body->width),
+        QVector3D(-body->width, body->height * 0.5f, -body->width),
+
         QVector3D(body->width, body->height, body->width),
         QVector3D(body->width, body->height, -body->width),
         QVector3D(-body->width, body->height, body->width),
