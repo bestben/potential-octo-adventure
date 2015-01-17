@@ -107,17 +107,10 @@ private:
     std::atomic<int> m_mapIndex;
     std::vector<Chunk*> m_nextFreeBuffer;
 
-    std::atomic<bool>* m_inUseChunkData;
-	uint16 m_vboLeft;
-
     // Le tableau des buffers opengl
     Buffer* m_oglBuffers;
     Chunk** m_chunkToDraw;
     int m_chunkToDrawCount;
-
-    int m_currentChunkI;
-    int m_currentChunkJ;
-    int m_currentChunkK;
 
 	Coords m_currentChunk;
 
@@ -126,11 +119,7 @@ private:
     /////////////////////////
 
     std::atomic<bool> m_needRegen;
-    std::atomic<bool> m_generationIsRunning;
 
-    std::atomic<bool>* m_availableBuffer;
-
-    std::mutex m_mutexChunkManagerList;
     std::mutex m_mutexGenerateQueue;
 
 	QVector<Chunk*> m_toGenerateChunkData;
@@ -151,4 +140,6 @@ private:
 	bool m_FirstUpdate;
 
     QTime m_animationTime;
+
+    std::atomic<Chunk*> m_lastChunk;
 };

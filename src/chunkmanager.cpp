@@ -25,16 +25,7 @@ m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
 	}
 
 	m_needRegen = true;
-	m_generationIsRunning = false;
 
-	m_inUseChunkData = new std::atomic<bool>[CHUNK_NUMBER];
-	for (int i = 0; i < CHUNK_NUMBER; ++i) {
-		m_inUseChunkData[i] = false;
-	}
-	m_availableBuffer = new std::atomic<bool>[VBO_NUMBER];
-	for (int i = 0; i < VBO_NUMBER; ++i) {
-		m_availableBuffer[i] = true;
-	}
 	m_tempVertexData = new GLuint[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 6];
 	m_vboToUpload = 0;
 	m_canGenerateMesh = true;
@@ -67,6 +58,8 @@ m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
 
         m_toGenerateChunkData.push_back(m_chunks + n);
         m_chunks[n].inQueue = true;
+        m_chunks[n].isDirty = true;
+        m_chunks[n].isLightDirty = true;
     }
     m_chunksCenter[0] = {0, 0, 0};
     m_chunksCenter[1] = {0, 0, 0};
@@ -74,7 +67,6 @@ m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
 }
 
 ChunkManager::~ChunkManager() {
-	m_mutexChunkManagerList.lock();
     
     for (int i = 0; i < CHUNK_NUMBER; ++i) {
         Chunk* chunk = m_chunks + i;
@@ -84,10 +76,7 @@ ChunkManager::~ChunkManager() {
 		}
 	}
 
-	m_mutexChunkManagerList.unlock();
 	delete[] m_chunkBuffers;
-	delete[] m_inUseChunkData;
-	delete[] m_availableBuffer;
 	delete[] m_tempVertexData;
 	delete[] m_chunkToDraw;
 
@@ -167,7 +156,6 @@ void ChunkManager::initialize(GameWindow* gl) {
 		buffer->toUpData = nullptr; 
 
 	}
-	m_vboLeft = VBO_NUMBER;
 
 	m_isInit = true;
 	
@@ -402,6 +390,13 @@ Voxel* ChunkManager::getBufferAdress(int index) {
 }
 
 Chunk* ChunkManager::getChunk(Coords pos) {
+    Chunk* lastChunk = m_lastChunk;
+    if (lastChunk != nullptr) {
+        Coords c = {lastChunk->i, lastChunk->j, lastChunk->k};
+        if (c == pos)
+            return lastChunk;
+    }
+
     int mapIndex = m_mapIndex;
     Coords currentPos = m_chunksCenter[mapIndex];
     if ((std::abs(pos.i - currentPos.i) > VIEW_SIZE) ||
@@ -416,6 +411,7 @@ Chunk* ChunkManager::getChunk(Coords pos) {
     int k = (pos.k - currentPos.k) + VIEW_SIZE;
     int index = i + ((k + (pos.j * FULL_VIEW_SIZE)) * FULL_VIEW_SIZE);
 
+    m_lastChunk = m_chunksMapping[mapIndex][index];
     return m_chunksMapping[mapIndex][index];
 }
 
@@ -431,14 +427,14 @@ void ChunkManager::run() {
 		if (m_toGenerateChunkData.size() > 0) {
 			m_mutexGenerateQueue.lock();
 			Coords here = m_currentChunk;
-			std::sort(m_toGenerateChunkData.begin(), m_toGenerateChunkData.end(), [here](Chunk* c1, Chunk* c2)->bool{
+            std::sort(m_toGenerateChunkData.begin(), m_toGenerateChunkData.end(), [here](Chunk* c1, Chunk* c2)->bool{
 				int a = (c1->i - here.i)*(c1->i - here.i) + (c1->k - here.k)*(c1->k - here.k);
 				int b = (c2->i - here.i)*(c2->i - here.i) + (c2->k - here.k)*(c2->k - here.k);
 				if (a == b) {
 					return c1->j < c2->j;
 				}
                 return a > b;
-			});
+            });
 
 			
             Chunk* newChunk = m_toGenerateChunkData.back();
@@ -467,7 +463,7 @@ void ChunkManager::run() {
                     m_LightManager->updateLighting(newChunk);
                     modifiedChunks.remove(Coords{ newChunk->i, newChunk->j, newChunk->k });
                     for (auto pos : modifiedChunks) {
-                        auto* c = getChunk(pos);
+                        Chunk* c = getChunk(pos);
                         if (c != nullptr){
                             if (c->generated) {
                                 m_LightManager->updateLighting(c);
@@ -487,8 +483,6 @@ void ChunkManager::run() {
             }
             newChunk->inQueue = false;
 		}
-
-
 
 		// Eviter de faire fondre le cpu dans des boucles vides ;)
         //QThread::msleep(5);

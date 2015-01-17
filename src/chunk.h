@@ -116,25 +116,18 @@ struct Chunk {
     int j;
     int k;
 
-    bool visible;
     float distanceFromCamera;
-
     Voxel* data;
     int vboIndex;
 
+    bool visible;
 	bool ready;
-
 	bool isDirty;
 	bool isLightDirty;
-
 	bool generated;
-
 	bool inQueue;
-
 	bool onlyAir;
-
 	bool differsFromDisk;
-
 };
 
 
