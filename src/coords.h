@@ -2,13 +2,14 @@
 #include <QtCore/QString>
 #include <QtCore/QHash>
 #include <QtGui/QVector3D>
+#include <cstdlib>
 
 // Operations de division avec correction de la troncature dans les nombres négatifs
 inline int div_floor(int x, int y) {
-	int q = x / y;
-	int r = x%y;
-	if ((r != 0) && ((r<0) != (y<0))) --q;
-	return q;
+
+    div_t res = div(x, y);
+    if ((res.rem != 0) && ((res.rem<0) != (y<0))) --res.quot;
+    return res.quot;
 }
 
 inline int mod_floor(int x, int y) {

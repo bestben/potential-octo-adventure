@@ -190,10 +190,6 @@ void LightManager::updateLighting(Chunk* chunk) {
 
 	Chunk* current_chunk = chunk;
 	while (true) {
-
-		if (current_chunk->chunkBufferIndex == -1)
-			break;
-
 		Coords chunkPos = { current_chunk->i, current_chunk->j, current_chunk->k };
 		Coords offset = chunkPos * CHUNK_SIZE;
 

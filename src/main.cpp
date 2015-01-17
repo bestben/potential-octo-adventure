@@ -6,6 +6,7 @@
 #include <QScreen>
 #include <QtOpenGL/QGLFormat>
 #include <fstream>
+#include <atomic>
 
 int main(int argc, char* argv[]) {
     try {

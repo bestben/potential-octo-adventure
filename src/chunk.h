@@ -12,22 +12,22 @@ typedef uint32_t uint32;
 typedef int64_t int64;
 typedef uint64_t uint64;
 
-#define CHUNK_NUMBER 4096
-#define VBO_NUMBER 4096
-
 #define FREE_BUFFERS_THRESHOLD 256
 
 #define CHUNK_SIZE 16
 #define CHUNK_SCALE 5
 
 #define VIEW_SIZE 7
+#define FULL_VIEW_SIZE ((2 * VIEW_SIZE) + 1)
+#define WORLD_HEIGHT 6
+
+#define CHUNK_NUMBER FULL_VIEW_SIZE * FULL_VIEW_SIZE * WORLD_HEIGHT
+#define VBO_NUMBER CHUNK_NUMBER
 
 #define BIOMEMAP_CHUNKS 16
 #define BIOMEMAP_SIZE CHUNK_SIZE*BIOMEMAP_CHUNKS
 
 #define BIOMES_COUNT 4
-
-#define WORLD_HEIGHT 6
 
 #define SUN_LIGHT 31
 #define MAX_LIGHT 30
@@ -100,7 +100,8 @@ struct Chunk {
 
 		ready = false;
 
-		chunkBufferIndex = -1;
+        data = nullptr;
+
 		vboIndex = -1;
 		visible = false;
 
@@ -118,7 +119,7 @@ struct Chunk {
     bool visible;
     float distanceFromCamera;
 
-    int chunkBufferIndex;
+    Voxel* data;
     int vboIndex;
 
 	bool ready;

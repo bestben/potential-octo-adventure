@@ -22,7 +22,7 @@ class MeshGenerator;
 class ChunkGenerator;
 
 
-#define MAX_REMESH_PER_UPDATE 8
+#define MAX_REMESH_PER_UPDATE 16
 struct Buffer {
     QOpenGLVertexArrayObject* vao;
     GLuint vbo;
@@ -45,15 +45,12 @@ public:
 	void initialize(GameWindow* gl);
     void update(GameWindow* gl);
 	void draw(GameWindow* gl);
-	void checkChunk(Coords tuple);
 	
-	void requestChunks();
 	Voxel* getBufferAdress(int index);
 	void destroy(GameWindow* gl);
 
 	Chunk* getChunk(Coords pos);
 	Chunk* getChunk(int i, int j, int k);
-
 
     Voxel getVoxel(int x, int y, int z, bool* loaded = nullptr);
 	Voxel getVoxel(Coords c);
@@ -76,12 +73,9 @@ protected:
     void run();
 
 private:
-    
-    Coords m_lastChunkId;
-    std::atomic<Chunk*> m_lastChunk;
-
-    int seekFreeChunkData();
-    int seekFreeBuffer();
+    int getArrayIndex(Coords chunkPos, Coords center);
+    int getArrayIndex(int i, int j, int k, Coords center);
+    Coords getChunkCoords(int index, Coords center);
 
 	int mWorldSeed;
 
@@ -102,21 +96,24 @@ private:
 
     int m_waterMatrixUniform;
     int m_waterChunkPosUniform;
+    int m_waterTimerUniform;
 
     // Le tableau contenant tous les voxels des chunks
     Voxel* m_chunkBuffers;
-    std::atomic<bool>* m_availableChunkData;
-    std::atomic<bool>* m_inUseChunkData;
 
-	uint16 m_chunkDataLeft;
+    Chunk* m_chunks;
+    Chunk** m_chunksMapping[2];
+    Coords m_chunksCenter[2];
+    std::atomic<int> m_mapIndex;
+    std::vector<Chunk*> m_nextFreeBuffer;
+
+    std::atomic<bool>* m_inUseChunkData;
 	uint16 m_vboLeft;
 
     // Le tableau des buffers opengl
     Buffer* m_oglBuffers;
     Chunk** m_chunkToDraw;
     int m_chunkToDrawCount;
-
-    std::unordered_map<Coords, Chunk*> m_ChunkMap;
 
     int m_currentChunkI;
     int m_currentChunkJ;
