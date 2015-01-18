@@ -149,7 +149,7 @@ bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, con
 
     bool isColliding = false;
 
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 12; ++i) {
         QVector3D oldVoxel = (corners[i] + position) / (CHUNK_SCALE);
         oldVoxel = QVector3D(floor(oldVoxel.x()), floor(oldVoxel.y()), floor(oldVoxel.z()));
         QVector3D newVoxel = (corners[i] + position + delta) / (CHUNK_SCALE);
