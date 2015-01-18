@@ -22,7 +22,7 @@ class MeshGenerator;
 class ChunkGenerator;
 
 
-#define MAX_REMESH_PER_UPDATE 16
+#define MAX_REMESH_PER_UPDATE 4
 struct Buffer {
     QOpenGLVertexArrayObject* vao;
     GLuint vbo;

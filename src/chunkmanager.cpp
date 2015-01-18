@@ -101,7 +101,7 @@ void ChunkManager::initialize(GameWindow* gl) {
 	m_matrixUniform = m_program->uniformLocation("viewProj");
 	m_chunkPosUniform = m_program->uniformLocation("chunkPosition");
 
-	QVector3D skyColor(0.53f, 0.807f, 0.92);
+    QVector3D skyColor(0.53f, 0.807f, 0.92f);
 
 	m_program->bind();
 	m_program->setUniformValue("atlas", 0);
@@ -431,7 +431,7 @@ void ChunkManager::run() {
 				int a = (c1->i - here.i)*(c1->i - here.i) + (c1->k - here.k)*(c1->k - here.k);
 				int b = (c2->i - here.i)*(c2->i - here.i) + (c2->k - here.k)*(c2->k - here.k);
 				if (a == b) {
-					return c1->j < c2->j;
+                    return c1->j < c2->j;
 				}
                 return a > b;
             });
@@ -539,7 +539,7 @@ VoxelType ChunkManager::setVoxel(int x, int y, int z, VoxelType newType, uint li
 
         res = v->type;
 
-        if (light != NO_CHANGE){
+        if (light != NO_CHANGE) {
             v->_light = (uint8)light;
         }
 
@@ -572,13 +572,11 @@ VoxelType ChunkManager::placeVoxel(Coords pos, VoxelType type) {
 		Chunk* chunk = getChunk(coords);
 		if (chunk != nullptr) {
 			chunk->inQueue = true;
-			//m_toGenerateChunkData.push_front(chunk);
-			chunk->isLightDirty = true;
+            chunk->isLightDirty = true;
 		}
 	}
 	if (thisChunk != nullptr) {
 		thisChunk->inQueue = true;
-		//m_toGenerateChunkData.push_front(thisChunk);
 		thisChunk->isLightDirty = true;
 		thisChunk->isDirty = true;
 
@@ -601,14 +599,12 @@ void ChunkManager::removeVoxel(Coords pos) {
 		Chunk* chunk = getChunk(coords);
 		if (chunk != nullptr) {
 			chunk->inQueue = true;
-			//m_toGenerateChunkData.push_front(chunk);
 			chunk->isLightDirty = true;
 		}
 	}
 
 	if (thisChunk != nullptr) {
 		thisChunk->inQueue = true;
-		//m_toGenerateChunkData.push_front(thisChunk);
 		thisChunk->isLightDirty = true;
 		thisChunk->isDirty = true;
 	}

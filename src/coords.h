@@ -156,6 +156,15 @@ inline int IndexVoxelRelPos(Coords const& c) {
 	return ((c.k * CHUNK_SIZE) + c.j)*CHUNK_SIZE + c.i;
 }
 
+inline Coords voxelRelPosFromIndex(int index) {
+    int k = index / (CHUNK_SIZE * CHUNK_SIZE);
+    index = index % (CHUNK_SIZE * CHUNK_SIZE);
+    int j = index / CHUNK_SIZE;
+    int i = index % CHUNK_SIZE;
+    return {i, j, k};
+}
+
+
 inline bool atChunkBounds(Coords const& c) {
 	return c.i == 0 || c.i == CHUNK_SIZE - 1 ||
 		c.j == 0 || c.j == CHUNK_SIZE - 1 ||

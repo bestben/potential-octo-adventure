@@ -17,7 +17,7 @@ typedef uint64_t uint64;
 #define CHUNK_SIZE 16
 #define CHUNK_SCALE 5
 
-#define VIEW_SIZE 7
+#define VIEW_SIZE 14
 #define FULL_VIEW_SIZE ((2 * VIEW_SIZE) + 1)
 #define WORLD_HEIGHT 6
 

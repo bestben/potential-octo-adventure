@@ -179,10 +179,6 @@ void LightManager::removeVoxel(Coords pos, QSet<Coords> &modifiedChunks) {
 }
 
 void LightManager::updateLighting(Chunk* chunk) {
-	
-	QTime timer;
-	timer.start();
-
 	QHash<Coords, uint8> removelightFrom;
 
 	QSet<Coords> lightSources;
@@ -195,19 +191,18 @@ void LightManager::updateLighting(Chunk* chunk) {
 
 		modifiedChunks.insert(chunkPos);
 
-		for (int k = 0; k < CHUNK_SIZE; k++)
-		for (int j = 0; j < CHUNK_SIZE; j++)
-		for (int i = 0; i < CHUNK_SIZE; i++) {
-			Coords pos = { i, j, k };
+        for (int n = 0; n < (CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE); ++n) {
+            Coords pos = voxelRelPosFromIndex(n);
 			Coords worldPos = offset + pos;
-			auto voxel = mChunkManager->getVoxel(worldPos);
+            Voxel voxel = chunk->data[n];
 
 			if (voxel.type == VoxelType::IGNORE_TYPE)
 				continue;
 
 			uint8 oldlight = voxel.getLight();
 
-			mChunkManager->setVoxel(worldPos, voxel.type, 0);
+            current_chunk->data[n]._light = 0;
+
 
 			if (lightSource(voxel.type) > 0)
 				lightSources.insert(worldPos);
@@ -220,8 +215,7 @@ void LightManager::updateLighting(Chunk* chunk) {
 					lightSources.insert(worldPos);
 				}
 			}
-
-		}
+        }
 
 		bool shouldGoDown = propagateSunLight(current_chunk, lightSources, modifiedChunks);
 
@@ -229,16 +223,16 @@ void LightManager::updateLighting(Chunk* chunk) {
 		if (!shouldGoDown)
 			break;
 		
-		current_chunk = mChunkManager->getChunk(chunkPos + Coords{0, -1, 0});
+        current_chunk = mChunkManager->getChunk(chunkPos + Coords{0, -1, 0});
 
-		if (current_chunk == nullptr)
+        if (current_chunk == nullptr)
 			break;
 
 	}
 	
-	unspreadLight(removelightFrom, lightSources, modifiedChunks);
+    unspreadLight(removelightFrom, lightSources, modifiedChunks);
 	
-	spreadLight(lightSources, modifiedChunks);
+    spreadLight(lightSources, modifiedChunks);
 
 	for (auto coords : modifiedChunks) {
 		Chunk* chunkModified = mChunkManager->getChunk(coords);
@@ -275,7 +269,7 @@ bool LightManager::propagateSunLight(Chunk* chunk, QSet<Coords> &lightSources, Q
 
 		uint8 currentLight = sunAbove ? SUN_LIGHT : 0;
 
-		for (int j = CHUNK_SIZE - 1; j >= 0; --j){
+        for (int j = CHUNK_SIZE - 1; j >= 0; --j) {
 			Coords pos = { i, j, k };
 
 			Voxel v = mChunkManager->getVoxel(offset + pos);
@@ -379,8 +373,7 @@ void LightManager::unspreadLight(QHash<Coords, uint8> &from, QSet<Coords> &light
 					unlighted[newPos] = v.getLight();
 					mChunkManager->setVoxel(newPos, v.type, 0);
 				}
-			}
-			else if (v.getLight() >= oldlight){
+            } else if (v.getLight() >= oldlight){
 				lightSources.insert(newPos);
 			}
 			modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
