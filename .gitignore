@@ -35,3 +35,4 @@ Makefile*
 *.sublime-project
 *.sublime-workspace
 *.chunk
+/data/log.txt

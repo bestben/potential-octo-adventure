@@ -11,3 +11,5 @@
 Utilisation:
     Créer un fichier config.txt dans le dossier de l'executable avec seulement un nombre dedans pour changer la seed.
     Créer un dossier world dans le dossier de l'executable pour permettre la sauvegarde.
+    
+    Modifier le working directory lorsque le programme est lancé depuis QtCreator.
