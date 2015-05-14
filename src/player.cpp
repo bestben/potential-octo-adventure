@@ -8,6 +8,8 @@
 #include <QtGui/QOpenGLTexture>
 #include <QtGui/QOpenGLVertexArrayObject>
 
+#include "glm/geometric.hpp"
+
 Player::Player(GameWindow& game, Camera& camera) : m_game{game}, m_camera{camera}, m_particles{20, 750},
                                                   m_maxBlockDistance{40.0f}, m_isHitting{false}, m_targetTime{2000} {
 
@@ -53,9 +55,8 @@ void Player::update(int dt) {
 }
 
 void Player::draw() {
-    QVector3D camPos = m_camera.getPosition();
-    QVector3D dir = m_camera.frontDir();
-    dir.normalize();
+    glm::vec3 camPos = m_camera.getPosition();
+    glm::vec3 dir = glm::normalize(m_camera.frontDir());
     float delta = 0.5f;
     float maxSquareDistance = m_maxBlockDistance * m_maxBlockDistance;
 
@@ -65,10 +66,10 @@ void Player::draw() {
 
     VoxelType type;
 
-    QVector3D rayPos = camPos + dir * delta;
+    glm::vec3 rayPos = camPos + dir * delta;
     ChunkManager& chunkManager = m_game.getChunkManager();
     bool hit = false;
-    while (((rayPos - camPos).lengthSquared() < maxSquareDistance)) {
+    while (lengthSquare(rayPos - camPos) < maxSquareDistance) {
 		currentVoxel = GetVoxelPosFromWorldPos(rayPos);
         type = chunkManager.getVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k).type;
         if ((type != VoxelType::AIR) && (type != VoxelType::WATER) && (type != VoxelType::IGNORE_TYPE)) {
@@ -79,7 +80,7 @@ void Player::draw() {
         rayPos = rayPos + dir * delta;
     }
     if (!(lastVoxel == startVoxel) && hit) { // Le joueur a un voxel dans sa cible
-        m_box.setPosition(QVector3D(currentVoxel.i, currentVoxel.j, currentVoxel.k) * CHUNK_SCALE);
+        m_box.setPosition(glm::vec3((float)currentVoxel.i, (float)currentVoxel.j, (float)currentVoxel.k) * (float)CHUNK_SCALE);
         m_box.draw(&m_game);
 
         if (currentVoxel != m_targetVoxel) { // Le voxel est différent du précédant voxel visé
@@ -92,7 +93,7 @@ void Player::draw() {
             } else {
                 m_game.glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
                 m_voxel.setDamage((float)m_startTimer.elapsed() / (float)m_targetTime);
-                m_voxel.setPosition(QVector3D(currentVoxel.i, currentVoxel.j, currentVoxel.k) * CHUNK_SCALE);
+                m_voxel.setPosition(glm::vec3((float)currentVoxel.i, (float)currentVoxel.j, (float)currentVoxel.k) * (float)CHUNK_SCALE);
                 m_voxel.draw(&m_game);
                 m_game.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
@@ -132,9 +133,8 @@ void Player::mousePressEvent(QMouseEvent* event) {
         m_startTimer.start();
     }
     if (event->button() & Qt::MiddleButton) {
-        QVector3D camPos = m_camera.getPosition();
-        QVector3D dir = m_camera.frontDir();
-        dir.normalize();
+        glm::vec3 camPos = m_camera.getPosition();
+        glm::vec3 dir = glm::normalize(m_camera.frontDir());
         float delta = 0.5f;
         float maxSquareDistance = m_maxBlockDistance * m_maxBlockDistance;
 
@@ -142,10 +142,10 @@ void Player::mousePressEvent(QMouseEvent* event) {
         Coords lastVoxel = startVoxel;
         Coords currentVoxel = startVoxel;
 
-        QVector3D rayPos = camPos + dir * delta;
+        glm::vec3 rayPos = camPos + dir * delta;
         ChunkManager& chunkManager = m_game.getChunkManager();
         bool hit = false;
-        while (((rayPos - camPos).lengthSquared() < maxSquareDistance)) {
+        while (lengthSquare(rayPos - camPos) < maxSquareDistance) {
 			currentVoxel = GetVoxelPosFromWorldPos(rayPos);
             VoxelType type = chunkManager.getVoxel(currentVoxel.i, currentVoxel.j, currentVoxel.k).type;
 			if ((type != VoxelType::AIR) && (type != VoxelType::WATER) && (type != VoxelType::IGNORE_TYPE)) {

@@ -2,11 +2,12 @@
 
 #include <vector>
 
+#include "glm/fwd.hpp"
+
 #define BODY_COUNT 100
 
 struct Body;
 class GameWindow;
-class QVector3D;
 
 /**
  * @brief Classe gérant la physique et les collisions.
@@ -41,7 +42,7 @@ public:
     void setGravity(bool active);
 
 private:
-    bool collide(GameWindow* gl, Body* body, QVector3D& position, const QVector3D& delta);
+    bool collide(GameWindow* gl, Body* body, glm::vec3& position, const glm::vec3& delta);
 
     // Tableau des body
     Body* m_bodies;

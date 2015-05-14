@@ -26,7 +26,7 @@ public:
     bool isDead();
     bool canBeDestroyed();
 
-    void setPosition(const QVector3D& pos);
+    void setPosition(const glm::vec3& pos);
 
 private:
     void updatePath();

@@ -1,8 +1,9 @@
 #pragma once
 
 #include <QtGui/QWindow>
-#include <QtGui/QMatrix4x4>
-#include <QtGui/QVector3D>
+
+#include "glm/vec3.hpp"
+#include "glm/mat4x4.hpp"
 
 /**
  * Enumeration permettant de savoir dans quelle direction avancer.
@@ -54,34 +55,34 @@ public:
      * @brief Modifie la position de la caméra.
      * @param v La nouvelle position de la caméra.
      */
-    void setPosition(const QVector3D& v);
+    void setPosition(const glm::vec3& v);
     /**
      * Renvoie la position de la camera.
      */
-    QVector3D getPosition() const;
+    glm::vec3 getPosition() const;
 
-    QVector3D getFootPosition() const;
+    glm::vec3 getFootPosition() const;
     /**
      * Renvoie la direction de DEPLACEMENT de la caméra.
      * NOTE : La direction de déplacement peut être différente de la direction
      *         de VUE de la caméra.
      * @return Un vecteur normalisé.
      */
-    QVector3D getDirection();
+    glm::vec3 getDirection();
     /*
      * Renvoie la direction dans laquelle la camera regarde.
      */
-    QVector3D frontDir();
+    glm::vec3 frontDir();
     /**
      * @brief Renvoie la matrice de vue de la caméra.
      */
-    const QMatrix4x4& getViewMatrix();
-    const QMatrix4x4& getProjectionMatrix();
-    const QMatrix4x4& getViewProjMatrix();
+    const glm::mat4x4& getViewMatrix();
+    const glm::mat4x4& getProjectionMatrix();
+    const glm::mat4x4& getViewProjMatrix();
 
     void changeViewportSize(int width, int height);
 
-    bool sphereInFrustum(const QVector3D& p, float radius);
+    bool sphereInFrustum(const glm::vec3& p, float radius);
     bool boxInFrustum(int x, int y, int z, int size);
 
     bool isInWater() const;
@@ -98,7 +99,7 @@ public:
     void mouseMoveEvent(QMouseEvent * event);
 
 private:
-    void setCamDef(const QVector3D& p, const QVector3D& l, const QVector3D& u);
+    void setCamDef(const glm::vec3& p, const glm::vec3& l, const glm::vec3& u);
 
     float m_speed; // Vitesse de déplacement de la caméra (Unités / seconde).
     float m_phi;   // Orientation de la vue horizontale par rapport a x+ (en radian).
@@ -113,9 +114,9 @@ private:
     float m_width;
     float m_height;
 
-    QVector3D m_planesOrigin[6];
-    QVector3D m_planesNormal[6];
-    QVector3D m_ntl,m_ntr,m_nbl,m_nbr,
+    glm::vec3 m_planesOrigin[6];
+    glm::vec3 m_planesNormal[6];
+    glm::vec3 m_ntl,m_ntr,m_nbl,m_nbr,
               m_ftl,m_ftr,m_fbl,m_fbr; // Les 4 coins de near et far
     float m_tang;
     float m_nw,m_nh,m_fw,m_fh;
@@ -128,9 +129,9 @@ private:
 
     bool m_isViewMatrixDirty; // La matrice de vue doit elle être recalculée ?
     bool m_isProjMatrixDirty; // La matrice de projection doit elle être recalculée ?
-    QMatrix4x4 m_viewMatrix; // La matrice de vue
-    QMatrix4x4 m_projMatrix; // La matrice de projection
-    QMatrix4x4 m_viewProjMatrix; // La matrice de vue/projection
+    glm::mat4x4 m_viewMatrix; // La matrice de vue
+    glm::mat4x4 m_projMatrix; // La matrice de projection
+    glm::mat4x4 m_viewProjMatrix; // La matrice de vue/projection
 
     bool m_isFPS;
 };

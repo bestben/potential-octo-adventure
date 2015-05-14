@@ -1,17 +1,17 @@
 #pragma once
 
-#include <QtGui/QVector3D>
+#include "glm/vec3.hpp"
 
 /**
  * @brief Structure décrivant un body.
  * Un body est représenté par une boite alignée aux axes.
  */
 struct Body {
-    QVector3D position; // La position du body
-    QVector3D velocity; // La vitesse du body
-    QVector3D acceleration; //L'acceleration du body
+    glm::vec3 position; // La position du body
+    glm::vec3 velocity; // La vitesse du body
+    glm::vec3 acceleration; //L'acceleration du body
 
-    QVector3D force; // Une force à appliquer
+    glm::vec3 force; // Une force à appliquer
 
     float height; // La hauteur du body
     float width; // La largeur du body

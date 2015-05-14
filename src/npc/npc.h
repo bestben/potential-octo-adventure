@@ -23,7 +23,7 @@ public:
     virtual bool isDead() = 0;
     virtual bool canBeDestroyed() = 0;
 
-    virtual void setPosition(const QVector3D& pos) = 0;
+    virtual void setPosition(const glm::vec3& pos) = 0;
 
 private:
 

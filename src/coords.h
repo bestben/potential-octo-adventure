@@ -1,7 +1,5 @@
 #pragma once
-#include <QtCore/QString>
-#include <QtCore/QHash>
-#include <QtGui/QVector3D>
+#include "glm/vec3.hpp"
 #include <cstdlib>
 
 // Operations de division avec correction de la troncature dans les nombres négatifs
@@ -56,24 +54,6 @@ namespace std {
             return hash;
         }
     };
-}
-
-// Permet d'utiliser Coords dans un container qt
-inline uint qHash(Coords c) {
-	
-	int hash = 23;
-	hash = hash * 31*31*31 + c.i;
-	hash = hash * 31*31 + c.j;
-	hash = hash * 31 + c.k;
-	return hash;
-
-	/*QString str = "";
-	str += c.i;
-	str += "-";
-	str += c.j;
-	str += "-";
-	str += c.k;
-	return qHash(str);*/
 }
 
 inline bool operator< (const Coords& lhs, const Coords& rhs) {
@@ -137,19 +117,20 @@ inline Coords GetVoxelRelPos(Coords const& c) {
 }
 
 inline Coords GetChunkPosFromVoxelPos(Coords const& c) {
-	return{ div_floor(c.i, CHUNK_SIZE), div_floor(c.j, CHUNK_SIZE), div_floor(c.k, CHUNK_SIZE) };
+    //return{ div_floor(c.i, CHUNK_SIZE), div_floor(c.j, CHUNK_SIZE), div_floor(c.k, CHUNK_SIZE) };
+    return { c.i >> 4, c.j >> 4, c.k >> 4 };
 }
 
 inline Coords GetChunkBiomeMap(Coords const& chunkId) {
 	return{ div_floor(chunkId.i, BIOMEMAP_CHUNKS), 0, div_floor(chunkId.k, BIOMEMAP_CHUNKS) };
 }
 
-inline Coords GetVoxelPosFromWorldPos(const QVector3D &pos) {
-	return{ div_floor(pos.x(), (CHUNK_SCALE)), div_floor(pos.y(), (CHUNK_SCALE)), div_floor(pos.z(), (CHUNK_SCALE)) };
+inline Coords GetVoxelPosFromWorldPos(const glm::vec3 &pos) {
+    return{ div_floor((int)pos.x, (CHUNK_SCALE)), div_floor((int)pos.y, (CHUNK_SCALE)), div_floor((int)pos.z, (CHUNK_SCALE)) };
 }
 
-inline QVector3D voxelToWorld(const Coords& pos) {
-        return QVector3D((pos.i + 0.5) * CHUNK_SCALE, (pos.j + 0.5) * CHUNK_SCALE, (pos.k + 0.5) * CHUNK_SCALE);
+inline glm::vec3 voxelToWorld(const Coords& pos) {
+        return glm::vec3((pos.i + 0.5) * CHUNK_SCALE, (pos.j + 0.5) * CHUNK_SCALE, (pos.k + 0.5) * CHUNK_SCALE);
 }
 
 inline int IndexVoxelRelPos(Coords const& c) {

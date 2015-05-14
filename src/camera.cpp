@@ -6,6 +6,9 @@
 #include "physic/body.h"
 #include "gamewindow.h"
 
+#include "glm/geometric.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
 static const float pi = 4 * std::atan(1);
 
 float degToRad(float x) {
@@ -33,8 +36,8 @@ void Camera::init(GameWindow* gl) {
     int bodyID = gl->getPhysicManager().allocBody();
     m_body = gl->getPhysicManager().getBody(bodyID);
 
-    m_body->position = QVector3D(124.0f, CHUNK_SCALE*CHUNK_SIZE*5.5f, 124.0f );
-    setCamDef(m_body->position, m_body->position + frontDir(), QVector3D(0.0f, 1.0f, 0.0f));
+    m_body->position = glm::vec3(124.0f, CHUNK_SCALE*CHUNK_SIZE*5.5f, 124.0f );
+    setCamDef(m_body->position, m_body->position + frontDir(), glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 void Camera::update(GameWindow* gl, int dt) {
@@ -66,8 +69,8 @@ void Camera::update(GameWindow* gl, int dt) {
     }
 
     // On translate la caméra
-    QVector3D dir = getDirection();
-    QVector3D move = dir * m_speed;
+    glm::vec3 dir = getDirection();
+    glm::vec3 move = dir * m_speed;
 
     m_body->force = move;
 
@@ -83,34 +86,33 @@ void Camera::update(GameWindow* gl, int dt) {
 }
 
 void Camera::postUpdate() {
-    QVector3D viewDir = frontDir();
-    viewDir.normalize();
+    glm::vec3 viewDir = glm::normalize(frontDir());
 
-    setCamDef(m_body->position, viewDir, QVector3D(0.0f, 1.0f, 0.0f));
+    setCamDef(m_body->position, viewDir, glm::vec3(0.0f, 1.0f, 0.0f));
 
     m_isViewMatrixDirty = true;
 }
 
-void Camera::setPosition(const QVector3D& v) {
+void Camera::setPosition(const glm::vec3& v) {
     m_body->position = v;
 
     m_isViewMatrixDirty = true;
 }
 
-QVector3D Camera::getPosition() const {
-    return m_body->position + QVector3D(0.0f, m_body->height, 0.0f);
+glm::vec3 Camera::getPosition() const {
+    return m_body->position + glm::vec3(0.0f, m_body->height, 0.0f);
 }
 
-QVector3D Camera::getFootPosition() const {
+glm::vec3 Camera::getFootPosition() const {
     return m_body->position;
 }
 
 
-QVector3D Camera::getDirection() {
-    QVector3D frontdir = frontDir();
-    QVector3D rightdir = QVector3D::crossProduct(frontDir(), QVector3D{0.0f, 1.0f, 0.0f});
+glm::vec3 Camera::getDirection() {
+    glm::vec3 frontdir = frontDir();
+    glm::vec3 rightdir = glm::cross(frontDir(), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    QVector3D d;
+    glm::vec3 d;
 
     switch (m_direction) {
     case Direction::NONE:
@@ -120,64 +122,57 @@ QVector3D Camera::getDirection() {
         return frontdir;
         break;
     case Direction::DOWN:
-        return frontdir * -1;
+        return frontdir * -1.0f;
         break;
     case Direction::LEFT:
-        return rightdir * -1;
+        return rightdir * -1.0f;
         break;
     case Direction::RIGHT:
         return rightdir;
         break;
     case Direction::UP_RIGHT:
-        d = (frontdir + rightdir);
-        d.normalize();
+        d = glm::normalize(frontdir + rightdir);
         return d;
         break;
     case Direction::UP_LEFT:
-        d = (frontdir + rightdir * -1);
-        d.normalize();
+        d = glm::normalize(frontdir + rightdir * -1.0f);
         return d;
         break;
     case Direction::DOWN_RIGHT:
-        d = (frontdir * -1 + rightdir);
-        d.normalize();
+        d = glm::normalize(frontdir * -1.0f + rightdir);
         return d;
         break;
     case Direction::DOWN_LEFT:
-        d = (frontdir + rightdir) * -1;
-        d.normalize();
+        d = glm::normalize(frontdir + rightdir) * -1.0f;
         return d;
         break;
     }
     return {0.0f, 0.0f, 0.0f};
 }
 
-const QMatrix4x4& Camera::getViewMatrix() {
+const glm::mat4x4& Camera::getViewMatrix() {
     // Si la caméra a été modifiée on re-calcule la matrice
     if (m_isViewMatrixDirty) {
-        QVector3D front = frontDir();
-        front.normalize();
+        glm::vec3 front = glm::normalize(frontDir());
 
-        QVector3D eyePos = m_body->position + QVector3D(0.0f, m_body->height, 0.0f);
-        QVector3D to = eyePos + front;
+        glm::vec3 eyePos = m_body->position + glm::vec3(0.0f, m_body->height, 0.0f);
+        glm::vec3 to = eyePos + front;
 
-        m_viewMatrix.setToIdentity();
-        m_viewMatrix.lookAt(eyePos, to, QVector3D(0.0, 1.0, 0.0));
+        m_viewMatrix = glm::lookAt(eyePos, to, glm::vec3(0.0, 1.0, 0.0));
         m_isViewMatrixDirty = false;
     }
     return m_viewMatrix;
 }
 
-const QMatrix4x4& Camera::getProjectionMatrix() {
+const glm::mat4x4& Camera::getProjectionMatrix() {
     if (m_isProjMatrixDirty) {
-        m_projMatrix.setToIdentity();
-        m_projMatrix.perspective(m_fov, m_width / m_height, m_near, m_far);
+        m_projMatrix = glm::perspective(degToRad(m_fov), m_width / m_height, m_near, m_far);
         m_isProjMatrixDirty = false;
     }
     return m_projMatrix;
 }
 
-const QMatrix4x4& Camera::getViewProjMatrix() {
+const glm::mat4x4& Camera::getViewProjMatrix() {
     if (m_isProjMatrixDirty || m_isViewMatrixDirty) {
         m_viewProjMatrix = getProjectionMatrix() * getViewMatrix();
     }
@@ -196,17 +191,13 @@ void Camera::changeViewportSize(int width, int height) {
     m_isProjMatrixDirty = true;
 }
 
-void Camera::setCamDef(const QVector3D &p, const QVector3D &l, const QVector3D &u) {
+void Camera::setCamDef(const glm::vec3 &p, const glm::vec3 &l, const glm::vec3 &u) {
 
-    QVector3D nc,fc,X,Y,Z;
+    glm::vec3 nc,fc,X,Y,Z;
 
-    Z = l * -1.0;
-    Z.normalize();
-
-    X = QVector3D::crossProduct(u, Z);
-    X.normalize();
-
-    Y = QVector3D::crossProduct(Z, X);
+    Z = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
+    X = glm::normalize(glm::cross(u, Z));
+    Y = glm::normalize(glm::cross(Z, X));
 
     nc = p - Z * m_near;
     fc = p - Z * m_far;
@@ -228,39 +219,33 @@ void Camera::setCamDef(const QVector3D &p, const QVector3D &l, const QVector3D &
     m_planesOrigin[1] = fc;
     m_planesNormal[1] = Z;
 
-    QVector3D aux,normal;
+    glm::vec3 aux,normal;
     // TOP
-    aux = (nc + Y*m_nh) - p;
-    aux.normalize();
-    normal = QVector3D::crossProduct(aux, X);
-    normal.normalize();
+    aux = glm::normalize((nc + Y*m_nh) - p);
+    normal = glm::normalize(glm::cross(aux, X));
+
     m_planesOrigin[2] = normal;
     m_planesNormal[2] = nc+Y*m_nh;
     // BOTTOM
-    aux = (nc - Y*m_nh) - p;
-    aux.normalize();
-    normal = QVector3D::crossProduct(X, aux);
-    normal.normalize();
+    aux = glm::normalize((nc - Y*m_nh) - p);
+    normal = glm::normalize(glm::cross(X, aux));
     m_planesOrigin[3] = normal;
     m_planesNormal[3] = nc-Y*m_nh;
     // LEFT
-    aux = (nc - X*m_nw) - p;
-    aux.normalize();
-    normal = QVector3D::crossProduct(aux, Y);
-    normal.normalize();
+    aux = glm::normalize((nc - X*m_nw) - p);
+    normal = glm::normalize(glm::cross(aux, Y));
     m_planesOrigin[4] = normal;
     m_planesNormal[4] = nc-X*m_nw;
     // RIGHT
-    aux = (nc + X*m_nw) - p;
-    aux.normalize();
-    normal = QVector3D::crossProduct(Y, aux);
-    normal.normalize();
+    aux = glm::normalize((nc + X*m_nw) - p);
+    normal = glm::normalize(glm::cross(Y, aux));
     m_planesOrigin[5] = normal;
     m_planesNormal[5] = nc+X*m_nw;
 }
 
-bool Camera::sphereInFrustum(const QVector3D& p, float radius) {
-    float distance;
+bool Camera::sphereInFrustum(const glm::vec3& /*p*/, float /*radius*/) {
+    return true;
+    /*float distance;
     bool result = true;
 
     for (int i = 0; i < 6; i++) {
@@ -269,11 +254,11 @@ bool Camera::sphereInFrustum(const QVector3D& p, float radius) {
             return false;
         }
     }
-    return result;
+    return result;*/
 }
 
-bool Camera::boxInFrustum(int x, int y, int z, int size) {
-    bool allOut = true;
+bool Camera::boxInFrustum(int /*x*/, int /*y*/, int /*z*/, int /*size*/) {
+    /*bool allOut = true;
 
     // for each plane do ...
     for(int i = 0; i < 6; i++) {
@@ -283,7 +268,7 @@ bool Camera::boxInFrustum(int x, int y, int z, int size) {
             int cy = (k >> 1) & 1;
             int cz = (k >> 0) & 1;
 
-            QVector3D c(x + cx * size, y + cy * size, z + cz * size);
+            glm::vec3 c(x + cx * size, y + cy * size, z + cz * size);
             if (c.distanceToPlane(m_planesOrigin[i], m_planesNormal[i]) >= 0) {
                 allOut = false;
                 break;
@@ -292,7 +277,7 @@ bool Camera::boxInFrustum(int x, int y, int z, int size) {
         //if all corners are out
         if (allOut)
             return false;
-    }
+    }*/
     return true;
 }
 
@@ -388,8 +373,8 @@ bool Camera::isInWater() const {
     return m_body->isFullyInWater;
 }
 
-QVector3D Camera::frontDir() {
-    QVector3D v{cos(m_theta) * cos(m_phi),
+glm::vec3 Camera::frontDir() {
+    glm::vec3 v{cos(m_theta) * cos(m_phi),
                 sin(m_theta),
                 -cos(m_theta) * sin(m_phi)};
     return v;

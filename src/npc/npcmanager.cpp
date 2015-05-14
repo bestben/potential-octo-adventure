@@ -24,7 +24,7 @@ void NpcManager::init(GameWindow* game) {
 
         m_npcs[i] = new Creeper();
         m_npcs[i]->init(game);
-        m_npcs[i]->setPosition(QVector3D(x * 50.0f * CHUNK_SCALE, CHUNK_SCALE*CHUNK_SIZE*5.5f, y * 50.0f * CHUNK_SCALE));
+        m_npcs[i]->setPosition(glm::vec3(x * 50.0f * CHUNK_SCALE, CHUNK_SCALE*CHUNK_SIZE*5.5f, y * 50.0f * CHUNK_SCALE));
     }*/
 }
 

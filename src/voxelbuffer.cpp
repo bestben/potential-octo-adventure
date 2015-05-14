@@ -9,6 +9,8 @@
 
 #include <iostream>
 
+#include "glm/gtc/type_ptr.hpp"
+
 VoxelBuffer::VoxelBuffer() : m_position{0.0f, 0.0f, 0.0f}, m_width(CHUNK_SCALE), m_height(CHUNK_SCALE) {
 
 }
@@ -97,8 +99,11 @@ void VoxelBuffer::setDamage(float damage) {
 
 void VoxelBuffer::draw(GameWindow* gl) {
     m_program->bind();
-    m_program->setUniformValue(m_matrixUniform, gl->getCamera().getViewProjMatrix());
-    m_program->setUniformValue(m_posUniform, m_position);
+
+    gl->glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
+    gl->glUniform3fv(m_posUniform, 1, glm::value_ptr(m_position));
+    //m_program->setUniformValue(m_matrixUniform, gl->getCamera().getViewProjMatrix());
+    //m_program->setUniformValue(m_posUniform, m_position);
     m_program->setUniformValue(m_damageUniform, m_damage);
 
     m_atlas->bind(0);
@@ -111,7 +116,7 @@ void VoxelBuffer::draw(GameWindow* gl) {
     m_program->release();
 }
 
-void VoxelBuffer::setPosition(const QVector3D& position) {
+void VoxelBuffer::setPosition(const glm::vec3& position) {
     m_position = position;
 }
 

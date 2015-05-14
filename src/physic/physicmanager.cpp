@@ -6,6 +6,9 @@
 
 #include "body.h"
 
+#include "glm/geometric.hpp"
+#include "glm/vec3.hpp"
+
 // La vitesse de saut par défaut
 #define JUMP_SPEED 150
 
@@ -31,50 +34,50 @@ PhysicManager::~PhysicManager() {
 void PhysicManager::update(GameWindow* gl, int dt) {
     float delta = (float)dt / 1000.0;
 
-    QVector3D g(0.0, -981.0f, 0.0);
+    glm::vec3 g(0.0, -981.0f, 0.0);
 
     for (int i = 0; i < BODY_COUNT; ++i) {
         if (!m_freeBodies[i]) {
             Body* body = m_bodies + i;
-            QVector3D lastAcceleration = body->acceleration;
+            glm::vec3 lastAcceleration = body->acceleration;
 
-            QVector3D deltaPos = body->velocity * delta + (0.5 * lastAcceleration * delta * delta);
-            QVector3D newPosition = body->position;
-            QVector3D newAcceleration;
-            QVector3D avgAcceleration;
+            glm::vec3 deltaPos = body->velocity * delta + (lastAcceleration * delta * delta * 0.5f);
+            glm::vec3 newPosition = body->position;
+            glm::vec3 newAcceleration;
+            glm::vec3 avgAcceleration;
 
-            QVector3D force = body->force;
-            if (force.x() == 0) {
-                lastAcceleration.setX(0.0f);
+            glm::vec3 force = body->force;
+            if (force.x == 0.0f) {
+                lastAcceleration.x = 0.0f;
             }
-            if (force.z() == 0) {
-                lastAcceleration.setZ(0.0f);
+            if (force.z == 0.0f) {
+                lastAcceleration.z = 0.0f;
             }
             if (m_hasGravity) {
                 // Test collision
-                bool colliding = collide(gl, body, newPosition, QVector3D(0.0f, deltaPos.y(), 0.0f));
+                bool colliding = collide(gl, body, newPosition, glm::vec3(0.0f, deltaPos.y, 0.0f));
                 if (colliding) {
-                    avgAcceleration.setY(0.0f);
-                    if (body->velocity.y() < 0.0f) {
-                        body->velocity.setY(0.0f);
+                    avgAcceleration.y = 0.0f;
+                    if (body->velocity.y < 0.0f) {
+                        body->velocity.y = 0.0f;
                     }
                     m_bodies[i].onGround = true;
                 } else {
                     m_bodies[i].onGround = false;
                 }
-                colliding = collide(gl, body, newPosition, QVector3D(deltaPos.x(), 0.0f, 0.0f));
+                colliding = collide(gl, body, newPosition, glm::vec3(deltaPos.x, 0.0f, 0.0f));
                 if (colliding) {
-                    avgAcceleration.setX(0.0f);
-                    body->velocity.setX(0.0f);
+                    avgAcceleration.x = 0.0f;
+                    body->velocity.x = 0.0f;
                 }
-                colliding = collide(gl, body, newPosition, QVector3D(0.0f, 0.0f, deltaPos.z()));
+                colliding = collide(gl, body, newPosition, glm::vec3(0.0f, 0.0f, deltaPos.z));
                 if (colliding) {
-                    avgAcceleration.setZ(0.0f);
-                    body->velocity.setZ(0.0f);
+                    avgAcceleration.z = 0.0f;
+                    body->velocity.z = 0.0f;
                 }
 
                 // Gestion physique
-                force.setY(0.0f);
+                force.y = 0.0f;
                 newAcceleration = g / body->mass;
                 if (body->inWater) {
                     newAcceleration /= 5.0f;
@@ -84,18 +87,18 @@ void PhysicManager::update(GameWindow* gl, int dt) {
                 }
                 //avgAcceleration = (lastAcceleration + newAcceleration) * 0.5;
                 avgAcceleration = newAcceleration;
-                body->velocity.setX(force.x());
-                body->velocity.setZ(force.z());
+                body->velocity.x = force.x;
+                body->velocity.z = force.z;
                 body->velocity += avgAcceleration * delta;
 
                 // Gére le saut
                 if (body->jump && body->onGround && !body->inWater) {
-                    body->velocity.setY(body->jumpSpeed);
+                    body->velocity.y = body->jumpSpeed;
                 } else if (body->jump && body->inWater) {
-                    body->velocity.setY(body->jumpSpeed / 2.0f);
+                    body->velocity.y = body->jumpSpeed * 0.5f;
                 }
             } else {
-                avgAcceleration = QVector3D(0.0f, 0.0f, 0.0f);
+                avgAcceleration = glm::vec3(0.0f, 0.0f, 0.0f);
                 body->velocity = force;
                 newPosition += deltaPos;
             }
@@ -106,61 +109,60 @@ void PhysicManager::update(GameWindow* gl, int dt) {
             body->position = newPosition;
 
             // Gestion du passage sous la map
-            if (m_hasGravity && ((body->position.y() + body->height) < 0.0f)) {
-				body->position.setY(CHUNK_SIZE * CHUNK_SCALE * WORLD_HEIGHT);
+            if (m_hasGravity && ((body->position.y + body->height) < 0.0f)) {
+                body->position.y = CHUNK_SIZE * CHUNK_SCALE * WORLD_HEIGHT;
             }
             // Gestion du blocage
-            QVector3D footVoxel = body->position / (CHUNK_SCALE);
-            footVoxel = QVector3D(floor(footVoxel.x()), floor(footVoxel.y()), floor(footVoxel.z()));
-            VoxelType type = gl->getChunkManager().getVoxel(footVoxel.x(), footVoxel.y(), footVoxel.z()).type;
+            glm::vec3 footVoxel = body->position / (float)(CHUNK_SCALE);
+            footVoxel = glm::vec3(floor(footVoxel.x), floor(footVoxel.y), floor(footVoxel.z));
+            VoxelType type = gl->getChunkManager().getVoxel(footVoxel.x, footVoxel.y, footVoxel.z).type;
 			if (m_hasGravity && (type != VoxelType::AIR) && (type != VoxelType::WATER) && (type != VoxelType::IGNORE_TYPE)) {
-                body->position.setY(CHUNK_SIZE * CHUNK_SCALE * WORLD_HEIGHT);
+                body->position.y = (float)(CHUNK_SIZE * CHUNK_SCALE * WORLD_HEIGHT);
             }
             body->inWater = type == VoxelType::WATER;
 
-            QVector3D headVoxel = (body->position + QVector3D(0.0f, body->height, 0.0f)) / (CHUNK_SCALE);
-            headVoxel = QVector3D(floor(headVoxel.x()), floor(headVoxel.y()), floor(headVoxel.z()));
-            type = gl->getChunkManager().getVoxel(headVoxel.x(), headVoxel.y(), headVoxel.z()).type;
+            glm::vec3 headVoxel = (body->position + glm::vec3(0.0f, body->height, 0.0f)) / (float)(CHUNK_SCALE);
+            headVoxel = glm::vec3(floor(headVoxel.x), floor(headVoxel.y), floor(headVoxel.z));
+            type = gl->getChunkManager().getVoxel(headVoxel.x, headVoxel.y, headVoxel.z).type;
             body->isFullyInWater = type == VoxelType::WATER;
         }
     }
 }
 
-bool PhysicManager::collide(GameWindow* gl, Body* body, QVector3D& position, const QVector3D& delta) {
+bool PhysicManager::collide(GameWindow* gl, Body* body, glm::vec3& position, const glm::vec3& delta) {
     const float PADDING = 0.00001f;
     ChunkManager& chunkManager = gl->getChunkManager();
     // Tous les coins de notre boite
-    QVector3D corners[] = {
-        QVector3D(body->width + PADDING, - PADDING, body->width + PADDING),
-        QVector3D(body->width + PADDING, - PADDING, -body->width - PADDING),
-        QVector3D(-body->width - PADDING, - PADDING, body->width + PADDING),
-        QVector3D(-body->width - PADDING, - PADDING, -body->width - PADDING),
+    glm::vec3 corners[] = {
+        glm::vec3(body->width + PADDING, - PADDING, body->width + PADDING),
+        glm::vec3(body->width + PADDING, - PADDING, -body->width - PADDING),
+        glm::vec3(-body->width - PADDING, - PADDING, body->width + PADDING),
+        glm::vec3(-body->width - PADDING, - PADDING, -body->width - PADDING),
 
-        QVector3D(body->width, body->height * 0.5f, body->width),
-        QVector3D(body->width, body->height * 0.5f, -body->width),
-        QVector3D(-body->width, body->height * 0.5f, body->width),
-        QVector3D(-body->width, body->height * 0.5f, -body->width),
+        glm::vec3(body->width, body->height * 0.5f, body->width),
+        glm::vec3(body->width, body->height * 0.5f, -body->width),
+        glm::vec3(-body->width, body->height * 0.5f, body->width),
+        glm::vec3(-body->width, body->height * 0.5f, -body->width),
 
-        QVector3D(body->width, body->height, body->width),
-        QVector3D(body->width, body->height, -body->width),
-        QVector3D(-body->width, body->height, body->width),
-        QVector3D(-body->width, body->height, -body->width)
+        glm::vec3(body->width, body->height, body->width),
+        glm::vec3(body->width, body->height, -body->width),
+        glm::vec3(-body->width, body->height, body->width),
+        glm::vec3(-body->width, body->height, -body->width)
     };
 
     bool isColliding = false;
 
     for (int i = 0; i < 12; ++i) {
-        QVector3D oldVoxel = (corners[i] + position) / (CHUNK_SCALE);
-        oldVoxel = QVector3D(floor(oldVoxel.x()), floor(oldVoxel.y()), floor(oldVoxel.z()));
-        QVector3D newVoxel = (corners[i] + position + delta) / (CHUNK_SCALE);
-        newVoxel = QVector3D(floor(newVoxel.x()), floor(newVoxel.y()), floor(newVoxel.z()));
-        QVector3D direction = oldVoxel - newVoxel;
-        direction.normalize();
-        QVector3D currentVoxel = oldVoxel;
+        glm::vec3 oldVoxel = (corners[i] + position) / (float)(CHUNK_SCALE);
+        oldVoxel = glm::vec3(floor(oldVoxel.x), floor(oldVoxel.y), floor(oldVoxel.z));
+        glm::vec3 newVoxel = (corners[i] + position + delta) / (float)(CHUNK_SCALE);
+        newVoxel = glm::vec3(floor(newVoxel.x), floor(newVoxel.y), floor(newVoxel.z));
+        glm::vec3 direction = glm::normalize(oldVoxel - newVoxel);
+        glm::vec3 currentVoxel = oldVoxel;
         if (oldVoxel != newVoxel) {
             do {
                 currentVoxel -= direction;
-                VoxelType type = chunkManager.getVoxel(currentVoxel.x(), currentVoxel.y(), currentVoxel.z()).type;
+                VoxelType type = chunkManager.getVoxel(currentVoxel.x, currentVoxel.y, currentVoxel.z).type;
 				if ((type != VoxelType::AIR) && (type != VoxelType::WATER) && (type != VoxelType::IGNORE_TYPE)) {
                     isColliding = true;
                     break;

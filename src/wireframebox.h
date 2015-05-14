@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QtGui/QVector3D>
+#include "glm/vec3.hpp"
 
 class GameWindow;
 class QOpenGLShaderProgram;
@@ -22,7 +22,7 @@ public:
     /**
      * @brief Modifie la position de la boite.
      */
-    void setPosition(const QVector3D& position);
+    void setPosition(const glm::vec3& position);
     /**
      * @brief Modifie la couleur de la boite.
      */
@@ -43,8 +43,8 @@ private:
     int m_colorUniform;
     int m_matrixUniform;
 
-    QVector3D m_position;
-    QVector3D m_color;
+    glm::vec3 m_position;
+    glm::vec3 m_color;
     float m_width;
     float m_height;
 };

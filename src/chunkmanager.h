@@ -3,16 +3,15 @@
 #include <QtGui/QOpenGLFunctions>
 #include <atomic>
 #include <QThread>
-#include <QLinkedList>
 #include <QTime>
 
 #include "chunk.h"
 #include "meshgenerator.h"
 #include "biomes/ChunkGenerator.h"
 #include "LightManager.h"
-#include <QtCore/qvector.h>
 #include <mutex>
 #include <unordered_map>
+#include "utility.h"
 
 class QOpenGLVertexArrayObject;
 class QOpenGLShaderProgram;
@@ -52,8 +51,8 @@ public:
 	Chunk* getChunk(Coords pos);
 	Chunk* getChunk(int i, int j, int k);
 
-    Voxel getVoxel(int x, int y, int z, bool* loaded = nullptr);
-	Voxel getVoxel(Coords c);
+    MI_FORCE_INLINE Voxel getVoxel(int x, int y, int z, bool* loaded = nullptr);
+    MI_FORCE_INLINE Voxel getVoxel(Coords c);
 	
 	LightManager& getLightManager();
 	VoxelType placeVoxel(Coords pos, VoxelType type);
@@ -122,8 +121,7 @@ private:
 
     std::mutex m_mutexGenerateQueue;
 
-	QVector<Chunk*> m_toGenerateChunkData;
-	QLinkedList<Chunk*> m_toGenerateBuffer;
+    std::vector<Chunk*> m_toGenerateChunkData;
 
     GLuint* m_tempVertexData;
     Buffer m_tempBufferToUpload;

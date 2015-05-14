@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QtCore/QHash>
 #include <memory>
 #include <fstream>
 #include "../chunk.h"

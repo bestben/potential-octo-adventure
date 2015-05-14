@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+#include "glm/geometric.hpp"
+
 Creeper::Creeper() : m_lengthOfSight{36}, m_pathRefreshRate{1000}, m_life{10}, m_canBeDestroyed{false} {
 
 }
@@ -21,7 +23,7 @@ void Creeper::init(GameWindow* gl) {
     m_body = gl->getPhysicManager().getBody(bodyID);
 
     m_body->jumpSpeed = 150.0f;
-    m_body->position = QVector3D(0.0f, CHUNK_SCALE*CHUNK_SIZE*5.5f, 0.0f );
+    m_body->position = glm::vec3(0.0f, CHUNK_SCALE*CHUNK_SIZE*5.5f, 0.0f );
     m_box.setSize(m_body->width, m_body->height);
     m_box.init(gl);
 
@@ -66,10 +68,9 @@ void Creeper::update(GameWindow* gl, int dt) {
                 }
             }
             if (m_path.size() > 0) {
-                QVector3D target = voxelToWorld(next);
-                QVector3D direction = target - m_body->position;
-                direction.normalize();
-                QVector3D move = direction * 50.0f;
+                glm::vec3 target = voxelToWorld(next);
+                glm::vec3 direction = glm::normalize(target - m_body->position);
+                glm::vec3 move = direction * 50.0f;
                 m_body->force = move;
                 if (next.j > current.j) {
                     m_body->jump = true;
@@ -85,7 +86,7 @@ void Creeper::update(GameWindow* gl, int dt) {
 }
 
 void Creeper::draw(GameWindow* gl) {
-    m_box.setPosition(m_body->position - QVector3D(m_body->width / 2.0f, 0.0f, m_body->width / 2.0f));
+    m_box.setPosition(m_body->position - glm::vec3(m_body->width / 2.0f, 0.0f, m_body->width / 2.0f));
     m_box.draw(gl);
 }
 
@@ -108,7 +109,7 @@ bool Creeper::canBeDestroyed() {
     return m_canBeDestroyed;
 }
 
-void Creeper::setPosition(const QVector3D& pos) {
+void Creeper::setPosition(const glm::vec3& pos) {
     if (m_body != nullptr) {
         m_body->position = pos;
     }

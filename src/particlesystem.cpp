@@ -7,9 +7,11 @@
 #include <QtGui/QOpenGLTexture>
 #include <QtGui/QOpenGLVertexArrayObject>
 
+#include "glm/gtc/type_ptr.hpp"
+
 ParticleSystem::ParticleSystem(int count, int lifetime) : m_count{count}, m_lifeTime{lifetime} {
-    m_positions = new QVector3D[m_count];
-    m_velocities = new QVector3D[m_count];
+    m_positions = new glm::vec3[m_count];
+    m_velocities = new glm::vec3[m_count];
 }
 
 ParticleSystem::~ParticleSystem() {
@@ -46,7 +48,7 @@ void ParticleSystem::init(GameWindow* gl) {
     m_vao->bind();
     m_vertices->bind();
     m_vertices->setUsagePattern(QOpenGLBuffer::DynamicDraw);
-    m_vertices->allocate(nullptr, sizeof(QVector3D) * m_count);
+    m_vertices->allocate(nullptr, sizeof(glm::vec3) * m_count);
     m_program->enableAttributeArray(verticesIndex);
     gl->glVertexAttribPointer(verticesIndex, 3, GL_FLOAT, false, 0, 0);
 
@@ -64,7 +66,7 @@ void ParticleSystem::destroy(GameWindow* gl) {
 void ParticleSystem::update(GameWindow* gl, int dt) {
     if (m_spawnTime.elapsed() < m_lifeTime) {
         int count = m_count;
-        QVector3D g(0.0f, 9.81f, 0.0f);
+        glm::vec3 g(0.0f, 9.81f, 0.0f);
         float delta = (float)dt / 1000.0f;
 
         for (int i = 0; i < count; ++i) {
@@ -72,7 +74,7 @@ void ParticleSystem::update(GameWindow* gl, int dt) {
             m_positions[i] += m_velocities[i] * delta;
         }
         m_vertices->bind();
-        m_vertices->write(0, m_positions, sizeof(QVector3D) * m_count);
+        m_vertices->write(0, m_positions, sizeof(glm::vec3) * m_count);
     }
 }
 
@@ -84,7 +86,8 @@ void ParticleSystem::draw(GameWindow* gl) {
         m_atlas->bind(0);
 
         m_program->setUniformValue(m_typeUniform, (int)getTexture(m_voxelType, 0));
-        m_program->setUniformValue(m_matrixUniform, gl->getCamera().getViewProjMatrix());
+        gl->glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
+        //m_program->setUniformValue(m_matrixUniform, gl->getCamera().getViewProjMatrix());
 
         gl->glDrawArrays(GL_POINTS, 0, m_count);
 
@@ -93,7 +96,7 @@ void ParticleSystem::draw(GameWindow* gl) {
     }
 }
 
-void ParticleSystem::setSpawnPosition(const QVector3D& position) {
+void ParticleSystem::setSpawnPosition(const glm::vec3& position) {
     m_spawnPosition = position;
 }
 
@@ -103,11 +106,11 @@ void ParticleSystem::setVoxelType(VoxelType type) {
 
 void ParticleSystem::spawn() {
     int count = m_count;
-    QVector3D spawnPos = m_spawnPosition;
+    glm::vec3 spawnPos = m_spawnPosition;
     for (int i = 0; i < count; ++i) {
         float vx = ((float)rand() / (float)RAND_MAX) * 2.0 - 1.0;
         float vz = ((float)rand() / (float)RAND_MAX) * 2.0 - 1.0;
-        m_velocities[i] = QVector3D(vx, 1.0f, vz) * 10.0f;
+        m_velocities[i] = glm::vec3(vx, 1.0f, vz) * 10.0f;
         m_positions[i] = spawnPos;
     }
     m_spawnTime.start();

@@ -6,6 +6,7 @@
 #include <QtGui/QOpenGLVertexArrayObject>
 
 #include <iostream>
+#include "glm/gtc/type_ptr.hpp"
 
 WireframeBox::WireframeBox() : m_position{0.0f, 0.0f, 0.0f}, m_color{0.0f, 0.0f, 1.0f},
                                 m_width(CHUNK_SCALE), m_height(CHUNK_SCALE) {
@@ -68,9 +69,12 @@ void WireframeBox::destroy(GameWindow* gl) {
 
 void WireframeBox::draw(GameWindow* gl) {
     m_program->bind();
-    m_program->setUniformValue(m_matrixUniform, gl->getCamera().getViewProjMatrix());
-    m_program->setUniformValue(m_posUniform, m_position);
-    m_program->setUniformValue(m_colorUniform, m_color);
+    gl->glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
+    gl->glUniform3fv(m_posUniform, 1, glm::value_ptr(m_position));
+    gl->glUniform3fv(m_colorUniform, 1, glm::value_ptr(m_color));
+    //m_program->setUniformValue(m_matrixUniform, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
+    //m_program->setUniformValue(m_posUniform, m_position);
+    //m_program->setUniformValue(m_colorUniform, m_color);
 
     m_vao->bind();
 
@@ -80,12 +84,12 @@ void WireframeBox::draw(GameWindow* gl) {
     m_program->release();
 }
 
-void WireframeBox::setPosition(const QVector3D& position) {
+void WireframeBox::setPosition(const glm::vec3& position) {
     m_position = position;
 }
 
 void WireframeBox::setColor(float r, float g, float b) {
-    m_color = QVector3D(r, g, b);
+    m_color = glm::vec3(r, g, b);
 }
 
 void WireframeBox::setSize(float width, float height) {

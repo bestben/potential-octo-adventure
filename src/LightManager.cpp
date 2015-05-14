@@ -2,9 +2,17 @@
 #include "chunkmanager.h"
 
 #include <QtCore/QQueue>
-#include <QtCore/QSet>
 #include <iostream>
 #include <QtCore/QTimer>
+
+static const Coords neighbors[6] = {
+    Coords{ 0, 0, 1 },
+    Coords{ 0, 1, 0 },
+    Coords{ 1, 0, 0 },
+    Coords{ 0, 0, -1 },
+    Coords{ 0, -1, 0 },
+    Coords{ -1, 0, 0 }
+};
 
 LightManager::LightManager(ChunkManager* cm) : mChunkManager{ cm }
 {
@@ -16,13 +24,12 @@ LightManager::~LightManager()
 
 
 
-void LightManager::placeVoxel(Coords pos, VoxelType type, QSet<Coords> &modifiedChunks){
+void LightManager::placeVoxel(Coords pos, VoxelType type, std::set<Coords> &modifiedChunks) {
 
 	Voxel n = {};
 	n.type = type;
 	
-	QSet<Coords> lightSources;
-
+    std::set<Coords> lightSources;
 	Voxel v = mChunkManager->getVoxel(pos);
 
 	if (v.type == VoxelType::IGNORE_TYPE)
@@ -30,8 +37,6 @@ void LightManager::placeVoxel(Coords pos, VoxelType type, QSet<Coords> &modified
 
 	Voxel above = mChunkManager->getVoxel(pos + Coords{ 0, 1, 0 });
 	bool underSun = (above.type != VoxelType::IGNORE_TYPE && above.getLight() == SUN_LIGHT);
-
-	
 
 	uint8 oldlight = v.getLight();
 	
@@ -51,6 +56,8 @@ void LightManager::placeVoxel(Coords pos, VoxelType type, QSet<Coords> &modified
 
 		uint16 y = pos.j - 1;
 
+        Coords currentChunk = {-1, -1, -1};
+
 		for (;; --y) {
 			Coords newPos = { pos.i, y, pos.k };
 
@@ -63,42 +70,31 @@ void LightManager::placeVoxel(Coords pos, VoxelType type, QSet<Coords> &modified
 				//TODO: Verifier les variables passées en parametre
 				unlightNeighbors(newPos, newVoxel.getLight(), lightSources, modifiedChunks);
 				mChunkManager->setVoxel(newPos, newVoxel.type, 0);
-				modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
+                if( currentChunk != GetChunkPosFromVoxelPos(newPos) )
+                    modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
 			}
 			else
 				break;
-			
-
 		}
 
 	}
 
-	const Coords neighbors[6] = {
-		Coords{ 0, 0, 1 },
-		Coords{ 0, 1, 0 },
-		Coords{ 1, 0, 0 },
-		Coords{ 0, 0, -1 },
-		Coords{ 0, -1, 0 },
-		Coords{ -1, 0, 0 }
-	};
-
-
 	for (uint16 dir = 0; dir < 6; ++dir) {
 		Coords p2 = pos + neighbors[dir];
-		lightSources.insert(p2);
+        lightSources.insert(p2);
 	}
 
-	lightSources.insert(pos);
+    lightSources.insert(pos);
 	spreadLight(lightSources, modifiedChunks);
 
 }
 
-void LightManager::removeVoxel(Coords pos, QSet<Coords> &modifiedChunks) {
+void LightManager::removeVoxel(Coords pos, std::set<Coords>& modifiedChunks) {
 	
 	Voxel n = {};
 	n.type = VoxelType::AIR;
 
-	QSet<Coords> lightSources;
+    std::set<Coords> lightSources;
 
 	Voxel v = mChunkManager->getVoxel(pos);
 
@@ -141,15 +137,6 @@ void LightManager::removeVoxel(Coords pos, QSet<Coords> &modifiedChunks) {
 		// Inutile
 		// mChunkManager->setVoxel(pos, n.type, 0);
 	}
-	
-	const Coords neighbors[6] = {
-		Coords{ 0, 0, 1 },
-		Coords{ 0, 1, 0 },
-		Coords{ 1, 0, 0 },
-		Coords{ 0, 0, -1 },
-		Coords{ 0, -1, 0 },
-		Coords{ -1, 0, 0 }
-	};
 
 	uint8 maxLight = 0;
 	Coords maxLightPos = {};
@@ -179,13 +166,16 @@ void LightManager::removeVoxel(Coords pos, QSet<Coords> &modifiedChunks) {
 }
 
 void LightManager::updateLighting(Chunk* chunk) {
-	QHash<Coords, uint8> removelightFrom;
+    std::unordered_map<Coords, uint8> removelightFrom;
 
-	QSet<Coords> lightSources;
-	QSet<Coords> modifiedChunks;
+    std::set<Coords> lightSources;
+    std::set<Coords> modifiedChunks;
 
 	Chunk* current_chunk = chunk;
 	while (true) {
+        if (current_chunk->data == nullptr)
+            break;
+
 		Coords chunkPos = { current_chunk->i, current_chunk->j, current_chunk->k };
 		Coords offset = chunkPos * CHUNK_SIZE;
 
@@ -244,7 +234,7 @@ void LightManager::updateLighting(Chunk* chunk) {
 
 }
 
-bool LightManager::propagateSunLight(Chunk* chunk, QSet<Coords> &lightSources, QSet<Coords> &modifiedChunks) {
+bool LightManager::propagateSunLight(Chunk* chunk, std::set<Coords>& lightSources, std::set<Coords>& modifiedChunks) {
 	bool shouldGoDown = false;
 
 	Coords chunkPos = { chunk->i, chunk->j, chunk->k };
@@ -318,10 +308,12 @@ bool LightManager::propagateSunLight(Chunk* chunk, QSet<Coords> &lightSources, Q
 	return shouldGoDown;
 }
 
-uint16 LightManager::propagateSunLight(Coords start, QSet<Coords> &modifiedChunks) {
+uint16 LightManager::propagateSunLight(Coords start, std::set<Coords>& modifiedChunks) {
 	
 	uint16 y = start.j;
 
+    Coords currentChunk = { -1, -1, -1 };
+    bool modified = false;
 	for (;; --y) {
 		Coords pos = { start.i, y, start.k };
 
@@ -332,34 +324,26 @@ uint16 LightManager::propagateSunLight(Coords start, QSet<Coords> &modifiedChunk
 
 		if (!isOpaque(v)) {
 			mChunkManager->setVoxel(pos, v.type, SUN_LIGHT);
+            modified = true;
 		}
-		modifiedChunks.insert(GetChunkPosFromVoxelPos(pos));
-
+        if ( ( GetChunkPosFromVoxelPos(pos) != currentChunk ) && modified ) {
+            modifiedChunks.insert(GetChunkPosFromVoxelPos(pos));
+            modified = false;
+        }
 	}
 
 	return y + 1;
 }
 
-void LightManager::unspreadLight(QHash<Coords, uint8> &from, QSet<Coords> &lightSources, QSet<Coords> &modifiedChunks) {
-	
-	const Coords neighbors[6] = {
-			Coords{  0,  0,  1 },
-			Coords{  0,  1,  0 },
-			Coords{  1,  0,  0 },
-			Coords{  0,  0, -1 },
-			Coords{  0, -1,  0 },
-			Coords{ -1,  0,  0 }
-	};
-
-	if (from.isEmpty())
+void LightManager::unspreadLight(std::unordered_map<Coords, uint8> &from, std::set<Coords> &lightSources, std::set<Coords> &modifiedChunks) {
+    if (from.empty())
 		return;
 
-	QHash<Coords, uint8> unlighted;
+    std::unordered_map<Coords, uint8> unlighted;
 
 	for (auto it = from.begin(); it != from.end(); ++it) {
-
-		Coords pos = it.key();
-		uint8 oldlight = *it;
+        Coords pos = it->first;
+        uint8 oldlight = it->second;
 
 		for (uint16 dir = 0; dir < 6; ++dir) {
 			Coords newPos = pos + neighbors[dir];
@@ -373,7 +357,7 @@ void LightManager::unspreadLight(QHash<Coords, uint8> &from, QSet<Coords> &light
 					unlighted[newPos] = v.getLight();
 					mChunkManager->setVoxel(newPos, v.type, 0);
 				}
-            } else if (v.getLight() >= oldlight){
+            } else if (v.getLight() >= oldlight) {
 				lightSources.insert(newPos);
 			}
 			modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
@@ -383,51 +367,38 @@ void LightManager::unspreadLight(QHash<Coords, uint8> &from, QSet<Coords> &light
 
 	
 
-	if (!unlighted.isEmpty()) {
+    if (!unlighted.empty()) {
 		unspreadLight(unlighted, lightSources, modifiedChunks);
 	}
 
 }
 
-void LightManager::unlightNeighbors(Coords coords, uint8 old_light, QSet<Coords> &light_sources, QSet<Coords> &modifiedChunks) {
-
-	QHash<Coords, uint8> fromSun;
+void LightManager::unlightNeighbors(Coords coords, uint8 old_light, std::set<Coords>& light_sources, std::set<Coords>& modifiedChunks) {
+    std::unordered_map<Coords, uint8> fromSun;
 	fromSun[coords] = old_light;
 	unspreadLight(fromSun, light_sources, modifiedChunks);
 
 }
 
-void LightManager::spreadLight(QSet<Coords> &lightSources, QSet<Coords> &modifiedChunks) {
+void LightManager::spreadLight(std::set<Coords> &lightSources, std::set<Coords> &modifiedChunks) {
 
-	if (lightSources.isEmpty())
+    if (lightSources.empty())
 		return;
 
-	const Coords neighbors[6] = {
-		Coords{ 0, 0, 1 },
-		Coords{ 0, 1, 0 },
-		Coords{ 1, 0, 0 },
-		Coords{ 0, 0, -1 },
-		Coords{ 0, -1, 0 },
-		Coords{ -1, 0, 0 }
-	};
-
-	QSet<Coords> lighted;
-
 	for (auto it = lightSources.begin(); it != lightSources.end(); ++it) {
-		
 		Coords pos = *it;
-
 		Voxel v = mChunkManager->getVoxel(pos);
 
 		if (v.type == VoxelType::IGNORE_TYPE)
 			continue;
 
-		uint8 oldlight = v.getLight();
+        uint8 oldlight = v.getLight();
+        uint8 newlight = reduce_light(oldlight);
 
-		uint8 newlight = reduce_light(oldlight);
+        Coords nextLightSources[6];
+        int nextLightSourcesCount = 0;
 
-		
-
+        Coords currentChunk = GetChunkPosFromVoxelPos(pos);
 		for (uint16 dir = 0; dir < 6; dir++) {
 			
 			Coords newPos = pos + neighbors[dir];
@@ -437,26 +408,65 @@ void LightManager::spreadLight(QSet<Coords> &lightSources, QSet<Coords> &modifie
 			if (newVoxel.type == VoxelType::IGNORE_TYPE)
 				continue;
 
-			if (newVoxel.getLight() > unreduce_light(oldlight)) {
-				lighted.insert(newPos);
-			}
+            /*if (newVoxel.getLight() > unreduce_light(oldlight)) {
+                nextLightSources[nextLightSourcesCount++] = newPos;
+            }*/
 			if (newVoxel.getLight() < newlight && !isOpaque(newVoxel)) {
 				mChunkManager->setVoxel(newPos, newVoxel.type, newlight);
-				lighted.insert(newPos);
+                nextLightSources[nextLightSourcesCount++] = newPos;
+                if( GetChunkPosFromVoxelPos(newPos) != currentChunk )
+                    modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
 			}
-			modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
-
 		}
-
+        if( nextLightSourcesCount != 0 )
+            spreadLight(nextLightSources, nextLightSourcesCount, modifiedChunks);
 	}
-
-	if (!lighted.isEmpty())
-		spreadLight(lighted, modifiedChunks);
-
 }
 
-void LightManager::lightNeighbors(Coords coords, QSet<Coords> &modifiedChunks) {
-	QSet<Coords> from;
+void LightManager::spreadLight(Coords* lightSources, int lightSourceCount, std::set<Coords> &modifiedChunks) {
+    if (lightSourceCount == 0)
+        return;
+
+    for (int i = 0; i < lightSourceCount; ++i) {
+        Coords pos = lightSources[i];
+        Voxel v = mChunkManager->getVoxel(pos);
+
+        if (v.type == VoxelType::IGNORE_TYPE)
+            continue;
+
+        uint8 oldlight = v.getLight();
+        uint8 newlight = reduce_light(oldlight);
+        Coords currentChunk = GetChunkPosFromVoxelPos(pos);
+
+        Coords nextLightSources[6];
+        int nextLightSourcesCount = 0;
+
+        for (uint16 dir = 0; dir < 6; dir++) {
+            Coords newPos = pos + neighbors[dir];
+
+            Voxel newVoxel = mChunkManager->getVoxel(newPos);
+
+            if (newVoxel.type == VoxelType::IGNORE_TYPE)
+                continue;
+
+            /*if (newVoxel.getLight() > unreduce_light(oldlight)) {
+                nextLightSources[nextLightSourcesCount++] = newPos;
+            }*/
+            if (newVoxel.getLight() < newlight && !isOpaque(newVoxel)) {
+                mChunkManager->setVoxel(newPos, newVoxel.type, newlight);
+                nextLightSources[nextLightSourcesCount++] = newPos;
+                if( GetChunkPosFromVoxelPos(newPos) != currentChunk )
+                    modifiedChunks.insert(GetChunkPosFromVoxelPos(newPos));
+            }
+
+        }
+        if( nextLightSourcesCount != 0 )
+            spreadLight(nextLightSources, nextLightSourcesCount, modifiedChunks);
+    }
+}
+
+void LightManager::lightNeighbors(Coords coords, std::set<Coords> &modifiedChunks) {
+    std::set<Coords> from;
 	from.insert(coords);
 	spreadLight(from, modifiedChunks);
 }

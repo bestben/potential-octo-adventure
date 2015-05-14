@@ -1,12 +1,12 @@
 #include "chunk.h"
 
-VoxelTextureMap VoxelTextures[(uint)VoxelType::COUNT];
+VoxelTextureMap VoxelTextures[(unsigned int)VoxelType::COUNT];
 
 void initializeTextureMaps(){
     // On ne devrait jamais demander la texture de l'air
-    VoxelTextures[(uint)VoxelType::AIR] = { TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE};
+    VoxelTextures[(unsigned int)VoxelType::AIR] = { TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE, TextureID::ERROR_TEXTURE};
 
-    VoxelTextures[(uint)VoxelType::GRASS] = {
+    VoxelTextures[(unsigned int)VoxelType::GRASS] = {
         TextureID::GRASS,
         TextureID::DIRT,
         TextureID::GRASS_SIDE,
@@ -23,7 +23,7 @@ void initializeTextureMaps(){
     FULL_BLOCK(WATER)
     FULL_BLOCK(LEAVES)
 
-    VoxelTextures[(uint)VoxelType::STONE] = {
+    VoxelTextures[(unsigned int)VoxelType::STONE] = {
         TextureID::STONE_TOP,
         TextureID::STONE_TOP,
         TextureID::STONE_SIDE,
@@ -32,7 +32,7 @@ void initializeTextureMaps(){
         TextureID::STONE_SIDE
     };
 
-    VoxelTextures[(uint)VoxelType::TRUNK] = {
+    VoxelTextures[(unsigned int)VoxelType::TRUNK] = {
         TextureID::TRUNK_TOP,
         TextureID::TRUNK_TOP,
         TextureID::TRUNK_SIDE,
@@ -44,11 +44,11 @@ void initializeTextureMaps(){
 
 TextureID getTexture(VoxelType type, int side) {
     side = side % 6;
-    TextureID* voxel = (TextureID*)&VoxelTextures[(uint)type];
+    TextureID* voxel = (TextureID*)&VoxelTextures[(unsigned int)type];
 
     return *(voxel + side);
 }
 
 VoxelTextureMap getTextureMap(VoxelType type) {
-    return VoxelTextures[(uint)type];
+    return VoxelTextures[(unsigned int)type];
 }

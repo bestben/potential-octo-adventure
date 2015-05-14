@@ -1,5 +1,4 @@
 #include "BiomeMap.h"
-#include <QtCore/QString>
 #include <fstream>
 #include "../libnoise/noise.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QtGui/QVector3D>
+#include "glm/vec3.hpp"
 #include <cstdint>
 
 typedef int8_t int8;
@@ -72,10 +72,10 @@ struct Voxel
 	Voxel(){ type = VoxelType::AIR; _light = 0; }
 	Voxel(VoxelType t){ type = t; _light = 0; }
 	VoxelType type : 8;
-	uint8 _light : 8;
+    uint8 _light : 8;
 
-	uint8 getLight() {
-		uint8 source = lightSource(type);
+    uint8 getLight() {
+        uint8 source = lightSource(type);
 		return source > _light ? source : _light;
 	}
 };
@@ -136,10 +136,10 @@ struct ChunkPile{
 
 	// Cache access
 	Chunk* _lastChunk;
-	uint16 _lastChunkId;
+    uint16 _lastChunkId;
 
-	uint16 pileI;
-	uint16 pileJ;
+    uint16 pileI;
+    uint16 pileJ;
 
 	bool modified = false;
 };
@@ -182,7 +182,7 @@ struct VoxelTextureMap
 	TextureID back;
 };
 
-#define FULL_BLOCK(name) VoxelTextures[(uint)VoxelType::name] = { TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name };
+#define FULL_BLOCK(name) VoxelTextures[(unsigned int)VoxelType::name] = { TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name, TextureID::name };
 
 
 inline double lerp(double v0, double v1, double t) {

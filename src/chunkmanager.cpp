@@ -7,7 +7,9 @@
 #include <QtGui/QOpenGLVertexArrayObject>
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QOpenGLTexture>
-#include <QtCore/QSet>
+
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 ChunkManager::ChunkManager(int worldSeed) : m_isInit{ false },
 m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
@@ -101,14 +103,16 @@ void ChunkManager::initialize(GameWindow* gl) {
 	m_matrixUniform = m_program->uniformLocation("viewProj");
 	m_chunkPosUniform = m_program->uniformLocation("chunkPosition");
 
-    QVector3D skyColor(0.53f, 0.807f, 0.92f);
+    glm::vec3 skyColor(0.53f, 0.807f, 0.92f);
 
 	m_program->bind();
 	m_program->setUniformValue("atlas", 0);
 	m_program->setUniformValue("tileCount", 16);
 	m_program->setUniformValue("tileSize", 16);
 	m_program->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE)*3.0f);
-	m_program->setUniformValue("fogColor", skyColor);
+
+    gl->glUniform3fv(m_program->uniformLocation("fogColor"), 1, glm::value_ptr(skyColor));
+    //m_program->setUniformValue("fogColor", skyColor);
 	m_program->release();
 
 	m_waterProgram = new QOpenGLShaderProgram(gl);
@@ -126,7 +130,8 @@ void ChunkManager::initialize(GameWindow* gl) {
 	m_waterProgram->setUniformValue("tileCount", 16);
 	m_waterProgram->setUniformValue("tileSize", 16);
 	m_waterProgram->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE)*3.0f);
-	m_waterProgram->setUniformValue("fogColor", skyColor);
+    gl->glUniform3fv(m_waterProgram->uniformLocation("fogColor"), 1, glm::value_ptr(skyColor));
+    //m_waterProgram->setUniformValue("fogColor", skyColor);
 	m_waterProgram->release();
 
 	m_atlas = new QOpenGLTexture(QImage(":/atlas.png"));
@@ -199,13 +204,13 @@ void ChunkManager::update(GameWindow* gl) {
 	m_chunkToDrawCount = 0;
 	if (m_isInit) {
 
-		QVector3D camPos = gl->getCamera().getPosition();
+		glm::vec3 camPos = gl->getCamera().getPosition();
 
 		Coords chunkHere = GetChunkPosFromVoxelPos(GetVoxelPosFromWorldPos(camPos));
 
-		float camX = gl->getCamera().getPosition().x();
-		float camY = gl->getCamera().getPosition().y();
-		float camZ = gl->getCamera().getPosition().z();
+        float camX = gl->getCamera().getPosition().x;
+        float camY = gl->getCamera().getPosition().y;
+        float camZ = gl->getCamera().getPosition().z;
 
         if ((chunkHere.i != m_currentChunk.i) || (chunkHere.k != m_currentChunk.k) || m_FirstUpdate) {
             m_currentChunk = chunkHere;
@@ -222,7 +227,12 @@ void ChunkManager::update(GameWindow* gl) {
                 if ((std::abs(chunk->i - chunkHere.i) > VIEW_SIZE) ||
                     (std::abs(chunk->k - chunkHere.k) > VIEW_SIZE)) {
                     m_mutexGenerateQueue.lock();
-                    m_toGenerateChunkData.removeAll(chunk);
+                    for( int j = 0; j < m_toGenerateChunkData.size(); ++j ) {
+                        if( m_toGenerateChunkData[j] == chunk ) {
+                            m_toGenerateChunkData[j] = nullptr;
+                            break;
+                        }
+                    }
                     chunk->inQueue = false;
                     m_mutexGenerateQueue.unlock();
 
@@ -346,10 +356,10 @@ void ChunkManager::draw(GameWindow* gl) {
 	if (m_isInit) {
 		m_program->bind();
 
-		QMatrix4x4 mat = gl->getCamera().getViewProjMatrix();
-		QMatrix4x4 scale;
-		scale.scale(CHUNK_SCALE, CHUNK_SCALE, CHUNK_SCALE);
-		m_program->setUniformValue(m_matrixUniform, mat * scale);
+		glm::mat4x4 mat = gl->getCamera().getViewProjMatrix();
+        glm::mat4x4 scale = glm::scale( glm::mat4x4(), glm::vec3((float)CHUNK_SCALE, (float)CHUNK_SCALE, (float)CHUNK_SCALE) );
+        gl->glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(mat * scale));
+        //m_program->setUniformValue(m_matrixUniform, mat * scale);
 		m_atlas->bind(0);
 
 		for (int i = m_chunkToDrawCount - 1; i >= 0; --i) {
@@ -358,8 +368,10 @@ void ChunkManager::draw(GameWindow* gl) {
 
             if (chunk->generated && buffer->draw && buffer->opaqueCount > 0) {
 				buffer->vao->bind();
-
-				m_program->setUniformValue(m_chunkPosUniform, QVector3D(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
+                gl->glUniform3fv(m_chunkPosUniform, 1, glm::value_ptr(glm::vec3((float)(chunk->i * CHUNK_SIZE),
+                                                                                (float)(chunk->j * CHUNK_SIZE),
+                                                                                (float)(chunk->k * CHUNK_SIZE))));
+                //m_program->setUniformValue(m_chunkPosUniform, glm::vec3(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
 				//m_program->setUniformValue(m_lightMapUniform, 1);
 				gl->glDrawArrays(GL_TRIANGLES, 0, buffer->opaqueCount);
 				buffer->vao->release();
@@ -367,7 +379,8 @@ void ChunkManager::draw(GameWindow* gl) {
 		}
 		glDisable(GL_CULL_FACE);
 		m_waterProgram->bind();
-		m_waterProgram->setUniformValue(m_waterMatrixUniform, mat * scale);
+        gl->glUniformMatrix4fv(m_waterMatrixUniform, 1, GL_FALSE, glm::value_ptr(mat * scale));
+        //m_waterProgram->setUniformValue(m_waterMatrixUniform, mat * scale);
         m_waterProgram->setUniformValue(m_waterTimerUniform, (float)m_animationTime.elapsed());
 		for (int i = m_chunkToDrawCount - 1; i >= 0; --i) {
 			Chunk* chunk = m_chunkToDraw[i];
@@ -375,7 +388,10 @@ void ChunkManager::draw(GameWindow* gl) {
             if (chunk->generated && buffer->draw && buffer->waterCount > 0) {
 				buffer->vao->bind();
 
-				m_waterProgram->setUniformValue(m_waterChunkPosUniform, QVector3D(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
+                gl->glUniform3fv(m_waterChunkPosUniform, 1, glm::value_ptr(glm::vec3((float)(chunk->i * CHUNK_SIZE),
+                                                                                    (float)(chunk->j * CHUNK_SIZE),
+                                                                                    (float)(chunk->k * CHUNK_SIZE))));
+                //m_waterProgram->setUniformValue(m_waterChunkPosUniform, glm::vec3(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
 				gl->glDrawArrays(GL_TRIANGLES, buffer->opaqueCount, buffer->waterCount);
 				buffer->vao->release();
 			}
@@ -428,6 +444,10 @@ void ChunkManager::run() {
 			m_mutexGenerateQueue.lock();
 			Coords here = m_currentChunk;
             std::sort(m_toGenerateChunkData.begin(), m_toGenerateChunkData.end(), [here](Chunk* c1, Chunk* c2)->bool{
+                if( c1 == nullptr )
+                    return false;
+                else if ( c2 == nullptr )
+                    return true;
 				int a = (c1->i - here.i)*(c1->i - here.i) + (c1->k - here.k)*(c1->k - here.k);
 				int b = (c2->i - here.i)*(c2->i - here.i) + (c2->k - here.k)*(c2->k - here.k);
 				if (a == b) {
@@ -437,8 +457,13 @@ void ChunkManager::run() {
             });
 
 			
-            Chunk* newChunk = m_toGenerateChunkData.back();
-			m_toGenerateChunkData.pop_back();
+            Chunk* newChunk = nullptr;
+            while( (newChunk == nullptr) && (m_toGenerateChunkData.size() > 0) ) {
+                newChunk = m_toGenerateChunkData.back();
+                m_toGenerateChunkData.pop_back();
+            }
+           if( newChunk == nullptr )
+               continue;
 			m_mutexGenerateQueue.unlock();
 
             if (!newChunk->generated) {
@@ -452,7 +477,7 @@ void ChunkManager::run() {
                         newChunk->differsFromDisk = !skipGeneration;
                     }
 
-                    QSet<Coords> modifiedChunks;
+                    std::set<Coords> modifiedChunks;
 
                     if(!skipGeneration){
                         newChunk->onlyAir = m_ChunkGenerator->generateChunk(data, newChunk->i, newChunk->j, newChunk->k, modifiedChunks);
@@ -461,7 +486,7 @@ void ChunkManager::run() {
                     }
 
                     m_LightManager->updateLighting(newChunk);
-                    modifiedChunks.remove(Coords{ newChunk->i, newChunk->j, newChunk->k });
+                    modifiedChunks.erase(Coords{ newChunk->i, newChunk->j, newChunk->k });
                     for (auto pos : modifiedChunks) {
                         Chunk* c = getChunk(pos);
                         if (c != nullptr){
@@ -558,7 +583,7 @@ LightManager& ChunkManager::getLightManager() {
 
 VoxelType ChunkManager::placeVoxel(Coords pos, VoxelType type) {
 	
-	QSet<Coords> modifiedChunks;
+    std::set<Coords> modifiedChunks;
 
 	VoxelType oldType = getVoxel(pos).type;
 
@@ -589,7 +614,7 @@ VoxelType ChunkManager::placeVoxel(Coords pos, VoxelType type) {
 
 void ChunkManager::removeVoxel(Coords pos) {
 
-	QSet<Coords> modifiedChunks;
+    std::set<Coords> modifiedChunks;
 	m_LightManager->removeVoxel(pos, modifiedChunks);
 
 	Chunk* thisChunk = getChunk(GetChunkPosFromVoxelPos(pos));

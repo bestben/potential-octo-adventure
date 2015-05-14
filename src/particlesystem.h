@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QtGui/QVector3D>
+#include "glm/vec3.hpp"
 #include <QTime>
 #include "chunk.h"
 
@@ -31,7 +31,7 @@ public:
      * @brief Modifie la position sur à laquelle les particules sont émises.
      * @param position La nouvelle position.
      */
-    void setSpawnPosition(const QVector3D& position);
+    void setSpawnPosition(const glm::vec3& position);
     /**
      * @brief Modifie le type de voxel à afficher sur les particules.
      */
@@ -65,10 +65,10 @@ private:
     // Le type de particules à afficher
     VoxelType m_voxelType;
     // La position de départ des particules
-    QVector3D m_spawnPosition;
+    glm::vec3 m_spawnPosition;
 
     // Tableau des positions des particules
-    QVector3D* m_positions;
+    glm::vec3* m_positions;
     // Tableau des vitesses des particules
-    QVector3D* m_velocities;
+    glm::vec3* m_velocities;
 };

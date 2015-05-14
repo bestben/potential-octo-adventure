@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QtGui/QVector3D>
+#include "glm/vec3.hpp"
 
 class GameWindow;
 class QOpenGLShaderProgram;
@@ -24,7 +24,7 @@ public:
      * @brief Modifie la position d'affichage du cube.
      * @param position La nouvelle position.
      */
-    void setPosition(const QVector3D& position);
+    void setPosition(const glm::vec3& position);
     void setSize(float width, float height);
 
     /**
@@ -48,7 +48,7 @@ private:
     int m_matrixUniform;
 
     // La position du voxel à afficher
-    QVector3D m_position;
+    glm::vec3 m_position;
     // La largeur du voxel à afficher
     float m_width;
     // La hauteur du voxel à afficher

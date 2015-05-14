@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <random>
-#include <QtCore/QSet>
+#include <set>
 
 ChunkGenerator::ChunkGenerator(ChunkManager* cm, int worldSeed) : mChunkManager{ cm }, mMaps(), mLog("log.txt", std::ios_base::out), mWorldSeed(worldSeed)
 {
@@ -21,12 +21,12 @@ ChunkGenerator::~ChunkGenerator()
 	mLog.close();
 }
 
-bool ChunkGenerator::generateChunk(Voxel* data, int i, int j, int k, QSet<Coords> &modifiedChunks) {
+bool ChunkGenerator::generateChunk(Voxel* data, int i, int j, int k, std::set<Coords> &modifiedChunks) {
 	Coords chunkId = { i, j, k };
 	return generateChunk(data, chunkId, modifiedChunks);
 }
 
-bool ChunkGenerator::generateChunk(Voxel* data, Coords chunkId, QSet<Coords> &modifiedChunks) {
+bool ChunkGenerator::generateChunk(Voxel* data, Coords chunkId, std::set<Coords> &modifiedChunks) {
 	//mLog << "Generating chunk [" << chunkId.i << "," << chunkId.j << "," << chunkId.k << "]" << std::endl;
 
 	modifiedChunks.insert(chunkId);
@@ -67,14 +67,14 @@ static int rndInt(std::minstd_rand0 &gen, int min, int max){
 }
 
 
-bool ChunkGenerator::placeTrees(Voxel* data, Coords chunkId, BiomeMap &map, QSet<Coords> &modifiedChunks){
+bool ChunkGenerator::placeTrees(Voxel* data, Coords chunkId, BiomeMap &map, std::set<Coords> &modifiedChunks){
 
 
 	std::minstd_rand0 rnd((chunkId.i*773 + chunkId.j*104743 + chunkId.k*15485867)*mWorldSeed);
 
 	Coords chunkPos = chunkId * CHUNK_SIZE;
 
-	uint count = 3;
+        unsigned int count = 3;
 
 	
 	Voxel trunk(VoxelType::TRUNK);
@@ -82,9 +82,9 @@ bool ChunkGenerator::placeTrees(Voxel* data, Coords chunkId, BiomeMap &map, QSet
 
 	bool onlyAir = true;
 
-	for(uint i=0 ; i<count ; ++i){
+        for(unsigned int i=0 ; i<count ; ++i){
 
-		uint height = rndInt(rnd, 4, 10);
+                unsigned int height = rndInt(rnd, 4, 10);
 
 		Coords min{ -3, -1, -3 };
 		Coords max{ 3, 3, 3 };
@@ -112,7 +112,7 @@ bool ChunkGenerator::placeTrees(Voxel* data, Coords chunkId, BiomeMap &map, QSet
 
 		onlyAir = false;
 
-		for(uint h=0 ; h<height ; ++h){
+                for(unsigned int h=0 ; h<height ; ++h){
 			startPos += {0,1,0};
 			
 			Coords pos = chunkPos + startPos;
@@ -137,7 +137,7 @@ bool ChunkGenerator::placeTrees(Voxel* data, Coords chunkId, BiomeMap &map, QSet
 			}
 		}	
 		
-		for(uint c=0 ; c<height*2 ; ++c){
+                for(unsigned int c=0 ; c<height*2 ; ++c){
 
 			int d = 1;
 			if (height >= 7)

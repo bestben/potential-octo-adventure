@@ -1,6 +1,8 @@
 #pragma once
 #include "chunk.h"
-#include <QtCore/QQueue>
+#include <vector>
+#include <set>
+#include <unordered_map>
 
 #define MAX_LIGHT_UPDATES_PER_FRAME 1024*32
 
@@ -16,20 +18,21 @@ public:
 	~LightManager();
 	
 
-	void placeVoxel(Coords pos, VoxelType type, QSet<Coords> &modifiedChunks);
-	void removeVoxel(Coords pos, QSet<Coords> &modifiedChunks);
+    void placeVoxel(Coords pos, VoxelType type, std::set<Coords> &modifiedChunks);
+    void removeVoxel(Coords pos, std::set<Coords> &modifiedChunks);
 
 	void updateLighting(Chunk* chunk);
 
-	void lightNeighbors(Coords coords, QSet<Coords> &modifiedChunks);
-	void unlightNeighbors(Coords coords, uint8 old_light, QSet<Coords> &light_sources, QSet<Coords> &modifiedChunks);
+    void lightNeighbors(Coords coords, std::set<Coords> &modifiedChunks);
+    void unlightNeighbors(Coords coords, uint8 old_light, std::set<Coords> &light_sources, std::set<Coords> &modifiedChunks);
 	
-	bool propagateSunLight(Chunk* chunk, QSet<Coords>& lightSources, QSet<Coords> &modifiedChunks);
-	uint16 propagateSunLight(Coords start, QSet<Coords> &modifiedChunks);
+    bool propagateSunLight(Chunk* chunk, std::set<Coords>& lightSources, std::set<Coords> &modifiedChunks);
+    uint16 propagateSunLight(Coords start, std::set<Coords> &modifiedChunks);
 
 	
-	void spreadLight(QSet<Coords>& lightSources, QSet<Coords> &modifiedChunks);
-	void unspreadLight(QHash<Coords, uint8> &from, QSet<Coords> &lightSources, QSet<Coords> &modifiedChunks);
+    void spreadLight(std::set<Coords>& lightSources, std::set<Coords> &modifiedChunks);
+    void spreadLight(Coords* lightSources, int lightSourceCount, std::set<Coords> &modifiedChunks);
+    void unspreadLight(std::unordered_map<Coords, uint8> &from, std::set<Coords> &lightSources, std::set<Coords> &modifiedChunks);
 
 private:
 	ChunkManager* mChunkManager;
