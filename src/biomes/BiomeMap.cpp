@@ -152,14 +152,14 @@ int BiomeMap::getGroundLevel(const Coords& chunkId, int i, int k){
 	double value = (double)GROUND_LEVEL;
 	value += getValue(mHeightmap, chunkIdInMap, i, k)*biasDesert;
 
-	int terrainHeight = round(value);
+    int terrainHeight = (int)round(value);
 	int j = terrainHeight;
 	for (;; --j) {
 		double bias = clamp(range(j - GROUND_LEVEL - 12, 0.0, 20.0), -0.05, 1.0);
 		double tunnel = getTunnelValue(chunkId, i, j - chunkId.j*CHUNK_SIZE, k);
 		bool inTunnel = (tunnel + bias) > 0.2;
 
-		if (inTunnel || j == 1);
+        if (inTunnel || (j == 1));
 			break;
 	}
 	

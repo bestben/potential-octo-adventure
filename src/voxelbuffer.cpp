@@ -2,13 +2,14 @@
 
 #include "gamewindow.h"
 #include <QtGui/QOpenGLBuffer>
-#include <QtGui/QOpenGLShaderProgram>
+#include "utilities/OpenglProgramShader.h"
 #include <QtGui/QOpenGLVertexArrayObject>
 #include <QtGui/QOpenGLTexture>
 #include <QImage>
 
 #include <iostream>
 
+#define GLM_FORCE_PURE
 #include "glm/gtc/type_ptr.hpp"
 
 VoxelBuffer::VoxelBuffer() : m_position{0.0f, 0.0f, 0.0f}, m_width(CHUNK_SCALE), m_height(CHUNK_SCALE) {
@@ -20,9 +21,9 @@ VoxelBuffer::~VoxelBuffer() {
 }
 
 void VoxelBuffer::init(GameWindow* gl) {
-    m_program = new QOpenGLShaderProgram(gl);
-    m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/voxelBuffer.vs"));
-    m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/voxelBuffer.ps"));
+    m_program = std::make_unique<OpenglProgramShader>(gl);
+    m_program->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/voxelBuffer.vs");
+    m_program->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/voxelBuffer.ps");
     m_program->link();
 
     m_matrixUniform = m_program->uniformLocation("viewProj");
@@ -85,8 +86,7 @@ void VoxelBuffer::init(GameWindow* gl) {
     m_vao->release();
 }
 
-void VoxelBuffer::destroy(GameWindow* gl) {
-    delete m_program;
+void VoxelBuffer::destroy(GameWindow* /*gl*/) {
     delete m_atlas;
     delete m_vertices;
     delete m_normals;

@@ -2,11 +2,12 @@
 
 #include "gamewindow.h"
 
-#include <QtGui/QOpenGLShaderProgram>
+#include "utilities/OpenglProgramShader.h"
 #include <QtGui/QOpenGLBuffer>
 #include <QtGui/QOpenGLTexture>
 #include <QtGui/QOpenGLVertexArrayObject>
 
+#define GLM_FORCE_PURE
 #include "glm/gtc/type_ptr.hpp"
 
 ParticleSystem::ParticleSystem(int count, int lifetime) : m_count{count}, m_lifeTime{lifetime} {
@@ -23,9 +24,9 @@ ParticleSystem::~ParticleSystem() {
 void ParticleSystem::init(GameWindow* gl) {
     gl->glPointSize(20.0f);
 
-    m_program = new QOpenGLShaderProgram(gl);
-    m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/particle.vs"));
-    m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/particle.ps"));
+    m_program = std::make_unique<OpenglProgramShader>(gl);
+    m_program->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/particle.vs");
+    m_program->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/particle.ps");
     m_program->link();
 
     m_matrixUniform = m_program->uniformLocation("mvp");
@@ -56,14 +57,13 @@ void ParticleSystem::init(GameWindow* gl) {
     m_spawnTime.start();
 }
 
-void ParticleSystem::destroy(GameWindow* gl) {
-    delete m_program;
+void ParticleSystem::destroy(GameWindow* /*gl*/) {
     delete m_vao;
     delete m_vertices;
     delete m_atlas;
 }
 
-void ParticleSystem::update(GameWindow* gl, int dt) {
+void ParticleSystem::update(GameWindow* /*gl*/, int dt) {
     if (m_spawnTime.elapsed() < m_lifeTime) {
         int count = m_count;
         glm::vec3 g(0.0f, 9.81f, 0.0f);

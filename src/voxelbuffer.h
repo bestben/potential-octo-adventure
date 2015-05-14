@@ -1,9 +1,10 @@
 #pragma once
 
 #include "glm/vec3.hpp"
+#include <memory>
 
 class GameWindow;
-class QOpenGLShaderProgram;
+class OpenglProgramShader;
 class QOpenGLVertexArrayObject;
 class QOpenGLBuffer;
 class QOpenGLTexture;
@@ -35,7 +36,7 @@ public:
 
 private:
     // Le shader affichant le voxel
-    QOpenGLShaderProgram* m_program;
+    std::unique_ptr<OpenglProgramShader> m_program;
     // L'atlas de textures
     QOpenGLTexture* m_atlas;
     // Les vertices du voxel

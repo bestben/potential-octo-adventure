@@ -14,7 +14,7 @@ NpcManager::~NpcManager() {
 
 }
 
-void NpcManager::init(GameWindow* game) {
+void NpcManager::init(GameWindow* /*game*/) {
     /*float ratio = 360.0f / BASE_NPC_ALLOCATION;
 
     for (int i = 0; i < BASE_NPC_ALLOCATION; ++i) {

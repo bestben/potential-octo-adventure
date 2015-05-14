@@ -6,6 +6,7 @@
 
 #include "body.h"
 
+#define GLM_FORCE_PURE
 #include "glm/geometric.hpp"
 #include "glm/vec3.hpp"
 

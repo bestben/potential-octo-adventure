@@ -24,59 +24,58 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 ///
-/// @ref gtx_common
-/// @file glm/gtx/common.hpp
-/// @date 2014-09-08 / 2014-09-08
+/// @ref gtc_color
+/// @file glm/gtc/color.hpp
+/// @date 2015-02-10 / 2015-02-10
 /// @author Christophe Riccio
 ///
 /// @see core (dependence)
-/// @see gtc_half_float (dependence)
+/// @see gtc_color (dependence)
 ///
-/// @defgroup gtx_common GLM_GTX_common
-/// @ingroup gtx
+/// @defgroup gtc_color GLM_GTC_color
+/// @ingroup gtc
 /// 
-/// @brief Provide functions to increase the compatibility with Cg and HLSL languages
+/// @brief Allow to perform bit operations on integer values
 /// 
-/// <glm/gtx/common.hpp> need to be included to use these functionalities.
+/// <glm/gtc/color.hpp> need to be included to use these functionalities.
 ///////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-// Dependencies:
-#include "../vec2.hpp"
+// Dependencies
+#include "../detail/setup.hpp"
+#include "../detail/precision.hpp"
+#include "../exponential.hpp"
 #include "../vec3.hpp"
 #include "../vec4.hpp"
-#include "../gtc/vec1.hpp"
+#include <limits>
 
 #if(defined(GLM_MESSAGES) && !defined(GLM_EXT_INCLUDED))
-#	pragma message("GLM: GLM_GTX_common extension included")
+#	pragma message("GLM: GLM_GTC_color extension included")
 #endif
 
 namespace glm
 {
-	/// @addtogroup gtx_common
+	/// @addtogroup gtc_color
 	/// @{
 
-	/// Returns true if x is a denormalized number
-	/// Numbers whose absolute value is too small to be represented in the normal format are represented in an alternate, denormalized format.
-	/// This format is less precise but can represent values closer to zero.
-	/// 
-	/// @tparam genType Floating-point scalar or vector types.
-	///
-	/// @see <a href="http://www.opengl.org/sdk/docs/manglsl/xhtml/isnan.xml">GLSL isnan man page</a>
-	/// @see <a href="http://www.opengl.org/registry/doc/GLSLangSpec.4.20.8.pdf">GLSL 4.20.8 specification, section 8.3 Common Functions</a>
-	template <typename genType> 
-	GLM_FUNC_DECL typename genType::bool_type isdenormal(genType const & x);
-
-	/// Similiar to 'mod' but with a different rounding and integer support.
-	/// Returns 'x - y * trunc(x/y)' instead of 'x - y * floor(x/y)'
-	/// 
-	/// @see <a href="http://stackoverflow.com/questions/7610631/glsl-mod-vs-hlsl-fmod">GLSL mod vs HLSL fmod</a>
-	/// @see <a href="http://www.opengl.org/sdk/docs/manglsl/xhtml/mod.xml">GLSL mod man page</a>
+	/// Convert a RGB color to sRGB color using a standard gamma correction
 	template <typename T, precision P, template <typename, precision> class vecType>
-	GLM_FUNC_DECL vecType<T, P> fmod(vecType<T, P> const & v);
+	GLM_FUNC_DECL vecType<T, P> convertRgbToSrgb(vecType<T, P> const & ColorRGB);
+
+	/// Convert a RGB color to sRGB color using a custom gamma correction	
+	template <typename T, precision P, template <typename, precision> class vecType>
+	GLM_FUNC_DECL vecType<T, P> convertRgbToSrgb(vecType<T, P> const & ColorRGB, T Gamma);
+
+	/// Convert a sRGB color to RGB color using a standard gamma correction
+	template <typename T, precision P, template <typename, precision> class vecType>
+	GLM_FUNC_DECL vecType<T, P> convertSrgbToRgb(vecType<T, P> const & ColorSRGB);
+
+	/// Convert a sRGB color to RGB color using a custom gamma correction
+	template <typename T, precision P, template <typename, precision> class vecType>
+	GLM_FUNC_DECL vecType<T, P> convertSrgbToRgb(vecType<T, P> const & ColorSRGB, T Gamma);
 
 	/// @}
-}//namespace glm
+} //namespace glm
 
-#include "common.inl"
+#include "color.inl"

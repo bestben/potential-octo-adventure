@@ -2,7 +2,7 @@
 
 #include "../gamewindow.h"
 
-#include <QtGui/QOpenGLShaderProgram>
+#include "utilities/OpenglProgramShader.h"
 #include <QtGui/QOpenGLVertexArrayObject>
 
 static const char* vertexShaderSource =
@@ -39,9 +39,9 @@ FrameBuffer::~FrameBuffer() {
 
 void FrameBuffer::initialize(GameWindow* gl) {
     // On crée le shader et le vbo pour dessiner le framebuffer à l'écran
-    m_program = new QOpenGLShaderProgram(gl);
-    m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+    m_program = std::make_unique<OpenglProgramShader>(gl);
+    m_program->addShaderFromSourceCode(OpenGLShaderType::Vertex, vertexShaderSource);
+    m_program->addShaderFromSourceCode(OpenGLShaderType::Fragment, fragmentShaderSource);
     m_program->link();
     m_program->bind();
     m_program->setUniformValue("texture", 0);
@@ -84,7 +84,6 @@ void FrameBuffer::destroy(GameWindow* gl) {
         gl->glDeleteFramebuffers(1, &m_framebuffer);
         m_vao->destroy();
         delete m_vao;
-        delete m_program;
         m_initialized = false;
     }
 }

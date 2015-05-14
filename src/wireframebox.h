@@ -1,9 +1,10 @@
 #pragma once
 
 #include "glm/vec3.hpp"
+#include <memory>
 
 class GameWindow;
-class QOpenGLShaderProgram;
+class OpenglProgramShader;
 class QOpenGLVertexArrayObject;
 class QOpenGLBuffer;
 
@@ -34,7 +35,7 @@ public:
 
 private:
     // Le shader affichant la boite
-    QOpenGLShaderProgram* m_program;
+    std::unique_ptr<OpenglProgramShader> m_program;
     // Les indices des sommets de la boite
     QOpenGLBuffer* m_indices;
     QOpenGLVertexArrayObject* m_vao;

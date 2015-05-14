@@ -4,10 +4,11 @@
 #include "camera.h"
 
 #include <QtGui/QMouseEvent>
-#include <QtGui/QOpenGLShaderProgram>
+#include "utilities/OpenglProgramShader.h"
 #include <QtGui/QOpenGLTexture>
 #include <QtGui/QOpenGLVertexArrayObject>
 
+#define GLM_FORCE_PURE
 #include "glm/geometric.hpp"
 
 Player::Player(GameWindow& game, Camera& camera) : m_game{game}, m_camera{camera}, m_particles{20, 750},
@@ -22,9 +23,9 @@ void Player::init() {
     m_box.init(&m_game);
     m_voxel.init(&m_game);
 
-    m_crossProgram = new QOpenGLShaderProgram(&m_game);
-    m_crossProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/cross.vs"));
-    m_crossProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/cross.ps"));
+    m_crossProgram = std::make_unique<OpenglProgramShader>(&m_game);
+    m_crossProgram->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/cross.vs");
+    m_crossProgram->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/cross.ps");
     m_crossProgram->link();
     m_crossProgram->bind();
     m_crossProgram->setUniformValue("texture", 0);
@@ -42,7 +43,6 @@ void Player::init() {
 }
 
 void Player::destroy() {
-    delete m_crossProgram;
     delete m_crossTexture;
     delete m_crossVao;
     m_box.destroy(&m_game);

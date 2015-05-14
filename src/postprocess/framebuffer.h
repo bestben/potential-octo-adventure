@@ -1,9 +1,10 @@
 #pragma once
 
 #include <QtGui/QOpenGLFunctions>
+#include <memory>
 
 class GameWindow;
-class QOpenGLShaderProgram;
+class OpenglProgramShader;
 class QOpenGLVertexArrayObject;
 
 /**
@@ -56,7 +57,7 @@ private:
     // Permet de savoir si le framebuffer est initialisé
     bool m_initialized;
     // Le shader utilisé pour dessiner le framebuffer
-    QOpenGLShaderProgram* m_program;
+    std::unique_ptr<OpenglProgramShader> m_program;
     // Le vertex array object
     QOpenGLVertexArrayObject* m_vao;
     // L'identifiant de framebuffer

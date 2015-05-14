@@ -2,10 +2,12 @@
 
 #include "gamewindow.h"
 #include <QtGui/QOpenGLBuffer>
-#include <QtGui/QOpenGLShaderProgram>
+#include "utilities/OpenglProgramShader.h"
 #include <QtGui/QOpenGLVertexArrayObject>
 
 #include <iostream>
+
+#define GLM_FORCE_PURE
 #include "glm/gtc/type_ptr.hpp"
 
 WireframeBox::WireframeBox() : m_position{0.0f, 0.0f, 0.0f}, m_color{0.0f, 0.0f, 1.0f},
@@ -18,9 +20,9 @@ WireframeBox::~WireframeBox() {
 }
 
 void WireframeBox::init(GameWindow* gl) {
-    m_program = new QOpenGLShaderProgram(gl);
-    m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/wireframeBox.vs"));
-    m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/wireframeBox.ps"));
+    m_program = std::make_unique<OpenglProgramShader>(gl);
+    m_program->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/wireframeBox.vs");
+    m_program->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/wireframeBox.ps");
     m_program->link();
 
     m_matrixUniform = m_program->uniformLocation("viewProj");
@@ -61,8 +63,7 @@ void WireframeBox::init(GameWindow* gl) {
 
 }
 
-void WireframeBox::destroy(GameWindow* gl) {
-    delete m_program;
+void WireframeBox::destroy(GameWindow* /*gl*/) {
     delete m_indices;
     delete m_vao;
 }

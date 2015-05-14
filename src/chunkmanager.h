@@ -11,10 +11,11 @@
 #include "LightManager.h"
 #include <mutex>
 #include <unordered_map>
+#include <memory>
 #include "utility.h"
 
 class QOpenGLVertexArrayObject;
-class QOpenGLShaderProgram;
+class OpenglProgramShader;
 class QOpenGLTexture;
 class GameWindow;
 class MeshGenerator;
@@ -82,9 +83,9 @@ private:
 
     MeshGenerator* m_meshGenerator;
     // Le shader affichant un chunk
-    QOpenGLShaderProgram* m_program;
+    std::unique_ptr<OpenglProgramShader> m_program;
     // Le shader affichant l'eau
-    QOpenGLShaderProgram* m_waterProgram;
+    std::unique_ptr<OpenglProgramShader> m_waterProgram;
     // L'atlas de textures
     QOpenGLTexture* m_atlas;
 

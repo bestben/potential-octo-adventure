@@ -6,6 +6,7 @@
 #include "physic/body.h"
 #include "gamewindow.h"
 
+#define GLM_FORCE_PURE
 #include "glm/geometric.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
@@ -191,7 +192,7 @@ void Camera::changeViewportSize(int width, int height) {
     m_isProjMatrixDirty = true;
 }
 
-void Camera::setCamDef(const glm::vec3 &p, const glm::vec3 &l, const glm::vec3 &u) {
+void Camera::setCamDef(const glm::vec3 &p, const glm::vec3 &/*l*/, const glm::vec3 &u) {
 
     glm::vec3 nc,fc,X,Y,Z;
 

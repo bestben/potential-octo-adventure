@@ -5,9 +5,10 @@
 #include <iostream>
 
 #include <QtGui/QOpenGLVertexArrayObject>
-#include <QtGui/QOpenGLShaderProgram>
+#include "utilities/OpenglProgramShader.h"
 #include <QtGui/QOpenGLTexture>
 
+#define GLM_FORCE_PURE
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
@@ -92,9 +93,9 @@ ChunkManager::~ChunkManager() {
 }
 
 void ChunkManager::initialize(GameWindow* gl) {
-	m_program = new QOpenGLShaderProgram(gl);
-	m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/render.vs"));
-	m_program->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/render.ps"));
+    m_program = std::make_unique<OpenglProgramShader>(gl);
+    m_program->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/render.vs");
+    m_program->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/render.ps");
 	if (!m_program->link()) {
 		// TODO(antoine): Remove Force crash
 		abort();
@@ -115,9 +116,9 @@ void ChunkManager::initialize(GameWindow* gl) {
     //m_program->setUniformValue("fogColor", skyColor);
 	m_program->release();
 
-	m_waterProgram = new QOpenGLShaderProgram(gl);
-	m_waterProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, QString(":/water.vs"));
-	m_waterProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, QString(":/water.ps"));
+    m_waterProgram = std::make_unique<OpenglProgramShader>(gl);
+    m_waterProgram->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/water.vs");
+    m_waterProgram->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/water.ps");
 	if (!m_waterProgram->link()) {
 		// TODO(antoine): Remove Force crash
 		abort();
@@ -194,10 +195,6 @@ void ChunkManager::destroy(GameWindow* gl) {
 	// On supprime l'atlas et le shader
 	delete m_atlas;
 	m_atlas = nullptr;
-	delete m_program;
-	m_program = nullptr;
-	delete m_waterProgram;
-	m_waterProgram = nullptr;
 }
 
 void ChunkManager::update(GameWindow* gl) {
@@ -227,7 +224,7 @@ void ChunkManager::update(GameWindow* gl) {
                 if ((std::abs(chunk->i - chunkHere.i) > VIEW_SIZE) ||
                     (std::abs(chunk->k - chunkHere.k) > VIEW_SIZE)) {
                     m_mutexGenerateQueue.lock();
-                    for( int j = 0; j < m_toGenerateChunkData.size(); ++j ) {
+                    for( int j = 0; j < (int)m_toGenerateChunkData.size(); ++j ) {
                         if( m_toGenerateChunkData[j] == chunk ) {
                             m_toGenerateChunkData[j] = nullptr;
                             break;

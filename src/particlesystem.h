@@ -4,9 +4,11 @@
 #include <QTime>
 #include "chunk.h"
 
+#include <memory>
+
 class GameWindow;
 class QOpenGLTexture;
-class QOpenGLShaderProgram;
+class OpenglProgramShader;
 class QOpenGLBuffer;
 class QOpenGLVertexArrayObject;
 
@@ -47,7 +49,7 @@ public:
 
 private:
     // Le shader affichant les particules
-    QOpenGLShaderProgram* m_program;
+    std::unique_ptr<OpenglProgramShader> m_program;
     // L'atlas de textures
     QOpenGLTexture* m_atlas;
     // Le buffer contenant la position des particules

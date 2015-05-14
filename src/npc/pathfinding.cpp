@@ -55,7 +55,7 @@ std::vector<Cell> Pathfinding::getPath(Cell start, Cell end) {
 
 void Pathfinding::getPathFromClosedMap() {
     m_path.clear();
-    if (m_path.capacity() < m_maxLength) {
+    if ((int)m_path.capacity() < m_maxLength) {
         m_path.reserve(m_maxLength);
     }
     /* l'arrivée est le dernier élément de la liste fermée */

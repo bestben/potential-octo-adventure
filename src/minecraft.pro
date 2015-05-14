@@ -56,10 +56,9 @@ SOURCES += \
     save.cpp \
     particlesystem.cpp \
     chunk.cpp \
-    glm/detail/dummy.cpp \
     glm/detail/glm.cpp \
     libnoise/win32/dllmain.cpp \
-    Unity.cpp
+    utilities/openglprogramshader.cpp
 
     
 QMAKE_CFLAGS_RELEASE  -= -O2
@@ -299,4 +298,5 @@ HEADERS += \
     glm/vec4.hpp \
     glm/vector_relational.hpp \
     libnoise/win32/resource.h \
-    utility.h
+    utility.h \
+    utilities/openglprogramshader.h

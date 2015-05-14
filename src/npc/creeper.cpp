@@ -7,6 +7,7 @@
 
 #include <iostream>
 
+#define GLM_FORCE_PURE
 #include "glm/geometric.hpp"
 
 Creeper::Creeper() : m_lengthOfSight{36}, m_pathRefreshRate{1000}, m_life{10}, m_canBeDestroyed{false} {
@@ -44,7 +45,7 @@ void Creeper::destroy(GameWindow* gl) {
     delete m_pathfinding;
 }
 
-void Creeper::update(GameWindow* gl, int dt) {
+void Creeper::update(GameWindow* gl, int /*dt*/) {
     m_playerPosition = GetVoxelPosFromWorldPos(gl->getCamera().getFootPosition());
 
     Coords current = GetVoxelPosFromWorldPos(m_body->position);

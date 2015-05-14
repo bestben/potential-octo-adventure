@@ -1,10 +1,12 @@
 #pragma once
+
 #include <QTime>
-#include <QString>
+#include <string>
 #include <QtGui/QOpenGLFunctions>
+#include <memory>
 
 class GameWindow;
-class QOpenGLShaderProgram;
+class OpenglProgramShader;
 class QOpenGLVertexArrayObject;
 class QString;
 
@@ -13,7 +15,7 @@ class QString;
  */
 class PostProcess {
 public:
-    PostProcess(const QString& fragmentShader);
+    PostProcess(const std::string& fragmentShader);
     ~PostProcess();
 
     void init(GameWindow* gl);
@@ -23,9 +25,9 @@ public:
 
 private:
     // Le nom du fragment shader à utiliser
-    QString m_fragmentShader;
+    std::string m_fragmentShader;
     // Le shader affichant l'effet
-    QOpenGLShaderProgram* m_program;
+    std::unique_ptr<OpenglProgramShader> m_program;
     // Le vertex array object
     QOpenGLVertexArrayObject* m_vao;
 

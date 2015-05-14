@@ -67,7 +67,7 @@ static int rndInt(std::minstd_rand0 &gen, int min, int max){
 }
 
 
-bool ChunkGenerator::placeTrees(Voxel* data, Coords chunkId, BiomeMap &map, std::set<Coords> &modifiedChunks){
+bool ChunkGenerator::placeTrees(Voxel* /*data*/, Coords chunkId, BiomeMap &map, std::set<Coords> &modifiedChunks){
 
 
 	std::minstd_rand0 rnd((chunkId.i*773 + chunkId.j*104743 + chunkId.k*15485867)*mWorldSeed);
@@ -123,7 +123,7 @@ bool ChunkGenerator::placeTrees(Voxel* data, Coords chunkId, BiomeMap &map, std:
 
 
 
-		Coords size{ rnd()%3 + 3, rnd()%2 + 2, rnd()%3 + 3 };
+        //Coords size{ rnd()%3 + 3, rnd()%2 + 2, rnd()%3 + 3 };
 		{
 			for (int z = -1; z <= 1; ++z)
 			for (int y = -1; y <= 1; ++y)

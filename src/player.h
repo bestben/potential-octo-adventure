@@ -5,6 +5,7 @@
 #include "particlesystem.h"
 #include "chunk.h"
 
+#include <memory>
 #include <QTime>
 
 class GameWindow;
@@ -57,7 +58,7 @@ private:
     float m_maxBlockDistance;
 
     // Le shader affichant la cible du joueur.
-    QOpenGLShaderProgram* m_crossProgram;
+    std::unique_ptr<OpenglProgramShader> m_crossProgram;
     // La texture de cible
     QOpenGLTexture* m_crossTexture;
     QOpenGLVertexArrayObject* m_crossVao;
