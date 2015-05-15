@@ -5,8 +5,8 @@
 
 class GameWindow;
 class OpenglProgramShader;
-class QOpenGLVertexArrayObject;
-class QOpenGLBuffer;
+class OpenGLVertexArrayObject;
+class OpenGLBuffer;
 
 /**
  * @brief Classe permettant d'afficher les contours d'une boite.
@@ -37,8 +37,8 @@ private:
     // Le shader affichant la boite
     std::unique_ptr<OpenglProgramShader> m_program;
     // Les indices des sommets de la boite
-    QOpenGLBuffer* m_indices;
-    QOpenGLVertexArrayObject* m_vao;
+    std::unique_ptr<OpenGLBuffer> m_indices;
+    std::unique_ptr<OpenGLVertexArrayObject> m_vao;
 
     int m_posUniform;
     int m_colorUniform;

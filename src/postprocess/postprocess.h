@@ -7,7 +7,7 @@
 
 class GameWindow;
 class OpenglProgramShader;
-class QOpenGLVertexArrayObject;
+class OpenGLVertexArrayObject;
 class QString;
 
 /**
@@ -29,7 +29,7 @@ private:
     // Le shader affichant l'effet
     std::unique_ptr<OpenglProgramShader> m_program;
     // Le vertex array object
-    QOpenGLVertexArrayObject* m_vao;
+    std::unique_ptr<OpenGLVertexArrayObject> m_vao;
 
     QTime m_time;
     int m_timeUniformLocation;

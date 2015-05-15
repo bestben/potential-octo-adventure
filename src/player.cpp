@@ -4,9 +4,9 @@
 #include "camera.h"
 
 #include <QtGui/QMouseEvent>
-#include "utilities/OpenglProgramShader.h"
+#include "utilities/openglprogramshader.h"
 #include <QtGui/QOpenGLTexture>
-#include <QtGui/QOpenGLVertexArrayObject>
+#include "utilities/openglvertexarrayobject.h"
 
 #define GLM_FORCE_PURE
 #include "glm/geometric.hpp"
@@ -34,17 +34,19 @@ void Player::init() {
     m_crossXSizeUniform = m_crossProgram->uniformLocation("xSize");
     m_crossYSizeUniform = m_crossProgram->uniformLocation("ySize");
 
-    m_crossTexture = new QOpenGLTexture(QImage(":/cross.png"));
+    m_crossTexture = new QOpenGLTexture(QImage("textures/cross.png"));
 
-    m_crossVao = new QOpenGLVertexArrayObject(&m_game);
+    m_crossVao = std::make_unique<OpenGLVertexArrayObject>(&m_game);
     m_crossVao->create();
 
     m_particles.init(&m_game);
 }
 
 void Player::destroy() {
+    m_crossProgram = nullptr;
     delete m_crossTexture;
-    delete m_crossVao;
+    m_crossTexture = nullptr;
+    m_crossVao = nullptr;
     m_box.destroy(&m_game);
     m_voxel.destroy(&m_game);
     m_particles.destroy(&m_game);

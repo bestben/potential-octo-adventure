@@ -61,7 +61,7 @@ private:
     std::unique_ptr<OpenglProgramShader> m_crossProgram;
     // La texture de cible
     QOpenGLTexture* m_crossTexture;
-    QOpenGLVertexArrayObject* m_crossVao;
+    std::unique_ptr<OpenGLVertexArrayObject> m_crossVao;
     int m_crossXSizeUniform;
     int m_crossYSizeUniform;
 

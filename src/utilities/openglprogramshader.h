@@ -1,5 +1,4 @@
-#ifndef OPENGLPROGRAMSHADER_H
-#define OPENGLPROGRAMSHADER_H
+#pragma once
 
 #include <string>
 
@@ -18,6 +17,9 @@ class OpenglProgramShader
 public:
     OpenglProgramShader( GameWindow* gl );
     ~OpenglProgramShader();
+
+    OpenglProgramShader( const OpenglProgramShader& copy ) = delete;
+    OpenglProgramShader& operator=( const OpenglProgramShader& copy ) = delete;
 
     bool        isValid() const;
 
@@ -59,5 +61,3 @@ private:
 
     unsigned int    m_programId;
 };
-
-#endif // OPENGLPROGRAMSHADER_H

@@ -1,7 +1,5 @@
 <RCC>
 	<qresource prefix="/">
-        <file alias="atlas.png">textures/atlas.png</file>
-		<file alias="cross.png">textures/cross.png</file>
 	</qresource>
 </RCC>
 

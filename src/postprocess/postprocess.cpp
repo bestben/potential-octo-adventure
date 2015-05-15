@@ -2,8 +2,8 @@
 
 #include "../gamewindow.h"
 
-#include "utilities/OpenglProgramShader.h"
-#include <QtGui/QOpenGLVertexArrayObject>
+#include "utilities/openglprogramshader.h"
+#include "utilities/openglvertexarrayobject.h"
 
 PostProcess::PostProcess(const std::string& fragmentShader) :
     m_program{nullptr},
@@ -29,14 +29,15 @@ void PostProcess::init(GameWindow* gl) {
     m_program->setUniformValue("texture", 0);
     m_program->release();
 
-    m_vao = new QOpenGLVertexArrayObject(gl);
+    m_vao = std::make_unique<OpenGLVertexArrayObject>(gl);
     m_vao->create();
 
     m_time.start();
 }
 
 void PostProcess::destroy(GameWindow* /*gl*/) {
-    delete m_vao;
+    m_vao = nullptr;
+    m_program = nullptr;
 }
 
 void PostProcess::render(GameWindow* gl) {

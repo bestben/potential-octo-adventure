@@ -5,8 +5,8 @@
 
 class GameWindow;
 class OpenglProgramShader;
-class QOpenGLVertexArrayObject;
-class QOpenGLBuffer;
+class OpenGLVertexArrayObject;
+class OpenGLBuffer;
 class QOpenGLTexture;
 
 /**
@@ -40,9 +40,9 @@ private:
     // L'atlas de textures
     QOpenGLTexture* m_atlas;
     // Les vertices du voxel
-    QOpenGLBuffer* m_vertices;
-    QOpenGLBuffer* m_normals;
-    QOpenGLVertexArrayObject* m_vao;
+    std::unique_ptr<OpenGLBuffer> m_vertices;
+    std::unique_ptr<OpenGLBuffer> m_normals;
+    std::unique_ptr<OpenGLVertexArrayObject> m_vao;
 
     int m_posUniform;
     int m_damageUniform;

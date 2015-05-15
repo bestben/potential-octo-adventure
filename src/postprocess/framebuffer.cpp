@@ -2,8 +2,8 @@
 
 #include "../gamewindow.h"
 
-#include "utilities/OpenglProgramShader.h"
-#include <QtGui/QOpenGLVertexArrayObject>
+#include "utilities/openglprogramshader.h"
+#include "utilities/openglvertexarrayobject.h"
 
 static const char* vertexShaderSource =
     "#version 330\n"
@@ -73,17 +73,18 @@ void FrameBuffer::initialize(GameWindow* gl) {
     gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, gl->size().width(), gl->size().height(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
     m_initialized = true;
-    m_vao = new QOpenGLVertexArrayObject(gl);
+    m_vao = std::make_unique<OpenGLVertexArrayObject>(gl);
     m_vao->create();
 }
 
 void FrameBuffer::destroy(GameWindow* gl) {
+    m_program = nullptr;
     if (m_initialized) {
         gl->glDeleteTextures(2, m_colorTexture);
         gl->glDeleteTextures(1, &m_depthTexture);
         gl->glDeleteFramebuffers(1, &m_framebuffer);
         m_vao->destroy();
-        delete m_vao;
+        m_vao = nullptr;
         m_initialized = false;
     }
 }

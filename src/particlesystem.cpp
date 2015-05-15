@@ -2,10 +2,10 @@
 
 #include "gamewindow.h"
 
-#include "utilities/OpenglProgramShader.h"
-#include <QtGui/QOpenGLBuffer>
+#include "utilities/openglprogramshader.h"
+#include "utilities/openglbuffer.h"
 #include <QtGui/QOpenGLTexture>
-#include <QtGui/QOpenGLVertexArrayObject>
+#include "utilities/openglvertexarrayobject.h"
 
 #define GLM_FORCE_PURE
 #include "glm/gtc/type_ptr.hpp"
@@ -37,18 +37,18 @@ void ParticleSystem::init(GameWindow* gl) {
     m_program->setUniformValue("atlas", 0);
     m_program->release();
 
-    QImage image(":/atlas.png");
+    QImage image("textures/atlas.png");
     m_atlas = new QOpenGLTexture(image);
     m_atlas->setMagnificationFilter(QOpenGLTexture::Nearest);
 
-    m_vertices = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    m_vertices = std::make_unique<OpenGLBuffer>(gl, OpenGLBuffer::VertexBuffer);
     m_vertices->create();
 
-    m_vao = new QOpenGLVertexArrayObject(gl);
+    m_vao = std::make_unique<OpenGLVertexArrayObject>(gl);
     m_vao->create();
     m_vao->bind();
     m_vertices->bind();
-    m_vertices->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+    m_vertices->setUsagePattern(OpenGLBuffer::DynamicDraw);
     m_vertices->allocate(nullptr, sizeof(glm::vec3) * m_count);
     m_program->enableAttributeArray(verticesIndex);
     gl->glVertexAttribPointer(verticesIndex, 3, GL_FLOAT, false, 0, 0);
@@ -58,9 +58,11 @@ void ParticleSystem::init(GameWindow* gl) {
 }
 
 void ParticleSystem::destroy(GameWindow* /*gl*/) {
-    delete m_vao;
-    delete m_vertices;
+    m_program = nullptr;
+    m_vao = nullptr;
+    m_vertices = nullptr;
     delete m_atlas;
+    m_atlas = nullptr;
 }
 
 void ParticleSystem::update(GameWindow* /*gl*/, int dt) {

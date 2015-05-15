@@ -1,9 +1,9 @@
 #include "wireframebox.h"
 
 #include "gamewindow.h"
-#include <QtGui/QOpenGLBuffer>
-#include "utilities/OpenglProgramShader.h"
-#include <QtGui/QOpenGLVertexArrayObject>
+#include "utilities/openglbuffer.h"
+#include "utilities/openglprogramshader.h"
+#include "utilities/openglvertexarrayobject.h"
 
 #include <iostream>
 
@@ -50,22 +50,23 @@ void WireframeBox::init(GameWindow* gl) {
         6, 7
     };
 
-    m_indices = new QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
+    m_indices = std::make_unique<OpenGLBuffer>(gl, OpenGLBuffer::IndexBuffer);
     m_indices->create();
 
-    m_vao = new QOpenGLVertexArrayObject(gl);
+    m_vao = std::make_unique<OpenGLVertexArrayObject>(gl);
     m_vao->create();
     m_vao->bind();
     m_indices->bind();
-    m_indices->setUsagePattern(QOpenGLBuffer::StaticDraw);
+    m_indices->setUsagePattern(OpenGLBuffer::StaticDraw);
     m_indices->allocate(indices, sizeof(indices));
     m_vao->release();
 
 }
 
 void WireframeBox::destroy(GameWindow* /*gl*/) {
-    delete m_indices;
-    delete m_vao;
+    m_program = nullptr;
+    m_indices = nullptr;
+    m_vao = nullptr;
 }
 
 void WireframeBox::draw(GameWindow* gl) {

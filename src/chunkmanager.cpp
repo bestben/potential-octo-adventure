@@ -4,8 +4,8 @@
 
 #include <iostream>
 
-#include <QtGui/QOpenGLVertexArrayObject>
-#include "utilities/OpenglProgramShader.h"
+#include "utilities/openglvertexarrayobject.h"
+#include "utilities/openglprogramshader.h"
 #include <QtGui/QOpenGLTexture>
 
 #define GLM_FORCE_PURE
@@ -135,7 +135,7 @@ void ChunkManager::initialize(GameWindow* gl) {
     //m_waterProgram->setUniformValue("fogColor", skyColor);
 	m_waterProgram->release();
 
-	m_atlas = new QOpenGLTexture(QImage(":/atlas.png"));
+	m_atlas = new QOpenGLTexture(QImage("textures/atlas.png"));
 	m_atlas->setMagnificationFilter(QOpenGLTexture::Nearest);
 
 	GLuint vbos[VBO_NUMBER];
@@ -150,7 +150,7 @@ void ChunkManager::initialize(GameWindow* gl) {
 		buffer->draw = false;
 
 		buffer->vbo = vbos[i];
-		buffer->vao = new QOpenGLVertexArrayObject(gl);
+		buffer->vao = new OpenGLVertexArrayObject(gl);
 		buffer->vao->create();
 		buffer->vao->bind();
 
@@ -195,6 +195,8 @@ void ChunkManager::destroy(GameWindow* gl) {
 	// On supprime l'atlas et le shader
 	delete m_atlas;
 	m_atlas = nullptr;
+    m_program = nullptr;
+    m_waterProgram = nullptr;
 }
 
 void ChunkManager::update(GameWindow* gl) {

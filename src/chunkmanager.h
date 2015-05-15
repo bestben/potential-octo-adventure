@@ -14,7 +14,7 @@
 #include <memory>
 #include "utility.h"
 
-class QOpenGLVertexArrayObject;
+class OpenGLVertexArrayObject;
 class OpenglProgramShader;
 class QOpenGLTexture;
 class GameWindow;
@@ -24,7 +24,7 @@ class ChunkGenerator;
 
 #define MAX_REMESH_PER_UPDATE 4
 struct Buffer {
-    QOpenGLVertexArrayObject* vao;
+    OpenGLVertexArrayObject* vao;
     GLuint vbo;
     unsigned int opaqueCount;
     unsigned int waterCount;

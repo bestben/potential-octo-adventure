@@ -1,9 +1,9 @@
 #include "voxelbuffer.h"
 
 #include "gamewindow.h"
-#include <QtGui/QOpenGLBuffer>
-#include "utilities/OpenglProgramShader.h"
-#include <QtGui/QOpenGLVertexArrayObject>
+#include "utilities/openglbuffer.h"
+#include "utilities/openglprogramshader.h"
+#include "utilities/openglvertexarrayobject.h"
 #include <QtGui/QOpenGLTexture>
 #include <QImage>
 
@@ -39,7 +39,7 @@ void VoxelBuffer::init(GameWindow* gl) {
 
     m_program->release();
 
-    m_atlas = new QOpenGLTexture(QImage(":/atlas.png"));
+    m_atlas = new QOpenGLTexture(QImage("textures/atlas.png"));
     m_atlas->setMagnificationFilter(QOpenGLTexture::Nearest);
 
     GLint vertices[36] = {
@@ -62,23 +62,23 @@ void VoxelBuffer::init(GameWindow* gl) {
         3, 3, 3, 3, 3, 3
     };
 
-    m_vertices = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    m_vertices = std::make_unique<OpenGLBuffer>(gl, OpenGLBuffer::VertexBuffer);
     m_vertices->create();
 
-    m_normals = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    m_normals = std::make_unique<OpenGLBuffer>(gl ,OpenGLBuffer::VertexBuffer);
     m_normals->create();
 
-    m_vao = new QOpenGLVertexArrayObject(gl);
+    m_vao = std::make_unique<OpenGLVertexArrayObject>(gl);
     m_vao->create();
     m_vao->bind();
     m_vertices->bind();
-    m_vertices->setUsagePattern(QOpenGLBuffer::StaticDraw);
+    m_vertices->setUsagePattern(OpenGLBuffer::StaticDraw);
     m_vertices->allocate(vertices, sizeof(vertices));
     m_program->enableAttributeArray(verticesIndex);
     gl->glVertexAttribIPointer(verticesIndex, 1, GL_INT, 0, 0);
 
     m_normals->bind();
-    m_normals->setUsagePattern(QOpenGLBuffer::StaticDraw);
+    m_normals->setUsagePattern(OpenGLBuffer::StaticDraw);
     m_normals->allocate(normals, sizeof(normals));
     m_program->enableAttributeArray(normalIndex);
     gl->glVertexAttribIPointer(normalIndex, 1, GL_INT, 0, 0);
@@ -87,10 +87,12 @@ void VoxelBuffer::init(GameWindow* gl) {
 }
 
 void VoxelBuffer::destroy(GameWindow* /*gl*/) {
+    m_program = nullptr;
     delete m_atlas;
-    delete m_vertices;
-    delete m_normals;
-    delete m_vao;
+    m_atlas = nullptr;
+    m_vertices = nullptr;
+    m_normals = nullptr;
+    m_vao = nullptr;
 }
 
 void VoxelBuffer::setDamage(float damage) {

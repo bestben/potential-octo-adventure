@@ -5,7 +5,7 @@
 
 class GameWindow;
 class OpenglProgramShader;
-class QOpenGLVertexArrayObject;
+class OpenGLVertexArrayObject;
 
 /**
  * Classe Framebuffer permettant d'avoir accès à un framebuffer perso.
@@ -59,7 +59,7 @@ private:
     // Le shader utilisé pour dessiner le framebuffer
     std::unique_ptr<OpenglProgramShader> m_program;
     // Le vertex array object
-    QOpenGLVertexArrayObject* m_vao;
+    std::unique_ptr<OpenGLVertexArrayObject> m_vao;
     // L'identifiant de framebuffer
     GLuint m_framebuffer;
     // L'identifiant de la texture de couleur

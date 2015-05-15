@@ -58,7 +58,9 @@ SOURCES += \
     chunk.cpp \
     glm/detail/glm.cpp \
     libnoise/win32/dllmain.cpp \
-    utilities/openglprogramshader.cpp
+    utilities/openglprogramshader.cpp \
+    utilities/openglbuffer.cpp \
+    utilities/openglvertexarrayobject.cpp
 
     
 QMAKE_CFLAGS_RELEASE  -= -O2
@@ -78,6 +80,14 @@ unix{
 win32{
 	QMAKE_CXXFLAGS += -openmp
 }
+
+debug {
+  DEFINES += MI_DEBUG
+}
+release {
+
+}
+
     
 target.path = $$[QT_INSTALL_EXAMPLES]/gui/openglwindow
 QT += opengl
@@ -299,4 +309,6 @@ HEADERS += \
     glm/vector_relational.hpp \
     libnoise/win32/resource.h \
     utility.h \
-    utilities/openglprogramshader.h
+    utilities/openglprogramshader.h \
+    utilities/openglbuffer.h \
+    utilities/openglvertexarrayobject.h

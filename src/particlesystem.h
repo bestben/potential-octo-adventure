@@ -9,8 +9,8 @@
 class GameWindow;
 class QOpenGLTexture;
 class OpenglProgramShader;
-class QOpenGLBuffer;
-class QOpenGLVertexArrayObject;
+class OpenGLBuffer;
+class OpenGLVertexArrayObject;
 
 /**
  * @brief Classe permettant d'afficher des particules.
@@ -53,8 +53,8 @@ private:
     // L'atlas de textures
     QOpenGLTexture* m_atlas;
     // Le buffer contenant la position des particules
-    QOpenGLBuffer* m_vertices;
-    QOpenGLVertexArrayObject* m_vao;
+    std::unique_ptr<OpenGLBuffer> m_vertices;
+    std::unique_ptr<OpenGLVertexArrayObject> m_vao;
     int m_matrixUniform;
     int m_typeUniform;
 
