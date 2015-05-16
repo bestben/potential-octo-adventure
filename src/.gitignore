@@ -1,9 +1,0 @@
-# Generated VS Projects
-
-*.sln
-*.vcxproj*
-
-
-*.raw
-*.data
-log.txt

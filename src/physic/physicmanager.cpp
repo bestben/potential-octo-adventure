@@ -161,6 +161,7 @@ bool PhysicManager::collide(GameWindow* gl, Body* body, glm::vec3& position, con
         glm::vec3 direction = glm::normalize(oldVoxel - newVoxel);
         glm::vec3 currentVoxel = oldVoxel;
         if (oldVoxel != newVoxel) {
+            int temp = 0; // TODO temp fix
             do {
                 currentVoxel -= direction;
                 VoxelType type = chunkManager.getVoxel(currentVoxel.x, currentVoxel.y, currentVoxel.z).type;
@@ -168,7 +169,8 @@ bool PhysicManager::collide(GameWindow* gl, Body* body, glm::vec3& position, con
                     isColliding = true;
                     break;
                 }
-            } while (currentVoxel != newVoxel);
+                temp++;
+            } while ((currentVoxel != newVoxel) && (temp < 15));
         }
     }
     if (!isColliding) {

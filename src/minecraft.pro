@@ -100,10 +100,6 @@ target.path = $$[QT_INSTALL_EXAMPLES]/gui/openglwindow
 QT += opengl
 INSTALLS += target
 
-
-RESOURCES += \
-    gestionnaire.qrc
-
 HEADERS += \
     camera.h \
     gamewindow.h \
