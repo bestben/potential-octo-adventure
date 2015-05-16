@@ -6,7 +6,7 @@
 
 #include "utilities/openglvertexarrayobject.h"
 #include "utilities/openglprogramshader.h"
-#include <QtGui/QOpenGLTexture>
+#include "utilities/opengltexture.h"
 
 #define GLM_FORCE_PURE
 #include "glm/gtc/matrix_transform.hpp"
@@ -135,8 +135,8 @@ void ChunkManager::initialize(GameWindow* gl) {
     //m_waterProgram->setUniformValue("fogColor", skyColor);
 	m_waterProgram->release();
 
-	m_atlas = new QOpenGLTexture(QImage("textures/atlas.png"));
-	m_atlas->setMagnificationFilter(QOpenGLTexture::Nearest);
+    m_atlas = std::make_unique<OpenGLTexture>(gl, "textures/atlas.png");
+	m_atlas->setMagnificationFilter(OpenGLTexture::Nearest);
 
 	GLuint vbos[VBO_NUMBER];
 	gl->glGenBuffers(VBO_NUMBER, vbos);
@@ -165,14 +165,13 @@ void ChunkManager::initialize(GameWindow* gl) {
 
 	m_isInit = true;
 	
-	start();
+	m_thread = std::thread( &ChunkManager::run, this );
 }
 
 void ChunkManager::destroy(GameWindow* gl) {
 	
 	m_needRegen = false;
-    this->terminate();
-    this->wait(2000);
+	m_thread.join();
 
 	m_isInit = false;
 
@@ -193,7 +192,6 @@ void ChunkManager::destroy(GameWindow* gl) {
 	delete[] m_oglBuffers;
 	m_oglBuffers = nullptr;
 	// On supprime l'atlas et le shader
-	delete m_atlas;
 	m_atlas = nullptr;
     m_program = nullptr;
     m_waterProgram = nullptr;

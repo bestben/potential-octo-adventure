@@ -16,7 +16,7 @@ WireframeBox::WireframeBox() : m_position{0.0f, 0.0f, 0.0f}, m_color{0.0f, 0.0f,
 }
 
 WireframeBox::~WireframeBox() {
-
+    destroy( nullptr );
 }
 
 void WireframeBox::init(GameWindow* gl) {

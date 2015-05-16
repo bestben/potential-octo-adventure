@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QTime>
+#include "utilities/time.h"
 #include <string>
 #include <QtGui/QOpenGLFunctions>
 #include <memory>
@@ -31,6 +31,6 @@ private:
     // Le vertex array object
     std::unique_ptr<OpenGLVertexArrayObject> m_vao;
 
-    QTime m_time;
+    Time m_time;
     int m_timeUniformLocation;
 };

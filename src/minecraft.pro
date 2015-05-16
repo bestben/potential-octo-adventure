@@ -60,7 +60,9 @@ SOURCES += \
     libnoise/win32/dllmain.cpp \
     utilities/openglprogramshader.cpp \
     utilities/openglbuffer.cpp \
-    utilities/openglvertexarrayobject.cpp
+    utilities/openglvertexarrayobject.cpp \
+    utilities/time.cpp \
+    utilities/opengltexture.cpp
 
     
 QMAKE_CFLAGS_RELEASE  -= -O2
@@ -311,4 +313,6 @@ HEADERS += \
     utility.h \
     utilities/openglprogramshader.h \
     utilities/openglbuffer.h \
-    utilities/openglvertexarrayobject.h
+    utilities/openglvertexarrayobject.h \
+    utilities/time.h \
+    utilities/opengltexture.h

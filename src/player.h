@@ -6,11 +6,11 @@
 #include "chunk.h"
 
 #include <memory>
-#include <QTime>
+#include "utilities/time.h"
 
 class GameWindow;
 class Camera;
-class QOpenGLTexture;
+class OpenGLTexture;
 
 class QKeyEvent;
 class QMouseEvent;
@@ -60,7 +60,7 @@ private:
     // Le shader affichant la cible du joueur.
     std::unique_ptr<OpenglProgramShader> m_crossProgram;
     // La texture de cible
-    QOpenGLTexture* m_crossTexture;
+    std::unique_ptr<OpenGLTexture> m_crossTexture;
     std::unique_ptr<OpenGLVertexArrayObject> m_crossVao;
     int m_crossXSizeUniform;
     int m_crossYSizeUniform;
@@ -72,5 +72,5 @@ private:
     // Le temps nécessaire pour casser le voxel
     int m_targetTime;
     // Le timer comptant le temps passé depuis que le joueur a commencé à taper le voxel
-    QTime m_startTimer;
+    Time m_startTimer;
 };

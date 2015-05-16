@@ -5,8 +5,6 @@
 
 #include "../chunk.h"
 
-#include <QTimer>
-
 class GameWindow;
 struct Body;
 class Pathfinding;

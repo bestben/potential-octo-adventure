@@ -1,9 +1,7 @@
 #include "LightManager.h"
 #include "chunkmanager.h"
 
-#include <QtCore/QQueue>
 #include <iostream>
-#include <QtCore/QTimer>
 
 static const Coords neighbors[6] = {
     Coords{ 0, 0, 1 },

@@ -3,8 +3,7 @@
 #include "camera.h"
 #include "player.h"
 
-#include <QTimer>
-#include <QTime>
+#include "utilities/time.h"
 
 #include <QtGui/QOpenGLWindow>
 #include <QtGui/QOpenGLFunctions_3_3_Core>
@@ -17,7 +16,7 @@
 
 #include "npc/npc.h"
 
-class QOpenGLTexture;
+class OpenGLTexture;
 class QOpenGLDebugLogger;
 class QOpenGLDebugMessage;
 
@@ -75,8 +74,7 @@ private:
 
     int m_lastDelta;
     int m_currentDeltaIndex;
-    QTimer m_timer;
-    QTime m_deltaTimer;
+    Time m_deltaTimer;
     int m_lastDeltas[FPS_FRAME_NUMBER];
     bool m_isInitialized;
 

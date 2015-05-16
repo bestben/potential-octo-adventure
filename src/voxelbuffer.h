@@ -7,7 +7,7 @@ class GameWindow;
 class OpenglProgramShader;
 class OpenGLVertexArrayObject;
 class OpenGLBuffer;
-class QOpenGLTexture;
+class OpenGLTexture;
 
 /**
  * Classe permettant d'afficher un unique voxel avec une texture endommagée.
@@ -38,7 +38,7 @@ private:
     // Le shader affichant le voxel
     std::unique_ptr<OpenglProgramShader> m_program;
     // L'atlas de textures
-    QOpenGLTexture* m_atlas;
+    std::unique_ptr<OpenGLTexture> m_atlas;
     // Les vertices du voxel
     std::unique_ptr<OpenGLBuffer> m_vertices;
     std::unique_ptr<OpenGLBuffer> m_normals;

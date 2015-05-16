@@ -4,7 +4,7 @@
 
 #include "utilities/openglprogramshader.h"
 #include "utilities/openglbuffer.h"
-#include <QtGui/QOpenGLTexture>
+#include "utilities/opengltexture.h"
 #include "utilities/openglvertexarrayobject.h"
 
 #define GLM_FORCE_PURE
@@ -37,9 +37,8 @@ void ParticleSystem::init(GameWindow* gl) {
     m_program->setUniformValue("atlas", 0);
     m_program->release();
 
-    QImage image("textures/atlas.png");
-    m_atlas = new QOpenGLTexture(image);
-    m_atlas->setMagnificationFilter(QOpenGLTexture::Nearest);
+    m_atlas = std::make_unique<OpenGLTexture>(gl, "textures/atlas.png");
+    m_atlas->setMagnificationFilter(OpenGLTexture::Nearest);
 
     m_vertices = std::make_unique<OpenGLBuffer>(gl, OpenGLBuffer::VertexBuffer);
     m_vertices->create();
@@ -61,7 +60,6 @@ void ParticleSystem::destroy(GameWindow* /*gl*/) {
     m_program = nullptr;
     m_vao = nullptr;
     m_vertices = nullptr;
-    delete m_atlas;
     m_atlas = nullptr;
 }
 

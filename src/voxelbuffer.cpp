@@ -4,8 +4,7 @@
 #include "utilities/openglbuffer.h"
 #include "utilities/openglprogramshader.h"
 #include "utilities/openglvertexarrayobject.h"
-#include <QtGui/QOpenGLTexture>
-#include <QImage>
+#include "utilities/opengltexture.h"
 
 #include <iostream>
 
@@ -17,7 +16,7 @@ VoxelBuffer::VoxelBuffer() : m_position{0.0f, 0.0f, 0.0f}, m_width(CHUNK_SCALE),
 }
 
 VoxelBuffer::~VoxelBuffer() {
-
+    destroy( nullptr );
 }
 
 void VoxelBuffer::init(GameWindow* gl) {
@@ -39,8 +38,8 @@ void VoxelBuffer::init(GameWindow* gl) {
 
     m_program->release();
 
-    m_atlas = new QOpenGLTexture(QImage("textures/atlas.png"));
-    m_atlas->setMagnificationFilter(QOpenGLTexture::Nearest);
+    m_atlas = std::make_unique<OpenGLTexture>(gl, "textures/atlas.png");
+    m_atlas->setMagnificationFilter(OpenGLTexture::Nearest);
 
     GLint vertices[36] = {
         3, 1, 0, 0, 2, 3,
@@ -88,7 +87,6 @@ void VoxelBuffer::init(GameWindow* gl) {
 
 void VoxelBuffer::destroy(GameWindow* /*gl*/) {
     m_program = nullptr;
-    delete m_atlas;
     m_atlas = nullptr;
     m_vertices = nullptr;
     m_normals = nullptr;

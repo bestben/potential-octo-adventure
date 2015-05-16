@@ -1,13 +1,13 @@
 #pragma once
 
 #include "glm/vec3.hpp"
-#include <QTime>
+#include "utilities/time.h"
 #include "chunk.h"
 
 #include <memory>
 
 class GameWindow;
-class QOpenGLTexture;
+class OpenGLTexture;
 class OpenglProgramShader;
 class OpenGLBuffer;
 class OpenGLVertexArrayObject;
@@ -51,7 +51,7 @@ private:
     // Le shader affichant les particules
     std::unique_ptr<OpenglProgramShader> m_program;
     // L'atlas de textures
-    QOpenGLTexture* m_atlas;
+    std::unique_ptr<OpenGLTexture> m_atlas;
     // Le buffer contenant la position des particules
     std::unique_ptr<OpenGLBuffer> m_vertices;
     std::unique_ptr<OpenGLVertexArrayObject> m_vao;
@@ -63,7 +63,7 @@ private:
     // La durée de vie des particules
     int m_lifeTime;
     // Timer calculant le temps depuis la création des dernières particules
-    QTime m_spawnTime;
+    Time m_spawnTime;
     // Le type de particules à afficher
     VoxelType m_voxelType;
     // La position de départ des particules

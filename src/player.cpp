@@ -5,7 +5,7 @@
 
 #include <QtGui/QMouseEvent>
 #include "utilities/openglprogramshader.h"
-#include <QtGui/QOpenGLTexture>
+#include "utilities/opengltexture.h"
 #include "utilities/openglvertexarrayobject.h"
 
 #define GLM_FORCE_PURE
@@ -34,7 +34,8 @@ void Player::init() {
     m_crossXSizeUniform = m_crossProgram->uniformLocation("xSize");
     m_crossYSizeUniform = m_crossProgram->uniformLocation("ySize");
 
-    m_crossTexture = new QOpenGLTexture(QImage("textures/cross.png"));
+    m_crossTexture = std::make_unique<OpenGLTexture>(&m_game, "textures/cross.png");
+    m_crossTexture->setMinMagFilters(OpenGLTexture::Linear, OpenGLTexture::Linear);
 
     m_crossVao = std::make_unique<OpenGLVertexArrayObject>(&m_game);
     m_crossVao->create();
@@ -44,7 +45,6 @@ void Player::init() {
 
 void Player::destroy() {
     m_crossProgram = nullptr;
-    delete m_crossTexture;
     m_crossTexture = nullptr;
     m_crossVao = nullptr;
     m_box.destroy(&m_game);

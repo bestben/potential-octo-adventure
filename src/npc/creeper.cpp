@@ -30,13 +30,13 @@ void Creeper::init(GameWindow* gl) {
 
     m_pathfinding = new Pathfinding(gl->getChunkManager(), 100);
 
-    m_refreshTimer.setInterval(m_pathRefreshRate);
-    m_refreshTimer.connect(&m_refreshTimer, &QTimer::timeout, [this]() {
+    /*m_refreshTimer.setInterval(m_pathRefreshRate);
+    m_refreshTimer.connect(&m_refreshTimer, &Timer::timeout, [this]() {
         updatePath();
-    });
+    });*/
 
     m_playerPosition = GetVoxelPosFromWorldPos(gl->getCamera().getFootPosition());
-    m_refreshTimer.start();
+    //m_refreshTimer.start();
 }
 
 void Creeper::destroy(GameWindow* gl) {

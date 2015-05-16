@@ -1,13 +1,13 @@
 #pragma once
 
+#include <vector>
+
 #include "npc.h"
 
 #include "../wireframebox.h"
-#include <vector>
-
 #include "../chunk.h"
 
-#include <QTimer>
+
 
 class GameWindow;
 struct Body;
@@ -41,7 +41,7 @@ private:
 
     int m_lengthOfSight;
     int m_pathRefreshRate; // Le nombre de millisecondes entre chaque mise à jour du pathfinding
-    QTimer m_refreshTimer;
+    //Timer m_refreshTimer;
 
     int m_life;
     bool m_canBeDestroyed;

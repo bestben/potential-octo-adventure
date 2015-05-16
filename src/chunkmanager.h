@@ -1,22 +1,23 @@
 #pragma once
 
 #include <QtGui/QOpenGLFunctions>
+#include "utilities/time.h"
+
 #include <atomic>
-#include <QThread>
-#include <QTime>
+#include <thread>
+#include <mutex>
+#include <unordered_map>
+#include <memory>
 
 #include "chunk.h"
 #include "meshgenerator.h"
 #include "biomes/ChunkGenerator.h"
 #include "LightManager.h"
-#include <mutex>
-#include <unordered_map>
-#include <memory>
 #include "utility.h"
 
 class OpenGLVertexArrayObject;
 class OpenglProgramShader;
-class QOpenGLTexture;
+class OpenGLTexture;
 class GameWindow;
 class MeshGenerator;
 class ChunkGenerator;
@@ -37,7 +38,7 @@ struct Buffer {
 /**
  * @brief Classe gérant les chunks devant être chargés/déchargés/affichés.
  */
-class ChunkManager : QThread {
+class ChunkManager {
 public:
 	ChunkManager(int worldSeed);
     ~ChunkManager();
@@ -77,6 +78,8 @@ private:
     int getArrayIndex(int i, int j, int k, Coords center);
     Coords getChunkCoords(int index, Coords center);
 
+	std::thread		m_thread;
+
 	int mWorldSeed;
 
     bool m_isInit;
@@ -87,7 +90,7 @@ private:
     // Le shader affichant l'eau
     std::unique_ptr<OpenglProgramShader> m_waterProgram;
     // L'atlas de textures
-    QOpenGLTexture* m_atlas;
+    std::unique_ptr<OpenGLTexture> m_atlas;
 
     int m_posAttr;
     int m_matrixUniform;
@@ -138,7 +141,7 @@ private:
 
 	bool m_FirstUpdate;
 
-    QTime m_animationTime;
+    Time m_animationTime;
 
     std::atomic<Chunk*> m_lastChunk;
 };
