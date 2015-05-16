@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QtGui/QOpenGLFunctions>
+#include <glad/glad.h>
 #include "utilities/time.h"
 
 #include <atomic>

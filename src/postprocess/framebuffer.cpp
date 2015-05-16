@@ -39,7 +39,7 @@ FrameBuffer::~FrameBuffer() {
 
 void FrameBuffer::initialize(GameWindow* gl) {
     // On crée le shader et le vbo pour dessiner le framebuffer à l'écran
-    m_program = std::make_unique<OpenglProgramShader>(gl);
+    m_program = std::make_unique<OpenglProgramShader>();
     m_program->addShaderFromSourceCode(OpenGLShaderType::Vertex, vertexShaderSource);
     m_program->addShaderFromSourceCode(OpenGLShaderType::Fragment, fragmentShaderSource);
     m_program->link();
@@ -48,108 +48,108 @@ void FrameBuffer::initialize(GameWindow* gl) {
     m_program->release();
 
     // On crée le FrameBuffer
-    gl->glGenFramebuffers(1, &m_framebuffer);
-    gl->glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+    glGenFramebuffers(1, &m_framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 
     // On crée la texture contenant la couleur
-    gl->glGenTextures(2, m_colorTexture);
+    glGenTextures(2, m_colorTexture);
     for (int i = 0; i < 2; ++i) {
-        gl->glBindTexture(GL_TEXTURE_2D, m_colorTexture[i]);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, gl->size().width(), gl->size().height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glBindTexture(GL_TEXTURE_2D, m_colorTexture[i]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, gl->size().width(), gl->size().height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     }
 
     // On crée la texture contenant la profondeur
-    gl->glGenTextures(1, &m_depthTexture);
-    gl->glBindTexture(GL_TEXTURE_2D, m_depthTexture);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-    gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, gl->size().width(), gl->size().height(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glGenTextures(1, &m_depthTexture);
+    glBindTexture(GL_TEXTURE_2D, m_depthTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, gl->size().width(), gl->size().height(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
     m_initialized = true;
-    m_vao = std::make_unique<OpenGLVertexArrayObject>(gl);
+    m_vao = std::make_unique<OpenGLVertexArrayObject>();
     m_vao->create();
 }
 
-void FrameBuffer::destroy(GameWindow* gl) {
+void FrameBuffer::destroy(GameWindow* /*gl*/) {
     m_program = nullptr;
     if (m_initialized) {
-        gl->glDeleteTextures(2, m_colorTexture);
-        gl->glDeleteTextures(1, &m_depthTexture);
-        gl->glDeleteFramebuffers(1, &m_framebuffer);
+        glDeleteTextures(2, m_colorTexture);
+        glDeleteTextures(1, &m_depthTexture);
+        glDeleteFramebuffers(1, &m_framebuffer);
         m_vao->destroy();
         m_vao = nullptr;
         m_initialized = false;
     }
 }
 
-void FrameBuffer::changeDimension(GameWindow* gl, int width, int height) {
+void FrameBuffer::changeDimension(GameWindow* /*gl*/, int width, int height) {
     if (m_initialized) {
         // On re-crée les textures à la bonne taille
 
         for (int i = 0; i < 2; ++i) {
-            gl->glBindTexture(GL_TEXTURE_2D, m_colorTexture[i]);
-            gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+            glBindTexture(GL_TEXTURE_2D, m_colorTexture[i]);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
         }
 
-        gl->glBindTexture(GL_TEXTURE_2D, m_depthTexture);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        gl->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-        gl->glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-        gl->glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, m_depthTexture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 }
 
-void FrameBuffer::begin(GameWindow* gl) {
+void FrameBuffer::begin(GameWindow* /*gl*/) {
     if (m_initialized) {
         m_colorTextureIndex = 0;
-        gl->glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 
         // On attache les textures au framebuffer
-        gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture, 0);
-        gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTexture[m_colorTextureIndex], 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTexture[m_colorTextureIndex], 0);
 
         GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-        gl->glDrawBuffers(1, drawBuffers);
+        glDrawBuffers(1, drawBuffers);
 
-        gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 }
 
-void FrameBuffer::end(GameWindow* gl) {
+void FrameBuffer::end(GameWindow* /*gl*/) {
     if (m_initialized) {
         // On désactive le framebuffer
-        gl->glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // On désactive le test de profondeur
-        gl->glDisable(GL_DEPTH_TEST);
+        glDisable(GL_DEPTH_TEST);
 
-        gl->glActiveTexture(GL_TEXTURE0);
-        gl->glBindTexture(GL_TEXTURE_2D, m_colorTexture[m_colorTextureIndex]);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_colorTexture[m_colorTextureIndex]);
 
         // Rendu
         m_program->bind();
         m_vao->bind();
 
-        gl->glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         // On remet les états à 0
         m_vao->release();
         m_program->release();
 
-        gl->glEnable(GL_DEPTH_TEST);
+        glEnable(GL_DEPTH_TEST);
     }
 }
 
@@ -161,9 +161,9 @@ GLuint FrameBuffer::getDepthTexture() const {
     return m_depthTexture;
 }
 
-void FrameBuffer::switchColorTexture(GameWindow* gl) {
+void FrameBuffer::switchColorTexture(GameWindow* /*gl*/) {
     if (m_initialized) {
         m_colorTextureIndex = (m_colorTextureIndex + 1) % 2;
-        gl->glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTexture[m_colorTextureIndex], 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTexture[m_colorTextureIndex], 0);
     }
 }

@@ -2,6 +2,8 @@
 
 #include "gamewindow.h"
 
+#include <glad/glad.h>
+
 #include "utilities/openglprogramshader.h"
 #include "utilities/openglbuffer.h"
 #include "utilities/opengltexture.h"
@@ -21,10 +23,10 @@ ParticleSystem::~ParticleSystem() {
 }
 
 
-void ParticleSystem::init(GameWindow* gl) {
-    gl->glPointSize(20.0f);
+void ParticleSystem::init(GameWindow* /*gl*/) {
+    glPointSize(20.0f);
 
-    m_program = std::make_unique<OpenglProgramShader>(gl);
+    m_program = std::make_unique<OpenglProgramShader>();
     m_program->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/particle.vs");
     m_program->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/particle.ps");
     m_program->link();
@@ -37,20 +39,20 @@ void ParticleSystem::init(GameWindow* gl) {
     m_program->setUniformValue("atlas", 0);
     m_program->release();
 
-    m_atlas = std::make_unique<OpenGLTexture>(gl, "textures/atlas.png");
+    m_atlas = std::make_unique<OpenGLTexture>("textures/atlas.png");
     m_atlas->setMagnificationFilter(OpenGLTexture::Nearest);
 
-    m_vertices = std::make_unique<OpenGLBuffer>(gl, OpenGLBuffer::VertexBuffer);
+    m_vertices = std::make_unique<OpenGLBuffer>(OpenGLBuffer::VertexBuffer);
     m_vertices->create();
 
-    m_vao = std::make_unique<OpenGLVertexArrayObject>(gl);
+    m_vao = std::make_unique<OpenGLVertexArrayObject>();
     m_vao->create();
     m_vao->bind();
     m_vertices->bind();
     m_vertices->setUsagePattern(OpenGLBuffer::DynamicDraw);
     m_vertices->allocate(nullptr, sizeof(glm::vec3) * m_count);
     m_program->enableAttributeArray(verticesIndex);
-    gl->glVertexAttribPointer(verticesIndex, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(verticesIndex, 3, GL_FLOAT, false, 0, 0);
 
     m_vao->release();
     m_spawnTime.start();
@@ -86,10 +88,10 @@ void ParticleSystem::draw(GameWindow* gl) {
         m_atlas->bind(0);
 
         m_program->setUniformValue(m_typeUniform, (int)getTexture(m_voxelType, 0));
-        gl->glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
+        glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
         //m_program->setUniformValue(m_matrixUniform, gl->getCamera().getViewProjMatrix());
 
-        gl->glDrawArrays(GL_POINTS, 0, m_count);
+        glDrawArrays(GL_POINTS, 0, m_count);
 
         m_vao->release();
         m_program->release();

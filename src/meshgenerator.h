@@ -1,7 +1,5 @@
 #pragma once
 
-#include <QtGui/QOpenGLFunctions>
-
 #include "chunk.h"
 #include "chunkmanager.h"
 

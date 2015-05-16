@@ -1,11 +1,9 @@
 #pragma once
 
-class GameWindow;
-
 class OpenGLVertexArrayObject
 {
 public:
-    OpenGLVertexArrayObject( GameWindow* gl );
+    OpenGLVertexArrayObject( );
     ~OpenGLVertexArrayObject();
 
     OpenGLVertexArrayObject( const OpenGLVertexArrayObject& copy ) = delete;
@@ -19,6 +17,5 @@ public:
     void            release();
 
 private:
-    GameWindow*     m_gl;
     unsigned int    m_VaoId;
 };

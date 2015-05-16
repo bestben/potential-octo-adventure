@@ -1,5 +1,6 @@
 #include "wireframebox.h"
 
+#include <glad/glad.h>
 #include "gamewindow.h"
 #include "utilities/openglbuffer.h"
 #include "utilities/openglprogramshader.h"
@@ -19,8 +20,8 @@ WireframeBox::~WireframeBox() {
     destroy( nullptr );
 }
 
-void WireframeBox::init(GameWindow* gl) {
-    m_program = std::make_unique<OpenglProgramShader>(gl);
+void WireframeBox::init(GameWindow* /*gl*/) {
+    m_program = std::make_unique<OpenglProgramShader>();
     m_program->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/wireframeBox.vs");
     m_program->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/wireframeBox.ps");
     m_program->link();
@@ -50,10 +51,10 @@ void WireframeBox::init(GameWindow* gl) {
         6, 7
     };
 
-    m_indices = std::make_unique<OpenGLBuffer>(gl, OpenGLBuffer::IndexBuffer);
+    m_indices = std::make_unique<OpenGLBuffer>(OpenGLBuffer::IndexBuffer);
     m_indices->create();
 
-    m_vao = std::make_unique<OpenGLVertexArrayObject>(gl);
+    m_vao = std::make_unique<OpenGLVertexArrayObject>();
     m_vao->create();
     m_vao->bind();
     m_indices->bind();
@@ -71,16 +72,16 @@ void WireframeBox::destroy(GameWindow* /*gl*/) {
 
 void WireframeBox::draw(GameWindow* gl) {
     m_program->bind();
-    gl->glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
-    gl->glUniform3fv(m_posUniform, 1, glm::value_ptr(m_position));
-    gl->glUniform3fv(m_colorUniform, 1, glm::value_ptr(m_color));
+    glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
+    glUniform3fv(m_posUniform, 1, glm::value_ptr(m_position));
+    glUniform3fv(m_colorUniform, 1, glm::value_ptr(m_color));
     //m_program->setUniformValue(m_matrixUniform, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
     //m_program->setUniformValue(m_posUniform, m_position);
     //m_program->setUniformValue(m_colorUniform, m_color);
 
     m_vao->bind();
 
-    gl->glDrawElements(GL_LINES, 24, GL_UNSIGNED_SHORT, nullptr);
+    glDrawElements(GL_LINES, 24, GL_UNSIGNED_SHORT, nullptr);
 
     m_vao->release();
     m_program->release();

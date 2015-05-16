@@ -1,12 +1,12 @@
 #pragma once
 
+#include <glad/glad.h>
 #include "camera.h"
 #include "player.h"
 
 #include "utilities/time.h"
 
 #include <QtGui/QOpenGLWindow>
-#include <QtGui/QOpenGLFunctions_3_3_Core>
 
 #include "chunkmanager.h"
 #include "physic/physicmanager.h"
@@ -23,7 +23,7 @@ class QOpenGLDebugMessage;
 // Le nombre de frames à considérer pour le calcul des FPS
 #define FPS_FRAME_NUMBER 100
 
-class GameWindow : public QOpenGLWindow, public QOpenGLFunctions_3_3_Core {
+class GameWindow : public QOpenGLWindow {
 public:
     /**
      * @brief Constructeur de la classe GameWindow.

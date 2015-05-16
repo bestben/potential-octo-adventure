@@ -1,6 +1,6 @@
 #pragma once
 
-class GameWindow;
+#include <glad/glad.h>
 
 class OpenGLBuffer
 {
@@ -42,7 +42,7 @@ public:
         RangeUnsynchronized   = 0x0020  // GL_MAP_UNSYNCHRONIZED_BIT
     };
 
-    OpenGLBuffer( GameWindow* gl, OpenGLBuffer::Type type );
+    OpenGLBuffer( OpenGLBuffer::Type type );
     ~OpenGLBuffer();
 
     OpenGLBuffer( const OpenGLBuffer& copy ) = delete;
@@ -77,8 +77,6 @@ public:
     bool                unmap();
 
 private:
-
-    GameWindow*                 m_gl;
     OpenGLBuffer::Type          m_type;
     OpenGLBuffer::UsagePattern  m_usagePattern;
     unsigned int                m_bufferId;

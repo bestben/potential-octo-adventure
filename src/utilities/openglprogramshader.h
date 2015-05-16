@@ -4,7 +4,7 @@
 
 #include "glm/fwd.hpp"
 
-class GameWindow;
+#include <glad/glad.h>
 
 enum class OpenGLShaderType {
     Vertex,
@@ -15,7 +15,7 @@ enum class OpenGLShaderType {
 class OpenglProgramShader
 {
 public:
-    OpenglProgramShader( GameWindow* gl );
+    OpenglProgramShader();
     ~OpenglProgramShader();
 
     OpenglProgramShader( const OpenglProgramShader& copy ) = delete;
@@ -57,7 +57,5 @@ public:
     void 	setUniformValue(const char* name, const glm::mat4x4& value);
 
 private:
-    GameWindow*     m_gl;
-
     unsigned int    m_programId;
 };

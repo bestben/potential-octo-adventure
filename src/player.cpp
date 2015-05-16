@@ -3,6 +3,7 @@
 #include "gamewindow.h"
 #include "camera.h"
 
+#include <glad/glad.h>
 #include <QtGui/QMouseEvent>
 #include "utilities/openglprogramshader.h"
 #include "utilities/opengltexture.h"
@@ -23,7 +24,7 @@ void Player::init() {
     m_box.init(&m_game);
     m_voxel.init(&m_game);
 
-    m_crossProgram = std::make_unique<OpenglProgramShader>(&m_game);
+    m_crossProgram = std::make_unique<OpenglProgramShader>();
     m_crossProgram->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/cross.vs");
     m_crossProgram->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/cross.ps");
     m_crossProgram->link();
@@ -34,10 +35,10 @@ void Player::init() {
     m_crossXSizeUniform = m_crossProgram->uniformLocation("xSize");
     m_crossYSizeUniform = m_crossProgram->uniformLocation("ySize");
 
-    m_crossTexture = std::make_unique<OpenGLTexture>(&m_game, "textures/cross.png");
+    m_crossTexture = std::make_unique<OpenGLTexture>("textures/cross.png");
     m_crossTexture->setMinMagFilters(OpenGLTexture::Linear, OpenGLTexture::Linear);
 
-    m_crossVao = std::make_unique<OpenGLVertexArrayObject>(&m_game);
+    m_crossVao = std::make_unique<OpenGLVertexArrayObject>();
     m_crossVao->create();
 
     m_particles.init(&m_game);
@@ -93,11 +94,11 @@ void Player::draw() {
             if (m_startTimer.elapsed() >= m_targetTime) {
                 chunkManager.removeVoxel({ currentVoxel.i, currentVoxel.j, currentVoxel.k });
             } else {
-                m_game.glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
+                glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
                 m_voxel.setDamage((float)m_startTimer.elapsed() / (float)m_targetTime);
                 m_voxel.setPosition(glm::vec3((float)currentVoxel.i, (float)currentVoxel.j, (float)currentVoxel.k) * (float)CHUNK_SCALE);
                 m_voxel.draw(&m_game);
-                m_game.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
             m_particles.setVoxelType(type);
             m_particles.setSpawnPosition(voxelToWorld(currentVoxel));
@@ -116,7 +117,7 @@ void Player::postDraw() {
     m_crossProgram->setUniformValue(m_crossYSizeUniform, CROSS_HEIGHT / m_game.height());
     m_crossTexture->bind(0);
     m_crossVao->bind();
-    m_game.glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
     m_crossVao->release();
 }
 

@@ -1,11 +1,11 @@
 #include "openglvertexarrayobject.h"
 
-#include "../gamewindow.h"
+#include <glad/glad.h>
+#include "../utility.h"
 
-OpenGLVertexArrayObject::OpenGLVertexArrayObject( GameWindow* gl )
+
+OpenGLVertexArrayObject::OpenGLVertexArrayObject( )
 {
-    MI_ASSERT( gl != nullptr );
-    m_gl = gl;
     m_VaoId = 0;
 }
 
@@ -16,15 +16,15 @@ OpenGLVertexArrayObject::~OpenGLVertexArrayObject()
 }
 
 void OpenGLVertexArrayObject::create() {
-    MI_ASSERT( (m_gl != nullptr) && (m_VaoId == 0) );
+    MI_ASSERT( (m_VaoId == 0) );
 
-    m_gl->glGenVertexArrays(1, &m_VaoId);
+    glGenVertexArrays(1, &m_VaoId);
 }
 
 void OpenGLVertexArrayObject::destroy() {
-    MI_ASSERT( (m_gl != nullptr) && (m_VaoId != 0) );
+    MI_ASSERT( (m_VaoId != 0) );
 
-    m_gl->glDeleteVertexArrays(1, &m_VaoId);
+    glDeleteVertexArrays(1, &m_VaoId);
     m_VaoId = 0;
 }
 
@@ -37,11 +37,11 @@ unsigned int OpenGLVertexArrayObject::objectId() const {
 }
 
 void OpenGLVertexArrayObject::bind() {
-    MI_ASSERT( (m_gl != nullptr) && (m_VaoId !=0 ) );
-    m_gl->glBindVertexArray( m_VaoId );
+    MI_ASSERT( (m_VaoId !=0 ) );
+    glBindVertexArray( m_VaoId );
 }
 
 void OpenGLVertexArrayObject::release() {
-    MI_ASSERT( (m_gl != nullptr) && (m_VaoId !=0 ) );
-    m_gl->glBindVertexArray( 0 );
+    MI_ASSERT( (m_VaoId !=0 ) );
+    glBindVertexArray( 0 );
 }

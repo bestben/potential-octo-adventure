@@ -1,8 +1,8 @@
 #pragma once
 
+#include <glad/glad.h>
 #include "utilities/time.h"
 #include <string>
-#include <QtGui/QOpenGLFunctions>
 #include <memory>
 
 class GameWindow;

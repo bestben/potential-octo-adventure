@@ -67,7 +67,8 @@ SOURCES += \
     utilities/openglbuffer.cpp \
     utilities/openglvertexarrayobject.cpp \
     utilities/time.cpp \
-    utilities/opengltexture.cpp
+    utilities/opengltexture.cpp \
+    glad/glad.c
 
     
 QMAKE_CFLAGS_RELEASE  -= -O2

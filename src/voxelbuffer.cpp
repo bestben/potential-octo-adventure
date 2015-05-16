@@ -1,5 +1,6 @@
 #include "voxelbuffer.h"
 
+#include <glad/glad.h>
 #include "gamewindow.h"
 #include "utilities/openglbuffer.h"
 #include "utilities/openglprogramshader.h"
@@ -19,8 +20,8 @@ VoxelBuffer::~VoxelBuffer() {
     destroy( nullptr );
 }
 
-void VoxelBuffer::init(GameWindow* gl) {
-    m_program = std::make_unique<OpenglProgramShader>(gl);
+void VoxelBuffer::init(GameWindow* /*gl*/) {
+    m_program = std::make_unique<OpenglProgramShader>();
     m_program->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/voxelBuffer.vs");
     m_program->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/voxelBuffer.ps");
     m_program->link();
@@ -38,7 +39,7 @@ void VoxelBuffer::init(GameWindow* gl) {
 
     m_program->release();
 
-    m_atlas = std::make_unique<OpenGLTexture>(gl, "textures/atlas.png");
+    m_atlas = std::make_unique<OpenGLTexture>("textures/atlas.png");
     m_atlas->setMagnificationFilter(OpenGLTexture::Nearest);
 
     GLint vertices[36] = {
@@ -61,26 +62,26 @@ void VoxelBuffer::init(GameWindow* gl) {
         3, 3, 3, 3, 3, 3
     };
 
-    m_vertices = std::make_unique<OpenGLBuffer>(gl, OpenGLBuffer::VertexBuffer);
+    m_vertices = std::make_unique<OpenGLBuffer>(OpenGLBuffer::VertexBuffer);
     m_vertices->create();
 
-    m_normals = std::make_unique<OpenGLBuffer>(gl ,OpenGLBuffer::VertexBuffer);
+    m_normals = std::make_unique<OpenGLBuffer>(OpenGLBuffer::VertexBuffer);
     m_normals->create();
 
-    m_vao = std::make_unique<OpenGLVertexArrayObject>(gl);
+    m_vao = std::make_unique<OpenGLVertexArrayObject>();
     m_vao->create();
     m_vao->bind();
     m_vertices->bind();
     m_vertices->setUsagePattern(OpenGLBuffer::StaticDraw);
     m_vertices->allocate(vertices, sizeof(vertices));
     m_program->enableAttributeArray(verticesIndex);
-    gl->glVertexAttribIPointer(verticesIndex, 1, GL_INT, 0, 0);
+    glVertexAttribIPointer(verticesIndex, 1, GL_INT, 0, 0);
 
     m_normals->bind();
     m_normals->setUsagePattern(OpenGLBuffer::StaticDraw);
     m_normals->allocate(normals, sizeof(normals));
     m_program->enableAttributeArray(normalIndex);
-    gl->glVertexAttribIPointer(normalIndex, 1, GL_INT, 0, 0);
+    glVertexAttribIPointer(normalIndex, 1, GL_INT, 0, 0);
 
     m_vao->release();
 }
@@ -100,8 +101,8 @@ void VoxelBuffer::setDamage(float damage) {
 void VoxelBuffer::draw(GameWindow* gl) {
     m_program->bind();
 
-    gl->glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
-    gl->glUniform3fv(m_posUniform, 1, glm::value_ptr(m_position));
+    glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(gl->getCamera().getViewProjMatrix()));
+    glUniform3fv(m_posUniform, 1, glm::value_ptr(m_position));
     //m_program->setUniformValue(m_matrixUniform, gl->getCamera().getViewProjMatrix());
     //m_program->setUniformValue(m_posUniform, m_position);
     m_program->setUniformValue(m_damageUniform, m_damage);
@@ -110,7 +111,7 @@ void VoxelBuffer::draw(GameWindow* gl) {
 
     m_vao->bind();
 
-    gl->glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 
     m_vao->release();
     m_program->release();

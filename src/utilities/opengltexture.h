@@ -3,7 +3,7 @@
 
 #include <string>
 
-class GameWindow;
+#include <glad/glad.h>
 
 class OpenGLTexture
 {
@@ -48,8 +48,8 @@ public:
         DontResetTextureUnit
     };
 
-    explicit OpenGLTexture(GameWindow* gl, Target target );
-    explicit OpenGLTexture(GameWindow* gl, const std::string& filename );
+    explicit OpenGLTexture(Target target );
+    explicit OpenGLTexture(const std::string& filename );
     ~OpenGLTexture();
 
     Target target() const;
@@ -299,7 +299,6 @@ public:
 
 
 private:
-    GameWindow*     m_gl;
     unsigned int    m_bufferId;
     Target          m_target;
     TextureFormat   m_format;

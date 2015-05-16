@@ -18,8 +18,8 @@ PostProcess::~PostProcess() {
 
 }
 
-void PostProcess::init(GameWindow* gl) {
-    m_program = std::make_unique<OpenglProgramShader>(gl);
+void PostProcess::init(GameWindow* /*gl*/) {
+    m_program = std::make_unique<OpenglProgramShader>();
 
     m_program->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/postProcess.vs");
     m_program->addShaderFromSourceFile(OpenGLShaderType::Fragment, m_fragmentShader);
@@ -29,7 +29,7 @@ void PostProcess::init(GameWindow* gl) {
     m_program->setUniformValue("texture", 0);
     m_program->release();
 
-    m_vao = std::make_unique<OpenGLVertexArrayObject>(gl);
+    m_vao = std::make_unique<OpenGLVertexArrayObject>();
     m_vao->create();
 
     m_time.start();
@@ -44,8 +44,8 @@ void PostProcess::render(GameWindow* gl) {
     FrameBuffer& fb = gl->getFrameBuffer();
 
     fb.switchColorTexture(gl);
-    gl->glActiveTexture(GL_TEXTURE0);
-    gl->glBindTexture(GL_TEXTURE_2D, fb.getColorTexture());
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fb.getColorTexture());
 
     m_program->bind();
     m_vao->bind();
@@ -54,7 +54,7 @@ void PostProcess::render(GameWindow* gl) {
         m_program->setUniformValue(m_timeUniformLocation, (float)m_time.elapsed() / 1000.0f);
     }
 
-    gl->glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     m_vao->release();
     m_program->release();

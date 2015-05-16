@@ -92,12 +92,13 @@ ChunkManager::~ChunkManager() {
     delete[]m_chunksMapping[1];
 }
 
-void ChunkManager::initialize(GameWindow* gl) {
-    m_program = std::make_unique<OpenglProgramShader>(gl);
+void ChunkManager::initialize(GameWindow* /*gl*/) {
+    m_program = std::make_unique<OpenglProgramShader>();
     m_program->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/render.vs");
     m_program->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/render.ps");
 	if (!m_program->link()) {
 		// TODO(antoine): Remove Force crash
+		MI_ASSERT( false );
 		abort();
 	}
 	m_posAttr = m_program->attributeLocation("position");
@@ -112,15 +113,16 @@ void ChunkManager::initialize(GameWindow* gl) {
 	m_program->setUniformValue("tileSize", 16);
 	m_program->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE)*3.0f);
 
-    gl->glUniform3fv(m_program->uniformLocation("fogColor"), 1, glm::value_ptr(skyColor));
+    glUniform3fv(m_program->uniformLocation("fogColor"), 1, glm::value_ptr(skyColor));
     //m_program->setUniformValue("fogColor", skyColor);
 	m_program->release();
 
-    m_waterProgram = std::make_unique<OpenglProgramShader>(gl);
+    m_waterProgram = std::make_unique<OpenglProgramShader>();
     m_waterProgram->addShaderFromSourceFile(OpenGLShaderType::Vertex, "shaders/water.vs");
     m_waterProgram->addShaderFromSourceFile(OpenGLShaderType::Fragment, "shaders/water.ps");
 	if (!m_waterProgram->link()) {
 		// TODO(antoine): Remove Force crash
+		MI_ASSERT(false);
 		abort();
 	}
 	m_waterMatrixUniform = m_waterProgram->uniformLocation("viewProj");
@@ -131,15 +133,15 @@ void ChunkManager::initialize(GameWindow* gl) {
 	m_waterProgram->setUniformValue("tileCount", 16);
 	m_waterProgram->setUniformValue("tileSize", 16);
 	m_waterProgram->setUniformValue("fogDistance", (float)(VIEW_SIZE*CHUNK_SIZE*CHUNK_SCALE)*3.0f);
-    gl->glUniform3fv(m_waterProgram->uniformLocation("fogColor"), 1, glm::value_ptr(skyColor));
+    glUniform3fv(m_waterProgram->uniformLocation("fogColor"), 1, glm::value_ptr(skyColor));
     //m_waterProgram->setUniformValue("fogColor", skyColor);
 	m_waterProgram->release();
 
-    m_atlas = std::make_unique<OpenGLTexture>(gl, "textures/atlas.png");
+    m_atlas = std::make_unique<OpenGLTexture>("textures/atlas.png");
 	m_atlas->setMagnificationFilter(OpenGLTexture::Nearest);
 
 	GLuint vbos[VBO_NUMBER];
-	gl->glGenBuffers(VBO_NUMBER, vbos);
+	glGenBuffers(VBO_NUMBER, vbos);
 
 
 	m_oglBuffers = new Buffer[VBO_NUMBER];
@@ -150,13 +152,13 @@ void ChunkManager::initialize(GameWindow* gl) {
 		buffer->draw = false;
 
 		buffer->vbo = vbos[i];
-		buffer->vao = new OpenGLVertexArrayObject(gl);
+		buffer->vao = new OpenGLVertexArrayObject();
 		buffer->vao->create();
 		buffer->vao->bind();
 
-		gl->glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-		gl->glEnableVertexAttribArray(m_posAttr);
-		gl->glVertexAttribIPointer(m_posAttr, 1, GL_UNSIGNED_INT, 0, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+		glEnableVertexAttribArray(m_posAttr);
+		glVertexAttribIPointer(m_posAttr, 1, GL_UNSIGNED_INT, 0, 0);
 		buffer->vao->release();
 
 		buffer->toUpData = nullptr; 
@@ -168,7 +170,7 @@ void ChunkManager::initialize(GameWindow* gl) {
 	m_thread = std::thread( &ChunkManager::run, this );
 }
 
-void ChunkManager::destroy(GameWindow* gl) {
+void ChunkManager::destroy(GameWindow* /*gl*/) {
 	
 	m_needRegen = false;
 	m_thread.join();
@@ -181,7 +183,7 @@ void ChunkManager::destroy(GameWindow* gl) {
 
 		buffer->vao->destroy();
 		delete buffer->vao;
-		gl->glDeleteBuffers(1, &buffer->vbo);
+		glDeleteBuffers(1, &buffer->vbo);
 
 
 		if (buffer->toUpData)
@@ -279,12 +281,12 @@ void ChunkManager::update(GameWindow* gl) {
                     totalCount = m_meshGenerator->generate(data, Coords{ chunk->i, chunk->j, chunk->k }, buffer, m_tempVertexData);
                 }
                 if (totalCount > 0) {
-                    gl->glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+                    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
                     // On alloue un buffer plus grand si besoin
                     if (totalCount > (buffer->opaqueCount + buffer->waterCount))
-                        gl->glBufferData(GL_ARRAY_BUFFER, totalCount * sizeof(GLuint), 0, GL_DYNAMIC_DRAW);
+                        glBufferData(GL_ARRAY_BUFFER, totalCount * sizeof(GLuint), 0, GL_DYNAMIC_DRAW);
 
-                    void *dataMap = gl->glMapBufferRange(GL_ARRAY_BUFFER, 0, totalCount*sizeof(GLuint), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+                    void *dataMap = glMapBufferRange(GL_ARRAY_BUFFER, 0, totalCount*sizeof(GLuint), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
                     if (dataMap != nullptr){
                         memcpy(dataMap, m_tempVertexData, totalCount*sizeof(GLuint));
                         chunk->ready = false;
@@ -297,8 +299,8 @@ void ChunkManager::update(GameWindow* gl) {
 
                         remesh = false;
                     }
-                    gl->glUnmapBuffer(GL_ARRAY_BUFFER);
-                    gl->glBindBuffer(GL_ARRAY_BUFFER, 0);
+                    glUnmapBuffer(GL_ARRAY_BUFFER);
+                    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                     m_vboToUpload = -1;
                 } else {
@@ -355,7 +357,7 @@ void ChunkManager::draw(GameWindow* gl) {
 
 		glm::mat4x4 mat = gl->getCamera().getViewProjMatrix();
         glm::mat4x4 scale = glm::scale( glm::mat4x4(), glm::vec3((float)CHUNK_SCALE, (float)CHUNK_SCALE, (float)CHUNK_SCALE) );
-        gl->glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(mat * scale));
+        glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(mat * scale));
         //m_program->setUniformValue(m_matrixUniform, mat * scale);
 		m_atlas->bind(0);
 
@@ -365,18 +367,18 @@ void ChunkManager::draw(GameWindow* gl) {
 
             if (chunk->generated && buffer->draw && buffer->opaqueCount > 0) {
 				buffer->vao->bind();
-                gl->glUniform3fv(m_chunkPosUniform, 1, glm::value_ptr(glm::vec3((float)(chunk->i * CHUNK_SIZE),
+                glUniform3fv(m_chunkPosUniform, 1, glm::value_ptr(glm::vec3((float)(chunk->i * CHUNK_SIZE),
                                                                                 (float)(chunk->j * CHUNK_SIZE),
                                                                                 (float)(chunk->k * CHUNK_SIZE))));
                 //m_program->setUniformValue(m_chunkPosUniform, glm::vec3(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
 				//m_program->setUniformValue(m_lightMapUniform, 1);
-				gl->glDrawArrays(GL_TRIANGLES, 0, buffer->opaqueCount);
+				glDrawArrays(GL_TRIANGLES, 0, buffer->opaqueCount);
 				buffer->vao->release();
 			}
 		}
 		glDisable(GL_CULL_FACE);
 		m_waterProgram->bind();
-        gl->glUniformMatrix4fv(m_waterMatrixUniform, 1, GL_FALSE, glm::value_ptr(mat * scale));
+        glUniformMatrix4fv(m_waterMatrixUniform, 1, GL_FALSE, glm::value_ptr(mat * scale));
         //m_waterProgram->setUniformValue(m_waterMatrixUniform, mat * scale);
         m_waterProgram->setUniformValue(m_waterTimerUniform, (float)m_animationTime.elapsed());
 		for (int i = m_chunkToDrawCount - 1; i >= 0; --i) {
@@ -385,11 +387,11 @@ void ChunkManager::draw(GameWindow* gl) {
             if (chunk->generated && buffer->draw && buffer->waterCount > 0) {
 				buffer->vao->bind();
 
-                gl->glUniform3fv(m_waterChunkPosUniform, 1, glm::value_ptr(glm::vec3((float)(chunk->i * CHUNK_SIZE),
+                glUniform3fv(m_waterChunkPosUniform, 1, glm::value_ptr(glm::vec3((float)(chunk->i * CHUNK_SIZE),
                                                                                     (float)(chunk->j * CHUNK_SIZE),
                                                                                     (float)(chunk->k * CHUNK_SIZE))));
                 //m_waterProgram->setUniformValue(m_waterChunkPosUniform, glm::vec3(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
-				gl->glDrawArrays(GL_TRIANGLES, buffer->opaqueCount, buffer->waterCount);
+				glDrawArrays(GL_TRIANGLES, buffer->opaqueCount, buffer->waterCount);
 				buffer->vao->release();
 			}
 		}

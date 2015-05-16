@@ -1,12 +1,9 @@
 #include "opengltexture.h"
 
-#include "../gamewindow.h"
-
 #include <FreeImage/FreeImagePlus.h>
+#include "../utility.h"
 
-OpenGLTexture::OpenGLTexture(GameWindow* gl, OpenGLTexture::Target target ) {
-    MI_ASSERT( gl != nullptr );
-    m_gl = gl;
+OpenGLTexture::OpenGLTexture(OpenGLTexture::Target target ) {
     m_target = target;
 
     m_bufferId = 0;
@@ -20,10 +17,7 @@ OpenGLTexture::OpenGLTexture(GameWindow* gl, OpenGLTexture::Target target ) {
     setWrapMode( Repeat );
 }
 
-OpenGLTexture::OpenGLTexture(GameWindow* gl, const std::string& filename ) {
-    MI_ASSERT( gl != nullptr );
-
-    m_gl = gl;
+OpenGLTexture::OpenGLTexture(const std::string& filename ) {
     m_target = OpenGLTexture::Target2D;
 
     m_bufferId = 0;
@@ -42,8 +36,7 @@ OpenGLTexture::OpenGLTexture(GameWindow* gl, const std::string& filename ) {
 
     FIBITMAP* image = FreeImage_Load(imageFormat, filename.c_str());
     //image = FreeImage_ConvertTo32Bits( image );
-    bool flipRes = FreeImage_FlipVertical( image );
-    flipRes = flipRes || FreeImage_FlipHorizontal( image );
+    BOOL flipRes = FreeImage_FlipVertical( image );
     MI_ASSERT( flipRes );
     FREE_IMAGE_TYPE type = FreeImage_GetImageType(image);
 
@@ -99,7 +92,7 @@ OpenGLTexture::OpenGLTexture(GameWindow* gl, const std::string& filename ) {
     setFormat( oglFormat );
     allocateStorage();
 
-    byte* data = FreeImage_GetBits( image );
+    BYTE* data = FreeImage_GetBits( image );
     MI_ASSERT( data != nullptr );
     setData(OpenGLTexture::BGRA, OpenGLTexture::UInt8, 0, data);
 }
@@ -115,15 +108,13 @@ OpenGLTexture::Target OpenGLTexture::target() const {
 
 // Creation and destruction
 bool OpenGLTexture::create() {
-    MI_ASSERT( m_gl != nullptr );
-
-    m_gl->glGenTextures(1, &m_bufferId);
+    glGenTextures(1, &m_bufferId);
     return m_bufferId != 0;
 }
 
 void OpenGLTexture::destroy() {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
-    m_gl->glDeleteTextures(1, &m_bufferId);
+    MI_ASSERT( (m_bufferId != 0) );
+    glDeleteTextures(1, &m_bufferId);
 }
 
 bool OpenGLTexture::isCreated() const {
@@ -136,29 +127,29 @@ GLuint OpenGLTexture::textureId() const {
 
 // Binding and releasing
 void OpenGLTexture::bind() {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
+    MI_ASSERT( (m_bufferId != 0) );
 
-    m_gl->glBindTexture(m_target, m_bufferId);
+    glBindTexture(m_target, m_bufferId);
 }
 
 void OpenGLTexture::bind(unsigned int unit, TextureUnitReset /*reset*/) {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
+    MI_ASSERT( (m_bufferId != 0) );
 
-    m_gl->glActiveTexture( GL_TEXTURE0 + unit );
-    m_gl->glBindTexture(m_target, m_bufferId);
+    glActiveTexture( GL_TEXTURE0 + unit );
+    glBindTexture(m_target, m_bufferId);
 }
 
 void OpenGLTexture::release() {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
+    MI_ASSERT( (m_bufferId != 0) );
 
-    m_gl->glBindTexture(m_target, 0);
+    glBindTexture(m_target, 0);
 }
 
 void OpenGLTexture::release(unsigned int unit, TextureUnitReset /*reset*/) {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
+    MI_ASSERT( (m_bufferId != 0) );
 
-    m_gl->glActiveTexture( GL_TEXTURE0 + unit );
-    m_gl->glBindTexture(m_target, 0);
+    glActiveTexture( GL_TEXTURE0 + unit );
+    glBindTexture(m_target, 0);
 }
 
 bool OpenGLTexture::isBound() const {
@@ -304,7 +295,6 @@ static OpenGLTexture::PixelFormat pixelFormatCompatibleWithInternalFormat(OpenGL
         return OpenGLTexture::LuminanceAlpha;
     }
 
-    Q_UNREACHABLE();
     return OpenGLTexture::NoSourceFormat;
 }
 
@@ -415,13 +405,12 @@ static OpenGLTexture::PixelType pixelTypeCompatibleWithInternalFormat(OpenGLText
         return OpenGLTexture::UInt8;
     }
 
-    Q_UNREACHABLE();
     return OpenGLTexture::NoPixelType;
 }
 
 void OpenGLTexture::allocateStorage()
 {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
+    MI_ASSERT( (m_bufferId != 0) );
 
     const OpenGLTexture::PixelFormat pixelFormat = pixelFormatCompatibleWithInternalFormat(m_format);
     const OpenGLTexture::PixelType pixelType = pixelTypeCompatibleWithInternalFormat(m_format);
@@ -430,14 +419,14 @@ void OpenGLTexture::allocateStorage()
     case OpenGLTexture::TargetBuffer:
         return;
     case OpenGLTexture::Target1D:
-        m_gl->glTexImage1D(m_target, 0, m_format, m_width, 0, pixelFormat, pixelType, 0);
+        glTexImage1D(m_target, 0, m_format, m_width, 0, pixelFormat, pixelType, 0);
         break;
     case OpenGLTexture::Target2D:
     case OpenGLTexture::TargetRectangle:
-        m_gl->glTexImage2D(m_target, 0, m_format, m_width, m_height, 0, pixelFormat, pixelType, 0);
+        glTexImage2D(m_target, 0, m_format, m_width, m_height, 0, pixelFormat, pixelType, 0);
         break;
     case OpenGLTexture::Target3D:
-        m_gl->glTexImage3D(m_target, 0, m_format, m_width, m_height, m_depth, 0, pixelFormat, pixelType, 0);
+        glTexImage3D(m_target, 0, m_format, m_width, m_height, m_depth, 0, pixelFormat, pixelType, 0);
         break;
     }
 
@@ -451,51 +440,51 @@ bool OpenGLTexture::isStorageAllocated() const {
 
 void OpenGLTexture::setData(OpenGLTexture::PixelFormat sourceFormat, OpenGLTexture::PixelType sourceType, int layer, const void *data)
 {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) && m_storageAllocated );
+    MI_ASSERT( (m_bufferId != 0) && m_storageAllocated );
 
     switch (m_target) {
     case OpenGLTexture::Target1D:
-        m_gl->glTexSubImage1D(m_target, 0, 0, m_width, sourceFormat, sourceType, data);
+        glTexSubImage1D(m_target, 0, 0, m_width, sourceFormat, sourceType, data);
         break;
     case OpenGLTexture::Target2D:
-        m_gl->glTexSubImage2D(m_target, 0, 0, 0, m_width, m_height, sourceFormat, sourceType, data);
+        glTexSubImage2D(m_target, 0, 0, 0, m_width, m_height, sourceFormat, sourceType, data);
         break;
     case OpenGLTexture::Target3D:
-        m_gl->glTexSubImage3D(m_target, 0, 0, 0, layer, m_width, m_height, m_depth, sourceFormat, sourceType, data);
+        glTexSubImage3D(m_target, 0, 0, 0, layer, m_width, m_height, m_depth, sourceFormat, sourceType, data);
         break;
     }
 }
 
 void OpenGLTexture::setMinificationFilter(OpenGLTexture::Filter filter) {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
+    MI_ASSERT( (m_bufferId != 0) );
 
-    m_gl->glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, filter);
+    glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, filter);
 }
 
 void OpenGLTexture::setMagnificationFilter(OpenGLTexture::Filter filter) {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
+    MI_ASSERT( (m_bufferId != 0) );
 
-    m_gl->glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, filter);
+    glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, filter);
 }
 
 void OpenGLTexture::setMinMagFilters(OpenGLTexture::Filter minificationFilter,
                                     OpenGLTexture::Filter magnificationFilter) {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
+    MI_ASSERT( (m_bufferId != 0) );
 
-    m_gl->glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, minificationFilter);
-    m_gl->glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, magnificationFilter);
+    glTexParameteri(m_target, GL_TEXTURE_MIN_FILTER, minificationFilter);
+    glTexParameteri(m_target, GL_TEXTURE_MAG_FILTER, magnificationFilter);
 }
 
 void OpenGLTexture::setWrapMode(OpenGLTexture::WrapMode mode) {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
+    MI_ASSERT( (m_bufferId != 0) );
 
-    m_gl->glTexParameteri( m_target, OpenGLTexture::DirectionS, mode );
-    m_gl->glTexParameteri( m_target, OpenGLTexture::DirectionT, mode );
-    m_gl->glTexParameteri( m_target, OpenGLTexture::DirectionR, mode );
+    glTexParameteri( m_target, OpenGLTexture::DirectionS, mode );
+    glTexParameteri( m_target, OpenGLTexture::DirectionT, mode );
+    glTexParameteri( m_target, OpenGLTexture::DirectionR, mode );
 }
 
 void OpenGLTexture::setWrapMode(CoordinateDirection direction, WrapMode mode) {
-    MI_ASSERT( (m_gl != nullptr) && (m_bufferId != 0) );
+    MI_ASSERT( (m_bufferId != 0) );
 
-    m_gl->glTexParameteri( m_target, direction, mode );
+    glTexParameteri( m_target, direction, mode );
 }

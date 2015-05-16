@@ -8,7 +8,7 @@
 #include <QtCore/QCoreApplication>
 #include <QtGui/QOpenGLDebugLogger>
 
-
+#include <glad/glad.h>
 
 GameWindow::GameWindow(int worldSeed) : QOpenGLWindow(), m_player{ *this, m_camera }, m_lastDelta{ 0 },
 m_currentDeltaIndex{ 0 }, m_isInitialized{ false }, m_waterPostProcess{ "shaders/waterPostProcess.ps" }, m_chunkManager(worldSeed)
@@ -35,7 +35,10 @@ void GameWindow::handleLoggedMessage(const QOpenGLDebugMessage& message) {
 }
 
 void GameWindow::initializeGL() {
-    initializeOpenGLFunctions();
+
+	if (!gladLoadGL()) {
+		MI_ASSERT( false );
+	}
     
 #ifdef QT_DEBUG
     m_logger = new QOpenGLDebugLogger(this);
