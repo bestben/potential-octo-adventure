@@ -1,4 +1,9 @@
 
+unix|win32: LIBS += -L$$PWD/../lib/ -lFreeImagePlus -lFreeImage
+
+INCLUDEPATH += $$PWD/../include
+DEPENDPATH += $$PWD/../include
+
 SOURCES += \
     main.cpp \
     camera.cpp \

@@ -2,7 +2,7 @@
 
 #include "../gamewindow.h"
 
-#include <QImage>
+#include <FreeImage/FreeImagePlus.h>
 
 OpenGLTexture::OpenGLTexture(GameWindow* gl, OpenGLTexture::Target target ) {
     MI_ASSERT( gl != nullptr );
@@ -33,24 +33,75 @@ OpenGLTexture::OpenGLTexture(GameWindow* gl, const std::string& filename ) {
     m_depth = 1;
     m_storageAllocated = false;
 
-    QImage image( filename.c_str() );
+    FREE_IMAGE_FORMAT imageFormat = FreeImage_GetFileType( filename.c_str() );
+    if( imageFormat == FIF_UNKNOWN ) {
+        imageFormat = FreeImage_GetFIFFromFilename( filename.c_str() );
+        MI_ASSERT( imageFormat != FIF_UNKNOWN );
+    }
+    MI_ASSERT( (imageFormat != FIF_UNKNOWN) && FreeImage_FIFSupportsReading(imageFormat) );
 
-    MI_ASSERT( !image.isNull() );
+    FIBITMAP* image = FreeImage_Load(imageFormat, filename.c_str());
+    //image = FreeImage_ConvertTo32Bits( image );
+    bool flipRes = FreeImage_FlipVertical( image );
+    flipRes = flipRes || FreeImage_FlipHorizontal( image );
+    MI_ASSERT( flipRes );
+    FREE_IMAGE_TYPE type = FreeImage_GetImageType(image);
+
+    int bpp = FreeImage_GetBPP( image );
+    MI_ASSERT( bpp >= 24 );
+
+    TextureFormat oglFormat;
+    switch( type ) {
+    case FIT_UNKNOWN:
+        MI_ASSERT( false );
+        break;
+    case FIT_BITMAP:
+        switch( bpp ) {
+        case 8:
+            MI_ASSERT( false );
+            oglFormat = OpenGLTexture::R8_UNorm;
+            break;
+        case 16:
+            MI_ASSERT( false );
+            oglFormat = OpenGLTexture::RG8_UNorm;
+            break;
+        case 24:
+            oglFormat = OpenGLTexture::RGB8_UNorm;
+            break;
+        case 32:
+            oglFormat = OpenGLTexture::RGBA8_UNorm;
+            break;
+        default:
+            MI_ASSERT( false );
+            break;
+        }
+        break;
+    case FIT_UINT16:
+    case FIT_INT16:
+    case FIT_UINT32:
+    case FIT_INT32:
+    case FIT_FLOAT:
+    case FIT_DOUBLE:
+    case FIT_COMPLEX:
+    case FIT_RGB16:
+    case FIT_RGBA16:
+    case FIT_RGBF:
+    case FIT_RGBAF:
+        MI_ASSERT( false );
+        break;
+    }
 
     create();
     bind(0);
     setMinMagFilters(Nearest, Nearest);
     setWrapMode( Repeat );
-    setSize( image.width(), image.height() );
-    setFormat(OpenGLTexture::RGBA8_UNorm);
+    setSize( FreeImage_GetWidth(image), FreeImage_GetHeight(image) );
+    setFormat( oglFormat );
     allocateStorage();
-    QImage glImage = image.convertToFormat(QImage::Format_RGBA8888);
 
-    unsigned char* data = new unsigned char[image.width() * image.height() * 4];
-    memset(data, 127, image.width() * image.height() * 4);
-    //setData(OpenGLTexture::RGBA, OpenGLTexture::UInt8, 0, data);
-    setData(OpenGLTexture::RGBA, OpenGLTexture::UInt8, 0, glImage.constBits());
-    delete[] data;
+    byte* data = FreeImage_GetBits( image );
+    MI_ASSERT( data != nullptr );
+    setData(OpenGLTexture::BGRA, OpenGLTexture::UInt8, 0, data);
 }
 
 OpenGLTexture::~OpenGLTexture() {

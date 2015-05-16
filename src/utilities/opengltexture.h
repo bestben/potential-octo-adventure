@@ -68,8 +68,8 @@ public:
 
     bool isBound() const;
     bool isBound(unsigned int unit);
-    static GLuint boundTextureId(BindingTarget target) { return 0; }
-    static GLuint boundTextureId(unsigned int unit, BindingTarget target) { return 0; }
+    static GLuint boundTextureId(BindingTarget /*target*/) { return 0; }
+    static GLuint boundTextureId(unsigned int /*unit*/, BindingTarget /*target*/) { return 0; }
 
     enum TextureFormat {
         NoFormat               = 0,         // GL_NONE
