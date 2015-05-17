@@ -5,7 +5,6 @@
 #define GROUND_LEVEL 128
 
 typedef unsigned int uint;
-typedef unsigned char Voxel;
 
 struct MapIndex
 {

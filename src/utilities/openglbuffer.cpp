@@ -103,5 +103,5 @@ void* OpenGLBuffer::map(OpenGLBuffer::Access access) {
 
 bool OpenGLBuffer::unmap() {
      MI_ASSERT( (m_bufferId != 0) );
-     return (bool)glUnmapBuffer( m_type );
+     return glUnmapBuffer( m_type ) == GL_TRUE;
 }

@@ -8,7 +8,7 @@ public:
     ~Time();
 
     int 	elapsed() const;
-    int 	restart();
+    void 	restart();
     void 	start();
 
     static Time currentTime();

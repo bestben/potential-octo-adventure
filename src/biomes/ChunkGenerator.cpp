@@ -77,8 +77,8 @@ bool ChunkGenerator::placeTrees(Voxel* /*data*/, Coords chunkId, BiomeMap &map, 
         unsigned int count = 3;
 
 	
-	Voxel trunk(VoxelType::TRUNK);
-	Voxel leaves(VoxelType::LEAVES);
+	Voxel trunk = getVoxelFromType(VoxelType::TRUNK);
+	Voxel leaves = getVoxelFromType(VoxelType::LEAVES);
 
 	bool onlyAir = true;
 

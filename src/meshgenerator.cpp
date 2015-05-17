@@ -28,7 +28,7 @@ int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint
     if (!waterPass) {
         memset(m_waterPassGrid, 0, CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
     }
-	Voxel emptyVoxel = {};
+	Voxel emptyVoxel = getEmptyVoxel();
 	emptyVoxel._light = 2;
 
 

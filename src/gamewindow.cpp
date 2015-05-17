@@ -158,7 +158,7 @@ void GameWindow::run() {
 		/* Poll for and process events */
 		glfwPollEvents();
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(std::max(16 - m_lastDelta, 0)));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(std::max(16 - m_lastDelta, 0)));
 	}
 }
 

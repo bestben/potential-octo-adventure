@@ -2,6 +2,7 @@
 
 #include "glm/vec3.hpp"
 #include <cstdint>
+#include "utility.h"
 
 typedef int8_t int8;
 typedef uint8_t uint8;
@@ -63,8 +64,6 @@ inline uint8 lightSource(VoxelType type) {
 
 struct Voxel
 {
-	Voxel(){ type = VoxelType::AIR; _light = 0; }
-	Voxel(VoxelType t){ type = t; _light = 0; }
 	VoxelType type : 8;
     uint8 _light : 8;
 
@@ -74,14 +73,22 @@ struct Voxel
 	}
 };
 
+MI_FORCE_INLINE Voxel getEmptyVoxel() {
+	Voxel vox;
+	vox.type = VoxelType::AIR;
+	vox._light = 0;
+	return vox;
+}
 
-
-
-
+MI_FORCE_INLINE Voxel getVoxelFromType(VoxelType t) {
+	Voxel vox;
+	vox.type = t;
+	return vox;
+}
 
 #define NO_CHANGE -1
 
-#define IGNORE_VOXEL Voxel(VoxelType::IGNORE_TYPE)
+#define IGNORE_VOXEL getVoxelFromType(VoxelType::IGNORE_TYPE)
 
 struct Chunk {
 

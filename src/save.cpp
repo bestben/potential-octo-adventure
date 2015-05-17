@@ -57,7 +57,7 @@ bool LoadChunkFromDisk(Voxel *data, const Coords &chunkId, bool *onlyAir, int wo
 		if(*onlyAir){
 			file.close();
 			for (uint32 i = 0; i < size; ++i){
-				data[i] = Voxel(VoxelType::AIR);
+				data[i] = getVoxelFromType(VoxelType::AIR);
 				data[i]._light = 0;
 			}
 			return true;
@@ -69,7 +69,7 @@ bool LoadChunkFromDisk(Voxel *data, const Coords &chunkId, bool *onlyAir, int wo
 	file.read((char *)tmp_data, size*sizeof(uint8));
 
 	for(uint32 i=0; i<size;++i){
-		data[i] = Voxel( (VoxelType)tmp_data[i] );
+		data[i] = getVoxelFromType((VoxelType)tmp_data[i]);
 		data[i]._light = 0;
 	}
 

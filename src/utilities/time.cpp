@@ -15,10 +15,9 @@ int Time::elapsed() const
 	return (int)((glfwGetTime() - m_startTime) * 1000.0);
 }
 
-int Time::restart()
+void Time::restart()
 {
 	m_startTime = glfwGetTime();
-	return m_startTime;
 }
 
 void Time::start()

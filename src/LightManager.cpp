@@ -24,7 +24,7 @@ LightManager::~LightManager()
 
 void LightManager::placeVoxel(Coords pos, VoxelType type, std::set<Coords> &modifiedChunks) {
 
-	Voxel n = {};
+	Voxel n = getEmptyVoxel();
 	n.type = type;
 	
     std::set<Coords> lightSources;
@@ -89,8 +89,7 @@ void LightManager::placeVoxel(Coords pos, VoxelType type, std::set<Coords> &modi
 
 void LightManager::removeVoxel(Coords pos, std::set<Coords>& modifiedChunks) {
 	
-	Voxel n = {};
-	n.type = VoxelType::AIR;
+	Voxel n = getVoxelFromType(VoxelType::AIR);
 
     std::set<Coords> lightSources;
 
