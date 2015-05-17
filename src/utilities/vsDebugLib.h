@@ -30,7 +30,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#include <DbgHelp.h>
+#include <dbghelp.h>
 #pragma comment(lib,"Dbghelp")
 
 #define STDCALL __stdcall

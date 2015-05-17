@@ -2,7 +2,7 @@
 #include "chunk.h"
 #include <cmath>
 #include <algorithm>
-#include <GLFW/glfw3.h>
+#include <glfw/glfw3.h>
 
 #include "physic/body.h"
 #include "gamewindow.h"
@@ -11,7 +11,7 @@
 #include "glm/geometric.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
-static const float pi = 4 * std::atan(1);
+static const float pi = 4.0f * (float)std::atan(1.0f);
 
 float degToRad(float x) {
     return x * pi / 180.0f;

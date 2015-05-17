@@ -2,7 +2,11 @@
 
 #include "glm/vec3.hpp"
 
+#ifdef WIN32
 #define MI_FORCE_INLINE __forceinline
+#else
+#define MI_FORCE_INLINE inline
+#endif
 
 inline float lengthSquare( const glm::vec3& vec ) {
     return (vec.x * vec.x) + (vec.y * vec.y) + (vec.z * vec.z);
@@ -10,7 +14,7 @@ inline float lengthSquare( const glm::vec3& vec ) {
 
 #ifdef WIN32
 #define CPU_BREAK __asm { int 3 }
-#elif
+#else
 #define CPU_BREAK *((char*)0) = 0;
 #endif
 

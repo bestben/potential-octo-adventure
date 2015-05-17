@@ -314,9 +314,9 @@ void ChunkManager::update(GameWindow* gl) {
 
             if (chunk->visible && !chunk->onlyAir) {
                 m_chunkToDraw[m_chunkToDrawCount++] = chunk;
-                int dx = camX - chunk->i*CHUNK_SIZE*CHUNK_SCALE;
-                int dy = camY - chunk->j*CHUNK_SIZE*CHUNK_SCALE;
-                int dz = camZ - chunk->k*CHUNK_SIZE*CHUNK_SCALE;
+                int dx = (int)camX - chunk->i*CHUNK_SIZE*CHUNK_SCALE;
+				int dy = (int)camY - chunk->j*CHUNK_SIZE*CHUNK_SCALE;
+				int dz = (int)camZ - chunk->k*CHUNK_SIZE*CHUNK_SCALE;
                 chunk->distanceFromCamera = dx * dx + dy * dy + dz * dz;
             }
         }

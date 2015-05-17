@@ -34,7 +34,7 @@ bool OpenglProgramShader::addShaderFromSourceFile(OpenGLShaderType type, const s
     std::streamoff fileSize = file.tellg();
     file.seekg( 0, std::ios::beg );
     std::string shaderContent;
-    shaderContent.resize(fileSize);
+    shaderContent.resize((int)fileSize);
 
     file.read( &shaderContent[0], fileSize );
     const char* source = shaderContent.c_str();

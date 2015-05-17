@@ -110,7 +110,7 @@ struct Chunk {
     int j;
     int k;
 
-    float distanceFromCamera;
+    int distanceFromCamera;
     Voxel* data;
     int vboIndex;
 

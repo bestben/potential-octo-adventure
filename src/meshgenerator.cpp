@@ -1,5 +1,6 @@
 #include "meshgenerator.h"
 #include <iostream>
+#include <cstring>
 
 #include "chunkmanager.h"
 

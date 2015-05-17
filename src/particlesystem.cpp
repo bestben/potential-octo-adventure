@@ -110,8 +110,8 @@ void ParticleSystem::spawn() {
     int count = m_count;
     glm::vec3 spawnPos = m_spawnPosition;
     for (int i = 0; i < count; ++i) {
-        float vx = ((float)rand() / (float)RAND_MAX) * 2.0 - 1.0;
-        float vz = ((float)rand() / (float)RAND_MAX) * 2.0 - 1.0;
+        float vx = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
+        float vz = ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
         m_velocities[i] = glm::vec3(vx, 1.0f, vz) * 10.0f;
         m_positions[i] = spawnPos;
     }

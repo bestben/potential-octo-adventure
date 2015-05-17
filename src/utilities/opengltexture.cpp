@@ -1,6 +1,6 @@
 #include "opengltexture.h"
 
-#include <FreeImage/FreeImagePlus.h>
+#include <freeimage/freeimageplus.h>
 #include "../utility.h"
 
 OpenGLTexture::OpenGLTexture(OpenGLTexture::Target target ) {

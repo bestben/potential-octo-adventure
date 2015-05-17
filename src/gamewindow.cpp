@@ -1,14 +1,17 @@
 #include "gamewindow.h"
 
+#include "utilities/vsDebugLib.h"
+
+#include <glad/glad.h>
+#include <glfw/glfw3.h>
+
 #include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <thread>
+#include <cstring>
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include "utilities/vsDebugLib.h"
+#undef max
 
 void window_size_callback(GLFWwindow* pWindow, int width, int height) {
 	GameWindow* pGameWindow = (GameWindow*)glfwGetWindowUserPointer( pWindow );
@@ -155,7 +158,7 @@ void GameWindow::run() {
 		/* Poll for and process events */
 		glfwPollEvents();
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(max(16 - m_lastDelta, 0)));
+		std::this_thread::sleep_for(std::chrono::milliseconds(std::max(16 - m_lastDelta, 0)));
 	}
 }
 
@@ -251,7 +254,7 @@ float GameWindow::getFPS() const {
     for (int i = 0; i < FPS_FRAME_NUMBER; ++i) {
         fps += m_lastDeltas[i];
     }
-    return 1000.0 / (fps / (float)FPS_FRAME_NUMBER);
+    return 1000.0f / (fps / (float)FPS_FRAME_NUMBER);
 }
 
 ChunkManager& GameWindow::getChunkManager() {

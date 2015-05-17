@@ -1,6 +1,7 @@
 #pragma once
 #include "glm/vec3.hpp"
 #include <cstdlib>
+#include <functional>
 
 // Operations de division avec correction de la troncature dans les nombres négatifs
 inline int div_floor(int x, int y) {

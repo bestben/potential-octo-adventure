@@ -15,7 +15,7 @@
 #include "npc/npc.h"
 
 class OpenGLTexture;
-class GLFWwindow;
+struct GLFWwindow;
 
 // Le nombre de frames à considérer pour le calcul des FPS
 #define FPS_FRAME_NUMBER 100

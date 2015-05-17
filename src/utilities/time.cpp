@@ -1,6 +1,6 @@
 #include "time.h"
 
-#include <GLFW/glfw3.h>
+#include <glfw/glfw3.h>
 
 Time::Time() {
 	m_startTime = 0.0;
