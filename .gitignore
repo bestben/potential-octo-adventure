@@ -35,3 +35,8 @@ Makefile*
 *.sublime-workspace
 *.chunk
 /data/log.txt
+/Win32/Release
+/Win32/Debug
+/Win32/*.sdf
+/Win32/*.user
+/Win32/*.filters
