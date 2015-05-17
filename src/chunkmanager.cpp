@@ -3,6 +3,7 @@
 #include "save.h"
 
 #include <iostream>
+#include <algorithm>
 
 #include "utilities/openglvertexarrayobject.h"
 #include "utilities/openglprogramshader.h"
@@ -544,11 +545,11 @@ Voxel ChunkManager::getVoxel(Coords c) {
 	return getVoxel(c.i, c.j, c.k);
 }
 
-VoxelType ChunkManager::setVoxel(Coords c, VoxelType newType, uint light) {
+VoxelType ChunkManager::setVoxel(Coords c, VoxelType newType, uint8 light) {
 	return setVoxel(c.i, c.j, c.k, newType, light);
 }
 
-VoxelType ChunkManager::setVoxel(int x, int y, int z, VoxelType newType, uint light) {
+VoxelType ChunkManager::setVoxel(int x, int y, int z, VoxelType newType, uint8 light) {
 	VoxelType res = VoxelType::IGNORE_TYPE;
 
     Chunk* chunk = getChunk(div_floor(x, CHUNK_SIZE), div_floor(y, CHUNK_SIZE), div_floor(z, CHUNK_SIZE));

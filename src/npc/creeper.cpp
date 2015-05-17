@@ -8,7 +8,7 @@
 #include <iostream>
 
 #define GLM_FORCE_PURE
-#include "glm/geometric.hpp"
+#include "../glm/geometric.hpp"
 
 Creeper::Creeper() : m_lengthOfSight{36}, m_pathRefreshRate{1000}, m_life{10}, m_canBeDestroyed{false} {
 

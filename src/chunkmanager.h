@@ -66,8 +66,8 @@ public:
      * @param z Coordonnée du voxel.
      * @return L'ancien type du voxel.
      */
-	VoxelType setVoxel(int x, int y, int z, VoxelType newType, uint light = NO_CHANGE);
-	VoxelType setVoxel(Coords c, VoxelType newType, uint light = NO_CHANGE);
+	VoxelType setVoxel(int x, int y, int z, VoxelType newType, uint8 light = NO_CHANGE);
+	VoxelType setVoxel(Coords c, VoxelType newType, uint8 light = NO_CHANGE);
 
 
 protected:

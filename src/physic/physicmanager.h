@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "glm/fwd.hpp"
+#include "../glm/fwd.hpp"
 
 #define BODY_COUNT 100
 

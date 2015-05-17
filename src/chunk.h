@@ -35,12 +35,6 @@ typedef uint64_t uint64;
 #define GROUND_LEVEL (WORLD_HEIGHT*CHUNK_SIZE)/3
 #define SEA_HEIGHT 10
 
-#ifdef QT_DEBUG
-#define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
-#else
-#define Assert(Expression)
-#endif
-
 #include "coords.h"
 
 enum class VoxelType : uint8

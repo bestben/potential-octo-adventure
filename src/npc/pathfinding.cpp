@@ -44,9 +44,6 @@ std::vector<Cell> Pathfinding::getPath(Cell start, Cell end) {
         getPathFromClosedMap();
     } else {
         m_path.clear();
-        #ifdef QT_DEBUG
-        std::cout << "Impossible de trouver un chemin dans la grille" << std::endl;
-        #endif
     }
 
 

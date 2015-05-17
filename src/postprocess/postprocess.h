@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
-#include "utilities/time.h"
+#include "../utilities/time.h"
 #include <string>
 #include <memory>
 

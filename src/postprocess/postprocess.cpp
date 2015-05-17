@@ -2,8 +2,8 @@
 
 #include "../gamewindow.h"
 
-#include "utilities/openglprogramshader.h"
-#include "utilities/openglvertexarrayobject.h"
+#include "../utilities/openglprogramshader.h"
+#include "../utilities/openglvertexarrayobject.h"
 
 PostProcess::PostProcess(const std::string& fragmentShader) :
     m_program{nullptr},

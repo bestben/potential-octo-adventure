@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "glm/fwd.hpp"
+#include "../glm/fwd.hpp"
 
 #include <glad/glad.h>
 

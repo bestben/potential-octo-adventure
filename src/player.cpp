@@ -4,7 +4,7 @@
 #include "camera.h"
 
 #include <glad/glad.h>
-#include <QtGui/QMouseEvent>
+#include <GLFW/glfw3.h>
 #include "utilities/openglprogramshader.h"
 #include "utilities/opengltexture.h"
 #include "utilities/openglvertexarrayobject.h"
@@ -121,21 +121,21 @@ void Player::postDraw() {
     m_crossVao->release();
 }
 
-void Player::keyPressEvent(QKeyEvent* event) {
-    m_camera.keyPressEvent(event);
+void Player::keyPressEvent(int key, int scancode, int action, int mods) {
+	m_camera.keyPressEvent(key, scancode, action, mods);
 }
 
-void Player::keyReleaseEvent(QKeyEvent* event) {
-    m_camera.keyReleaseEvent(event);
+void Player::keyReleaseEvent(int key, int scancode, int action, int mods) {
+	m_camera.keyReleaseEvent(key, scancode, action, mods);
 }
 
-void Player::mousePressEvent(QMouseEvent* event) {
-    m_camera.mousePressEvent(event);
-    if (event->button() == Qt::LeftButton) {
+void Player::mousePressEvent(int button, int action, int mods, float xpos, float ypos) {
+	m_camera.mousePressEvent(button, action, mods, xpos, ypos);
+
+	if (button == GLFW_MOUSE_BUTTON_LEFT) {
         m_isHitting = true;
         m_startTimer.start();
-    }
-    if (event->button() & Qt::MiddleButton) {
+    } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
         glm::vec3 camPos = m_camera.getPosition();
         glm::vec3 dir = glm::normalize(m_camera.frontDir());
         float delta = 0.5f;
@@ -171,14 +171,14 @@ void Player::mousePressEvent(QMouseEvent* event) {
     }
 }
 
-void Player::mouseReleaseEvent(QMouseEvent* event) {
-    if (event->button() == Qt::LeftButton) {
+void Player::mouseReleaseEvent(int button, int action, int mods) {
+	if (button == GLFW_MOUSE_BUTTON_LEFT) {
         m_isHitting = false;
         m_voxel.setDamage(0.0f);
     }
-    m_camera.mouseReleaseEvent(event);
+    m_camera.mouseReleaseEvent(button, action, mods);
 }
 
-void Player::mouseMoveEvent(QMouseEvent * event) {
-    m_camera.mouseMoveEvent(event);
+void Player::mouseMoveEvent(float xpos, float ypos) {
+    m_camera.mouseMoveEvent(xpos, ypos);
 }

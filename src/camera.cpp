@@ -1,7 +1,8 @@
 #include "camera.h"
 #include "chunk.h"
 #include <cmath>
-#include <QKeyEvent>
+#include <algorithm>
+#include <GLFW/glfw3.h>
 
 #include "physic/body.h"
 #include "gamewindow.h"
@@ -41,8 +42,8 @@ void Camera::init(GameWindow* gl) {
     setCamDef(m_body->position, m_body->position + frontDir(), glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
-void Camera::update(GameWindow* gl, int dt) {
-    if (m_isFPS) {
+void Camera::update(GameWindow* /*gl*/, int dt) {
+    /*if (m_isFPS) {
         QPoint cursorPos = gl->mapFromGlobal(QCursor::pos());
         int dx = cursorPos.x() - (m_width / 2);
         int dy = cursorPos.y() - (m_height / 2);
@@ -54,7 +55,7 @@ void Camera::update(GameWindow* gl, int dt) {
          * On évite à phi de devenir trop grand (ou trop petit)
          *   en enlevant (ou ajoutant) 1 tour à chaque tour
          */
-        if (m_phi > degToRad(360.0f)) {
+        /*if (m_phi > degToRad(360.0f)) {
             m_phi -= degToRad(360.0f);
         } else if (m_phi < 0.0f) {
             m_phi += degToRad(360.0f);
@@ -67,7 +68,7 @@ void Camera::update(GameWindow* gl, int dt) {
         }
 
         m_isViewMatrixDirty = true;
-    }
+    }*/
 
     // On translate la caméra
     glm::vec3 dir = getDirection();
@@ -107,7 +108,6 @@ glm::vec3 Camera::getPosition() const {
 glm::vec3 Camera::getFootPosition() const {
     return m_body->position;
 }
-
 
 glm::vec3 Camera::getDirection() {
     glm::vec3 frontdir = frontDir();
@@ -181,8 +181,8 @@ const glm::mat4x4& Camera::getViewProjMatrix() {
 }
 
 void Camera::changeViewportSize(int width, int height) {
-    m_width = width;
-    m_height = height;
+    m_width = std::max(width, 1);
+	m_height = std::max(height, 1);
 
     m_nh = m_near * m_tang;
     m_nw = m_nh * m_width / m_height;
@@ -282,71 +282,70 @@ bool Camera::boxInFrustum(int /*x*/, int /*y*/, int /*z*/, int /*size*/) {
     return true;
 }
 
-void Camera::keyPressEvent(QKeyEvent* event) {
-
-    if (event->key() == Qt::Key_Space) {
-        m_body->jump = true;
-    } else if (event->key() == Qt::Key_Control) {
+void Camera::keyPressEvent(int key, int /*scancode*/, int /*action*/, int mods) {
+	if ((mods & GLFW_MOD_CONTROL) == GLFW_MOD_CONTROL) {
         m_speed = CAMERA_RUN_SPEED;
         m_desiredFov = CAMERA_RUN_FOV;
         m_isProjMatrixDirty = true;
+	}
+    if (key == GLFW_KEY_SPACE) {
+        m_body->jump = true;
     }
 
     Direction mod = Direction::NONE;
-    if (event->key() == Qt::Key_Z) {
+	if (key == GLFW_KEY_W)
         mod = Direction::UP;
-    } else if (event->key() == Qt::Key_S) {
+    else if (key == GLFW_KEY_S)
         mod = Direction::DOWN;
-    } else if (event->key() == Qt::Key_Q) {
+	else if (key == GLFW_KEY_A)
         mod = Direction::LEFT;
-    } else if (event->key() == Qt::Key_D) {
+	else if (key == GLFW_KEY_D)
         mod = Direction::RIGHT;
-    } else {
+    else
         mod = Direction::NONE;
-    }
+
     m_direction = (Direction)((int)m_direction | (int)mod);
 }
 
-void Camera::keyReleaseEvent(QKeyEvent* event) {
-    if (event->key() == Qt::Key_Control) {
+void Camera::keyReleaseEvent(int key, int /*scancode*/, int /*action*/, int mods) {
+	if ((mods & GLFW_MOD_CONTROL) != GLFW_MOD_CONTROL) {
         m_speed = CAMERA_WALK_SPEED;
         m_desiredFov = CAMERA_WALK_FOV;
         m_isProjMatrixDirty = true;
     }
-    Direction mod = Direction::NONE;
-    if (event->key() == Qt::Key_Z) {
-        mod = Direction::UP;
-    } else if (event->key() == Qt::Key_S) {
-        mod = Direction::DOWN;
-    } else if (event->key() == Qt::Key_Q) {
-        mod = Direction::LEFT;
-    } else if (event->key() == Qt::Key_D) {
-        mod = Direction::RIGHT;
-    } else {
-        mod = Direction::NONE;
-    }
+	Direction mod = Direction::NONE;
+	if (key == GLFW_KEY_W)
+		mod = Direction::UP;
+	else if (key == GLFW_KEY_S)
+		mod = Direction::DOWN;
+	else if (key == GLFW_KEY_A)
+		mod = Direction::LEFT;
+	else if (key == GLFW_KEY_D) 
+		mod = Direction::RIGHT;
+	else
+		mod = Direction::NONE;
 
     m_direction = (Direction)((int)m_direction & (~(int)mod));
 }
 
-void Camera::mousePressEvent(QMouseEvent* event) {
-    if (event->button() == Qt::MouseButton::RightButton) {
-        m_mousePressed = true;
-        m_oldMousPos = event->pos();
+void Camera::mousePressEvent(int button, int action, int mods, float xpos, float ypos) {
+	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+		m_mousePressed = true;
+		m_oldMousPos = glm::vec2( xpos, ypos );
     }
 }
 
-void Camera::mouseReleaseEvent(QMouseEvent* event) {
-    if (event->button() == Qt::MouseButton::RightButton) {
+void Camera::mouseReleaseEvent(int button, int action, int mods) {
+	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         m_mousePressed = false;
     }
 }
 
-void Camera::mouseMoveEvent(QMouseEvent* event) {
-    if (m_mousePressed && !m_isFPS) {
-        float dx = event->x() - m_oldMousPos.x();
-        float dy = event->y() - m_oldMousPos.y();
-        m_oldMousPos = event->pos();
+void Camera::mouseMoveEvent(float xpos, float ypos) {
+    if (m_mousePressed || m_isFPS) {
+		float dx = xpos - m_oldMousPos.x;
+		float dy = ypos - m_oldMousPos.y;
+        m_oldMousPos = glm::vec2(xpos, ypos);
         m_phi -= degToRad(dx * m_sensi);
         m_theta -= degToRad(dy * m_sensi);
 

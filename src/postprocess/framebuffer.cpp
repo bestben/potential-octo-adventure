@@ -2,8 +2,8 @@
 
 #include "../gamewindow.h"
 
-#include "utilities/openglprogramshader.h"
-#include "utilities/openglvertexarrayobject.h"
+#include "../utilities/openglprogramshader.h"
+#include "../utilities/openglvertexarrayobject.h"
 
 static const char* vertexShaderSource =
     "#version 330\n"
@@ -59,7 +59,7 @@ void FrameBuffer::initialize(GameWindow* gl) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, gl->size().width(), gl->size().height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, gl->width(), gl->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     }
 
     // On crée la texture contenant la profondeur
@@ -70,7 +70,7 @@ void FrameBuffer::initialize(GameWindow* gl) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, gl->size().width(), gl->size().height(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, gl->width(), gl->height(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 
     m_initialized = true;
     m_vao = std::make_unique<OpenGLVertexArrayObject>();

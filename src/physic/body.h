@@ -1,6 +1,6 @@
 #pragma once
 
-#include "glm/vec3.hpp"
+#include "../glm/vec3.hpp"
 
 /**
  * @brief Structure décrivant un body.

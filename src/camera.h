@@ -1,7 +1,6 @@
 #pragma once
 
-#include <QtGui/QWindow>
-
+#include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 #include "glm/mat4x4.hpp"
 
@@ -92,11 +91,11 @@ public:
     /*
      * Fonctions gérant les événements.
      */
-    void keyPressEvent(QKeyEvent* event);
-    void keyReleaseEvent(QKeyEvent* event);
-    void mousePressEvent(QMouseEvent* event);
-    void mouseReleaseEvent(QMouseEvent* event);
-    void mouseMoveEvent(QMouseEvent * event);
+	void keyPressEvent(int key, int scancode, int action, int mods);
+	void keyReleaseEvent(int key, int scancode, int action, int mods);
+	void mousePressEvent(int button, int action, int mods, float xpos, float ypos);
+	void mouseReleaseEvent(int button, int action, int mods);
+	void mouseMoveEvent(float xpos, float ypos);
 
 private:
     void setCamDef(const glm::vec3& p, const glm::vec3& l, const glm::vec3& u);
@@ -125,7 +124,7 @@ private:
     Direction m_direction; // La direction de déplacement de la caméra
 
     bool m_mousePressed; // Le clique droit est-il appuyé ?
-    QPoint m_oldMousPos; // La dernière position de la souris
+    glm::vec2 m_oldMousPos; // La dernière position de la souris
 
     bool m_isViewMatrixDirty; // La matrice de vue doit elle être recalculée ?
     bool m_isProjMatrixDirty; // La matrice de projection doit elle être recalculée ?

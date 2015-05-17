@@ -1,48 +1,34 @@
 #include "time.h"
 
-Time::Time()
-{
+#include <GLFW/glfw3.h>
 
+Time::Time() {
+	m_startTime = 0.0;
 }
 
-Time::~Time()
-{
+Time::~Time() {
 
 }
 
 int Time::elapsed() const
 {
-    return m_time.elapsed();
-}
-
-int Time::msec() const
-{
-    return m_time.msec();
+	return (int)((glfwGetTime() - m_startTime) * 1000.0);
 }
 
 int Time::restart()
 {
-    return m_time.restart();
-}
-
-int Time::second() const
-{
-    return m_time.second();
+	m_startTime = glfwGetTime();
+	return m_startTime;
 }
 
 void Time::start()
 {
-    m_time.start();
-}
-
-void Time::setTime( QTime t )
-{
-    m_time = t;
+	m_startTime = glfwGetTime();
 }
 
 Time Time::currentTime()
 {
     Time res;
-    res.setTime(QTime::currentTime());
+	res.m_startTime = glfwGetTime();
     return res;
 }

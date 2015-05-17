@@ -6,8 +6,6 @@
 
 #include "utilities/time.h"
 
-#include <QtGui/QOpenGLWindow>
-
 #include "chunkmanager.h"
 #include "physic/physicmanager.h"
 #include "npc/npcmanager.h"
@@ -17,13 +15,12 @@
 #include "npc/npc.h"
 
 class OpenGLTexture;
-class QOpenGLDebugLogger;
-class QOpenGLDebugMessage;
+class GLFWwindow;
 
 // Le nombre de frames à considérer pour le calcul des FPS
 #define FPS_FRAME_NUMBER 100
 
-class GameWindow : public QOpenGLWindow {
+class GameWindow {
 public:
     /**
      * @brief Constructeur de la classe GameWindow.
@@ -33,26 +30,23 @@ public:
     /**
      * @brief Initialise la fenêtre.
      */
-    void initializeGL();
-    /**
-     * @brief Redessine la fenêtre.
-     */
-    void paintGL();
+    void init();
+	/**
+	* @brief Lance la boucle de rendu
+	*/
+	void run();
     /**
      * @brief Renvoie le delta de la frame.
      */
     int getDeltaTime();
 
-    void keyPressEvent(QKeyEvent* event);
-    void keyReleaseEvent(QKeyEvent* event);
-    void mousePressEvent(QMouseEvent* event);
-    void mouseReleaseEvent(QMouseEvent* event);
-    void mouseMoveEvent(QMouseEvent* event);
+	void keyPressEvent(int key, int scancode, int action, int mods);
+	void keyReleaseEvent(int key, int scancode, int action, int mods);
+	void mousePressEvent(int button, int action, int mods, float xpos, float ypos);
+	void mouseReleaseEvent(int button, int action, int mods);
+	void mouseMoveEvent(float xpos, float ypos);
     void resizeGL(int w, int h);
 
-    void handleLoggedMessage(const QOpenGLDebugMessage& message);
-
-    QOpenGLContext* getContext() const;
     /**
      * @brief Renvoie la camera actuelle de la fenêtre.
      */
@@ -66,11 +60,19 @@ public:
     PhysicManager& getPhysicManager();
     FrameBuffer& getFrameBuffer();
 
+	int width();
+	int height();
+
 private:
+	/**
+	* @brief Redessine la fenêtre.
+	*/
+	void render();
+
+	GLFWwindow* m_window;
+
     Camera m_camera;
     Player m_player;
-    // Le logger permettant d'afficher les ereurs d'opengl
-    QOpenGLDebugLogger* m_logger;
 
     int m_lastDelta;
     int m_currentDeltaIndex;

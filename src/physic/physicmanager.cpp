@@ -7,8 +7,8 @@
 #include "body.h"
 
 #define GLM_FORCE_PURE
-#include "glm/geometric.hpp"
-#include "glm/vec3.hpp"
+#include "../glm/geometric.hpp"
+#include "../glm/vec3.hpp"
 
 // La vitesse de saut par défaut
 #define JUMP_SPEED 150
