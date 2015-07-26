@@ -180,9 +180,6 @@
     <ClCompile Include="..\src\postprocess\postprocess.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\src\save.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\src\unityBuild.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -379,7 +376,6 @@
     <ClInclude Include="..\src\player.h" />
     <ClInclude Include="..\src\postprocess\framebuffer.h" />
     <ClInclude Include="..\src\postprocess\postprocess.h" />
-    <ClInclude Include="..\src\save.h" />
     <ClInclude Include="..\src\utilities\openglbuffer.h" />
     <ClInclude Include="..\src\utilities\openglprogramshader.h" />
     <ClInclude Include="..\src\utilities\opengltexture.h" />
@@ -582,7 +578,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>No</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>C:\Users\Benoit\Desktop\potential-octo-adventure\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
