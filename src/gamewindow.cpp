@@ -170,7 +170,7 @@ void GameWindow::run() {
 		m_player.update(m_lastDelta);
 		m_chunkManager.update(this);
 
-		if (fLastRender >= 33.0f)
+		if (fLastRender >= 33.3f)
 		{
 			/* Render here */
 			render();
@@ -178,7 +178,7 @@ void GameWindow::run() {
 			glfwSwapBuffers(m_window);
 			fLastRender = 0;
 		} //else
-			//std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 		/* Poll for and process events */
 		glfwPollEvents();

@@ -218,37 +218,45 @@ void Camera::setCamDef(const glm::vec3 &p, const glm::vec3 & l, const glm::vec3 
     m_planesNormal[5] = nc+X*m_nw;
 }
 
-bool Camera::sphereInFrustum(const glm::vec3& /*p*/, float /*radius*/) {
-    return true;
-    /*float distance;
+bool Camera::sphereInFrustum(const glm::vec3& p, float radius) {
+    float distance;
     bool result = true;
 
     for (int i = 0; i < 6; i++) {
-        distance = p.distanceToPlane(m_planesOrigin[i], m_planesNormal[i]);
-        if (distance < -radius) {
+		glm::vec3 vOrigin = m_planesOrigin[i];
+		glm::vec3 vNormal = m_planesNormal[i];
+
+		float fcx = (p.x - vOrigin.x) * vNormal.x;
+		float fcy = (p.y - vOrigin.y) * vNormal.y;
+		float fcz = (p.z - vOrigin.z) * vNormal.z;
+
+		float fDist = fcx + fcy + fcz;
+
+        if (fDist < -radius) {
             return false;
         }
     }
-    return result;*/
+    return result;
 }
 
 bool Camera::boxInFrustum(int x, int y, int z, int size) {
     bool allOut = true;
     // for each plane do ...
     for(int i = 0; i < 6; i++) {
+		glm::vec3 vOrigin = m_planesOrigin[i];
+		glm::vec3 vNormal = m_planesNormal[i];
         allOut = true;
-        for (int k = 0; k < 8; k++) {
+        for (int k = 0; (k < 8) && allOut; k++) {
             int cx = (k >> 2) & 1;
             int cy = (k >> 1) & 1;
             int cz = (k >> 0) & 1;
 
-            glm::vec3 c(x + cx * size, y + cy * size, z + cz * size);
+			float fcx = (float)(x + cx * size) - vOrigin.x * vNormal.x;
+			float fcy = (float)(y + cy * size) - vOrigin.y * vNormal.y;
+			float fcz = (float)(z + cz * size) - vOrigin.z * vNormal.z;
 
-			float fDist = glm::dot(c - m_planesOrigin[i], m_planesNormal[i]);
-            if (fDist >= 0.0) {
-                allOut = false;
-                break;
-            }
+			float fDist = fcx + fcy + fcz;
+            allOut = allOut & (fDist < 0.0);
         }
         //if all corners are out
         if (allOut)

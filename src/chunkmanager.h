@@ -136,13 +136,6 @@ private:
     std::vector<Chunk*> m_toGenerateChunkData;
 
     GLuint* m_tempVertexData;
-    Buffer m_tempBufferToUpload;
-    int m_vboToUpload;
-    int m_countToUpload;
-	Chunk* m_chunkToUpload;
-
-    std::atomic<bool> m_canGenerateMesh;
-    std::atomic<bool> m_canUploadMesh;
 
 	ChunkGenerator* m_ChunkGenerator;
 	LightManager* m_LightManager;

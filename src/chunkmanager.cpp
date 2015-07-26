@@ -40,10 +40,6 @@ ChunkManager::ChunkManager(int worldSeed)
 	m_needRegen = true;
 
 	m_tempVertexData = new GLuint[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 6];
-	m_vboToUpload = 0;
-	m_canGenerateMesh = true;
-	m_canUploadMesh = false;
-	m_countToUpload = 0;
 
 	m_currentChunk = { 0, -1, 0 };
 	m_animationTime.start();
@@ -247,7 +243,12 @@ void ChunkManager::update(GameWindow* gl) {
                     }
                     chunk->inQueue = false;
                     m_mutexGenerateQueue.unlock();
-
+					chunk->visible = false;
+					chunk->ready = false;
+					chunk->isDirty = true;
+					chunk->isLightDirty = true;
+					chunk->onlyAir = true;
+					chunk->differsFromDisk = false;
                     chunk->generated = false;
                     m_nextFreeBuffer.push_back(chunk);
                 } else {
@@ -313,7 +314,6 @@ void ChunkManager::update(GameWindow* gl) {
 					remesh = false;
                     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-                    m_vboToUpload = -1;
                 } else {
                     buffer->draw = true;
                     chunk->ready = true;
@@ -322,7 +322,12 @@ void ChunkManager::update(GameWindow* gl) {
             }
 
             if (chunk->ready && chunk->generated && chunk->visible && !chunk->onlyAir) {
-				bool bInFrustum = oCamera.boxInFrustum(chunk->i*CHUNK_SIZE*CHUNK_SCALE, chunk->j*CHUNK_SIZE*CHUNK_SCALE, chunk->k*CHUNK_SIZE*CHUNK_SCALE, CHUNK_SIZE*CHUNK_SCALE);
+				//bool bInFrustum = oCamera.boxInFrustum(chunk->i*CHUNK_SIZE*CHUNK_SCALE, chunk->j*CHUNK_SIZE*CHUNK_SCALE, chunk->k*CHUNK_SIZE*CHUNK_SCALE, CHUNK_SIZE*CHUNK_SCALE);
+				bool bInFrustum = oCamera.sphereInFrustum(
+					glm::vec3(chunk->i*CHUNK_SIZE*CHUNK_SCALE + CHUNK_SIZE*CHUNK_SCALE / 2.0f,
+							chunk->j*CHUNK_SIZE*CHUNK_SCALE + CHUNK_SIZE*CHUNK_SCALE / 2.0f,
+							chunk->k*CHUNK_SIZE*CHUNK_SCALE + CHUNK_SIZE*CHUNK_SCALE / 2.0f),
+					CHUNK_SIZE*CHUNK_SCALE);
 				if (bInFrustum)
 				{
 					int dx = (int)camX - chunk->i*CHUNK_SIZE*CHUNK_SCALE;
