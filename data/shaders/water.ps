@@ -31,6 +31,7 @@ void main() {
 
     float light = clamp(lightVar/32.0, 0.0, 1.0);
     light = 1.0 - pow(1.0-light, 0.25);
+    light = 0.5;// temporaire temps que l'éclairage est désactivé
     vec4 texelAll = texture2D(atlas, texCoord) * light;
     texelAll.a = 0.5;
 

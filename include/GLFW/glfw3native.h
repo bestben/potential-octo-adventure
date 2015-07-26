@@ -77,15 +77,15 @@ extern "C" {
  #undef APIENTRY
  #include <windows.h>
 #elif defined(GLFW_EXPOSE_NATIVE_COCOA)
- #include <applicationservices/applicationservices.h>
+ #include <ApplicationServices/ApplicationServices.h>
  #if defined(__OBJC__)
   #import <Cocoa/Cocoa.h>
  #else
   typedef void* id;
  #endif
 #elif defined(GLFW_EXPOSE_NATIVE_X11)
- #include <x11/xlib.h>
- #include <x11/extensions/xrandr.h>
+ #include <X11/Xlib.h>
+ #include <X11/extensions/Xrandr.h>
 #else
  #error "No window API selected"
 #endif
@@ -95,9 +95,9 @@ extern "C" {
 #elif defined(GLFW_EXPOSE_NATIVE_NSGL)
  /* NSGL is declared by Cocoa.h */
 #elif defined(GLFW_EXPOSE_NATIVE_GLX)
- #include <gl/glx.h>
+ #include <GL/glx.h>
 #elif defined(GLFW_EXPOSE_NATIVE_EGL)
- #include <egl/egl.h>
+ #include <EGL/egl.h>
 #else
  #error "No context API selected"
 #endif

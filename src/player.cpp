@@ -53,7 +53,7 @@ void Player::destroy() {
     m_particles.destroy(&m_game);
 }
 
-void Player::update(int dt) {
+void Player::update(float dt) {
     m_particles.update(&m_game, dt);
 }
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <glad/glad.h>
 
@@ -117,14 +118,43 @@ struct gladGLversionStruct GLVersion;
 #define _GLAD_IS_SOME_NEW_VERSION 1
 #endif
 
+static int max_loaded_major;
+static int max_loaded_minor;
+
+static const char *exts = NULL;
+static int num_exts_i = 0;
+static const char **exts_i = NULL;
+
+static void get_exts(void) {
+#ifdef _GLAD_IS_SOME_NEW_VERSION
+    if(max_loaded_major < 3) {
+#endif
+        exts = (const char *)glGetString(GL_EXTENSIONS);
+#ifdef _GLAD_IS_SOME_NEW_VERSION
+    } else {
+        int index;
+
+        num_exts_i = 0;
+        glGetIntegerv(GL_NUM_EXTENSIONS, &num_exts_i);
+        if (num_exts_i > 0) {
+            exts_i = (const char **)realloc((void *)exts_i, num_exts_i * sizeof *exts_i);
+        }
+
+        for(index = 0; index < num_exts_i; index++) {
+            exts_i[index] = (const char*)glGetStringi(GL_EXTENSIONS, index);
+        }
+    }
+#endif
+}
+
 static int has_ext(const char *ext) {
 #ifdef _GLAD_IS_SOME_NEW_VERSION
-    if(GLVersion.major < 3) {
+    if(max_loaded_major < 3) {
 #endif
         const char *extensions;
         const char *loc;
         const char *terminator;
-        extensions = (const char *)glGetString(GL_EXTENSIONS);
+        extensions = exts;
         if(extensions == NULL || ext == NULL) {
             return 0;
         }
@@ -144,12 +174,10 @@ static int has_ext(const char *ext) {
         }
 #ifdef _GLAD_IS_SOME_NEW_VERSION
     } else {
-        int num, index;
+        int index;
 
-        glGetIntegerv(GL_NUM_EXTENSIONS, &num);
-
-        for(index = 0; index < num; index++) {
-            const char *e = (const char*)glGetStringi(GL_EXTENSIONS, index);
+        for(index = 0; index < num_exts_i; index++) {
+            const char *e = exts_i[index];
 
             if(strcmp(e, ext) == 0) {
                 return 1;
@@ -7082,6 +7110,7 @@ static void load_GL_SUN_vertex(GLADloadproc load) {
 	glad_glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fvSUN = (PFNGLREPLACEMENTCODEUITEXCOORD2FCOLOR4FNORMAL3FVERTEX3FVSUNPROC)load("glReplacementCodeuiTexCoord2fColor4fNormal3fVertex3fvSUN");
 }
 static void find_extensionsGL(void) {
+	get_exts();
 	GLAD_GL_3DFX_multisample = has_ext("GL_3DFX_multisample");
 	GLAD_GL_3DFX_tbuffer = has_ext("GL_3DFX_tbuffer");
 	GLAD_GL_3DFX_texture_compression_FXT1 = has_ext("GL_3DFX_texture_compression_FXT1");
@@ -7607,6 +7636,8 @@ static void find_extensionsGL(void) {
 	GLAD_GL_SUN_vertex = has_ext("GL_SUN_vertex");
 	GLAD_GL_WIN_phong_shading = has_ext("GL_WIN_phong_shading");
 	GLAD_GL_WIN_specular_fog = has_ext("GL_WIN_specular_fog");
+    
+    free(exts_i);
 }
 
 static void find_coreGL(void) {
@@ -7644,6 +7675,7 @@ static void find_coreGL(void) {
 #endif
 
     GLVersion.major = major; GLVersion.minor = minor;
+    max_loaded_major = major; max_loaded_minor = minor;
 	GLAD_GL_VERSION_1_0 = (major == 1 && minor >= 0) || major > 1;
 	GLAD_GL_VERSION_1_1 = (major == 1 && minor >= 1) || major > 1;
 	GLAD_GL_VERSION_1_2 = (major == 1 && minor >= 2) || major > 1;
@@ -7662,6 +7694,10 @@ static void find_coreGL(void) {
 	GLAD_GL_VERSION_4_3 = (major == 4 && minor >= 3) || major > 4;
 	GLAD_GL_VERSION_4_4 = (major == 4 && minor >= 4) || major > 4;
 	GLAD_GL_VERSION_4_5 = (major == 4 && minor >= 5) || major > 4;
+	if (GLVersion.major > 4 || (GLVersion.major >= 4 && GLVersion.minor >= 5)) {
+		max_loaded_major = 4;
+		max_loaded_minor = 5;
+	}
 }
 
 int gladLoadGLLoader(GLADloadproc load) {

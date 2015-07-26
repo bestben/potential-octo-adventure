@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/vec3.hpp"
+#include <atomic>
 
 #ifdef WIN32
 #define MI_FORCE_INLINE __forceinline
@@ -23,3 +24,20 @@ inline float lengthSquare( const glm::vec3& vec ) {
 #else
 #define MI_ASSERT( x )
 #endif
+
+class SpinLock {
+public:
+	SpinLock(std::atomic<int>& lock) : m_lock(lock) {
+		int old = false;
+		while ( !m_lock.compare_exchange_weak(old, 1) );
+	}
+
+	~SpinLock() {
+		m_lock.store(0);
+	}
+
+private:
+	std::atomic<int>& m_lock;
+};
+
+#define MI_SPINLOCK( l ) SpinLock( l )

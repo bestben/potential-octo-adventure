@@ -13,7 +13,7 @@ public:
     void init(GameWindow* game);
     void destroy(GameWindow* game);
 
-    void update(GameWindow* game, int dt);
+    void update(GameWindow* game, float dt);
     void draw(GameWindow* game);
 
 private:

@@ -32,7 +32,7 @@ PhysicManager::~PhysicManager() {
     delete[] m_bodies;
 }
 
-void PhysicManager::update(GameWindow* gl, int dt) {
+void PhysicManager::update(GameWindow* gl, float dt) {
     float delta = (float)dt / 1000.0;
 
     glm::vec3 g(0.0, -981.0f, 0.0);

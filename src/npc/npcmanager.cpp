@@ -38,7 +38,7 @@ void NpcManager::destroy(GameWindow* game) {
     }
 }
 
-void NpcManager::update(GameWindow* game, int dt) {
+void NpcManager::update(GameWindow* game, float dt) {
     int size = m_npcs.size();
     for (int i = 0; i < size; ++i) {
         if (m_npcs[i] != nullptr) {

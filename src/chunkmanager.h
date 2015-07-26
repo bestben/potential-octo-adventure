@@ -15,6 +15,8 @@
 #include "LightManager.h"
 #include "utility.h"
 
+#include "ChunkIOManager.h"
+
 class OpenGLVertexArrayObject;
 class OpenglProgramShader;
 class OpenGLTexture;
@@ -33,6 +35,11 @@ struct Buffer {
 	unsigned int toUpWaterCount;
     bool draw;
 	GLuint* toUpData;
+};
+
+struct ChunkSortData {
+	int		iChunkIndex;
+	int		iDistance;
 };
 
 /**
@@ -113,6 +120,7 @@ private:
     // Le tableau des buffers opengl
     Buffer* m_oglBuffers;
     Chunk** m_chunkToDraw;
+	ChunkSortData* m_chunkToSort;
     int m_chunkToDrawCount;
 
 	Coords m_currentChunk;
@@ -144,4 +152,6 @@ private:
     Time m_animationTime;
 
     std::atomic<Chunk*> m_lastChunk;
+
+	ChunkIOManager	m_oIOManager;
 };

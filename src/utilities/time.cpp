@@ -10,9 +10,9 @@ Time::~Time() {
 
 }
 
-int Time::elapsed() const
+float Time::elapsed() const
 {
-	return (int)((glfwGetTime() - m_startTime) * 1000.0);
+	return (float)((glfwGetTime() - m_startTime) * 1000.0);
 }
 
 void Time::restart()

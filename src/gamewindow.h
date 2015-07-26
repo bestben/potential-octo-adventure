@@ -74,11 +74,11 @@ private:
     Camera m_camera;
     Player m_player;
 
-    int m_lastDelta;
-    int m_currentDeltaIndex;
-    Time m_deltaTimer;
-    int m_lastDeltas[FPS_FRAME_NUMBER];
-    bool m_isInitialized;
+    float	m_lastDelta;
+    int		m_currentDeltaIndex;
+    Time	m_deltaTimer;
+    float	m_lastDeltas[FPS_FRAME_NUMBER];
+    bool	m_isInitialized;
 
     ChunkManager m_chunkManager;
     PhysicManager m_physicManager;

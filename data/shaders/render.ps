@@ -37,6 +37,7 @@ void main() {
     float light = clamp(lightVar/32.0, 0.0, 1.0);
 
     light = 1.0 - pow(1.0-light, 0.25);
+    light = 0.5; // temporaire temps que l'éclairage est désactivé
 
     float dotProd = clamp(dot(ex_normal, -normalize(vec3(0.5,-1.0,0.0))), 0.5,1.0);
 

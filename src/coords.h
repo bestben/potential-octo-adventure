@@ -2,6 +2,7 @@
 #include "glm/vec3.hpp"
 #include <cstdlib>
 #include <functional>
+#include "chunk.h"
 
 // Operations de division avec correction de la troncature dans les nombres négatifs
 inline int div_floor(int x, int y) {
@@ -108,13 +109,12 @@ inline Coords operator%(Coords l, int d){
 	return l;
 }
 
-
 inline Coords GetChunkRelPosInBiomeMap(Coords const& chunkId) {
-	return{ mod_floor(chunkId.i, BIOMEMAP_CHUNKS), mod_floor(chunkId.j, BIOMEMAP_CHUNKS), mod_floor(chunkId.k, BIOMEMAP_CHUNKS) };
+	return{ chunkId.i & 15, chunkId.j & 15, chunkId.k & 15 };
 }
 
 inline Coords GetVoxelRelPos(Coords const& c) {
-	return{ mod_floor(c.i, CHUNK_SIZE), mod_floor(c.j, CHUNK_SIZE), mod_floor(c.k, CHUNK_SIZE) };
+	return{ c.i & 15, c.j & 15, c.k & 15 };
 }
 
 inline Coords GetChunkPosFromVoxelPos(Coords const& c) {
@@ -123,7 +123,7 @@ inline Coords GetChunkPosFromVoxelPos(Coords const& c) {
 }
 
 inline Coords GetChunkBiomeMap(Coords const& chunkId) {
-	return{ div_floor(chunkId.i, BIOMEMAP_CHUNKS), 0, div_floor(chunkId.k, BIOMEMAP_CHUNKS) };
+	return{ chunkId.i >>4, 0, chunkId.k >> 4 };
 }
 
 inline Coords GetVoxelPosFromWorldPos(const glm::vec3 &pos) {

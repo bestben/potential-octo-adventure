@@ -176,9 +176,7 @@ VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 
 	VoxelType result = VoxelType::AIR;
 
-	
-
-	if (voxelHeight == 0){
+	if (voxelHeight == 0) {
 		result = VoxelType::ROCK;
 		return result;
 	}
@@ -213,9 +211,6 @@ VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 	double tunnel = getTunnelValue(chunkId, i, j, k);
 	bool inTunnel = (tunnel + bias) > 0.2;
 	bool inTunnelBorder = (tunnel + bias) > 0.2 && (tunnel + bias) < 0.25;
-
-
-	
 	
 	if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT && inTunnel)
 		result = VoxelType::WATER;
@@ -239,14 +234,11 @@ VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 	if ((atGround||result==VoxelType::WATER)&&inTunnelBorder)
 		result = replace;
 
-
-	
-
 /*	if ((distanceFromSeaLevel == SEA_HEIGHT || distanceFromSeaLevel == SEA_HEIGHT-1) && result == Voxel::GRASS) {
 		result = Voxel::SAND;
 	}*/
 	
-	if (temperature > 18){
+	if (temperature > 18) {
 		if (result == VoxelType::GRASS || result == VoxelType::DIRT) {
 			result = replace;
 		}
@@ -256,7 +248,6 @@ VoxelType BiomeMap::getVoxelType(const Coords& chunkId, int i, int j, int k) {
 		/*if (!atGround && aboveGround && distanceFromSeaLevel<SEA_HEIGHT)/2
 			result = Voxel::SAND;*/
 	}
-
 
 	return result;
 }

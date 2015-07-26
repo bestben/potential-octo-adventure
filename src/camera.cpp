@@ -39,37 +39,10 @@ void Camera::init(GameWindow* gl) {
     m_body = gl->getPhysicManager().getBody(bodyID);
 
     m_body->position = glm::vec3(124.0f, CHUNK_SCALE*CHUNK_SIZE*5.5f, 124.0f );
-    setCamDef(m_body->position, m_body->position + frontDir(), glm::vec3(0.0f, 1.0f, 0.0f));
+    setCamDef(m_body->position, -frontDir(), glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
-void Camera::update(GameWindow* /*gl*/, int dt) {
-    /*if (m_isFPS) {
-        QPoint cursorPos = gl->mapFromGlobal(QCursor::pos());
-        int dx = cursorPos.x() - (m_width / 2);
-        int dy = cursorPos.y() - (m_height / 2);
-
-        m_phi -= degToRad(dx * m_sensi);
-        m_theta -= degToRad(dy * m_sensi);
-
-        /*
-         * On évite à phi de devenir trop grand (ou trop petit)
-         *   en enlevant (ou ajoutant) 1 tour à chaque tour
-         */
-        /*if (m_phi > degToRad(360.0f)) {
-            m_phi -= degToRad(360.0f);
-        } else if (m_phi < 0.0f) {
-            m_phi += degToRad(360.0f);
-        }
-        // On évite que theta dépasse la limite
-        if (m_theta > m_thetaMax) {
-            m_theta = m_thetaMax;
-        } else if (m_theta < -m_thetaMax) {
-            m_theta = -m_thetaMax;
-        }
-
-        m_isViewMatrixDirty = true;
-    }*/
-
+void Camera::update(GameWindow* /*gl*/, float dt) {
     // On translate la caméra
     glm::vec3 dir = getDirection();
     glm::vec3 move = dir * m_speed;
@@ -90,7 +63,7 @@ void Camera::update(GameWindow* /*gl*/, int dt) {
 void Camera::postUpdate() {
     glm::vec3 viewDir = glm::normalize(frontDir());
 
-    setCamDef(m_body->position, viewDir, glm::vec3(0.0f, 1.0f, 0.0f));
+    setCamDef(m_body->position, -viewDir, glm::vec3(0.0f, 1.0f, 0.0f));
 
     m_isViewMatrixDirty = true;
 }
@@ -192,11 +165,12 @@ void Camera::changeViewportSize(int width, int height) {
     m_isProjMatrixDirty = true;
 }
 
-void Camera::setCamDef(const glm::vec3 &p, const glm::vec3 &/*l*/, const glm::vec3 &u) {
+void Camera::setCamDef(const glm::vec3 &p, const glm::vec3 & l, const glm::vec3 &u) {
 
     glm::vec3 nc,fc,X,Y,Z;
 
-    Z = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
+    //Z = glm::normalize(glm::vec3(-1.0f, -1.0f, -1.0f));
+	Z = glm::normalize(l);
     X = glm::normalize(glm::cross(u, Z));
     Y = glm::normalize(glm::cross(Z, X));
 
@@ -258,9 +232,8 @@ bool Camera::sphereInFrustum(const glm::vec3& /*p*/, float /*radius*/) {
     return result;*/
 }
 
-bool Camera::boxInFrustum(int /*x*/, int /*y*/, int /*z*/, int /*size*/) {
-    /*bool allOut = true;
-
+bool Camera::boxInFrustum(int x, int y, int z, int size) {
+    bool allOut = true;
     // for each plane do ...
     for(int i = 0; i < 6; i++) {
         allOut = true;
@@ -270,7 +243,9 @@ bool Camera::boxInFrustum(int /*x*/, int /*y*/, int /*z*/, int /*size*/) {
             int cz = (k >> 0) & 1;
 
             glm::vec3 c(x + cx * size, y + cy * size, z + cz * size);
-            if (c.distanceToPlane(m_planesOrigin[i], m_planesNormal[i]) >= 0) {
+
+			float fDist = glm::dot(c - m_planesOrigin[i], m_planesNormal[i]);
+            if (fDist >= 0.0) {
                 allOut = false;
                 break;
             }
@@ -278,7 +253,7 @@ bool Camera::boxInFrustum(int /*x*/, int /*y*/, int /*z*/, int /*size*/) {
         //if all corners are out
         if (allOut)
             return false;
-    }*/
+    }
     return true;
 }
 

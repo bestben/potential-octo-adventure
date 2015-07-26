@@ -28,7 +28,7 @@ public:
 
     void init();
     void destroy();
-    void update(int dt);
+    void update(float dt);
     void draw();
     /**
      * @brief Affiche les informations extérieures à la scène.

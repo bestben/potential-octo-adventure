@@ -20,7 +20,7 @@ public:
     /**
      * @brief Met à jour tous les body.
      */
-    void update(GameWindow* gl, int dt);
+    void update(GameWindow* gl, float dt);
 
     /**
      * @brief Crée un nouveau body.

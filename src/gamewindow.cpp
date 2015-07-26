@@ -81,7 +81,7 @@ void GameWindow::init() {
 #endif
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwSwapInterval(1);
 
 	/* Create a windowed mode window and its OpenGL context */
@@ -146,14 +146,39 @@ void GameWindow::init() {
 }
 
 void GameWindow::run() {
+	float fLastRender = 66;
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(m_window))
 	{
-		/* Render here */
-		render();
+		m_lastDelta = m_deltaTimer.elapsed();
+		fLastRender += m_lastDelta;
+		m_deltaTimer.restart();
+#ifdef MI_DEBUG
+		m_lastDeltas[m_currentDeltaIndex++] = m_lastDelta;
+		m_currentDeltaIndex = m_currentDeltaIndex % FPS_FRAME_NUMBER;
+		std::stringstream ss;
+		ss << (int)getFPS();
+		glfwSetWindowTitle(m_window, ss.str().c_str());
+#endif
 
-		/* Swap front and back buffers */
-		glfwSwapBuffers(m_window);
+		// On met à jour la position de la caméra
+		m_camera.update(this, m_lastDelta);
+		m_npcManager.update(this, m_lastDelta);
+		m_physicManager.update(this, m_lastDelta);
+
+		m_camera.postUpdate();
+		m_player.update(m_lastDelta);
+		m_chunkManager.update(this);
+
+		if (fLastRender >= 33.0f)
+		{
+			/* Render here */
+			render();
+			/* Swap front and back buffers */
+			glfwSwapBuffers(m_window);
+			fLastRender = 0;
+		} //else
+			//std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 		/* Poll for and process events */
 		glfwPollEvents();
@@ -167,25 +192,6 @@ void GameWindow::render() {
 	glm::vec3 skyColor(0.53f, 0.807f, 0.92);
     glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    
-    m_lastDelta = m_deltaTimer.elapsed();
-    m_deltaTimer.restart();
-#ifdef MI_DEBUG
-    m_lastDeltas[m_currentDeltaIndex++] = m_lastDelta;
-    m_currentDeltaIndex = m_currentDeltaIndex % FPS_FRAME_NUMBER;
-	std::stringstream ss;
-	ss << (int)getFPS();
-	glfwSetWindowTitle(m_window, ss.str().c_str());
-#endif
-
-    // On met à jour la position de la caméra
-    m_camera.update(this, m_lastDelta);
-    m_npcManager.update(this, m_lastDelta);
-    m_physicManager.update(this, m_lastDelta);
-
-    m_camera.postUpdate();
-    m_player.update(m_lastDelta);
-    m_chunkManager.update(this);
 
     // On commence l'affichage
     m_framebuffer.begin(this);

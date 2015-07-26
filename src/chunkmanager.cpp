@@ -13,8 +13,17 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-ChunkManager::ChunkManager(int worldSeed) : m_isInit{ false },
-m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
+MI_FORCE_INLINE bool chunkSortFunction(const ChunkSortData& i, const ChunkSortData& j) {
+	return i.iDistance < j.iDistance;
+}
+
+ChunkManager::ChunkManager(int worldSeed) 
+	: m_isInit{ false }
+	, m_chunkBuffers{ nullptr }
+	, m_oglBuffers{ nullptr }
+	, m_FirstUpdate{ true }
+	, m_oIOManager{ worldSeed } {
+
 	mWorldSeed = worldSeed;
 	m_LightManager = new LightManager(this);
 	m_meshGenerator = new MeshGenerator(this);
@@ -27,6 +36,7 @@ m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
 	for (int i = 0; i < VBO_NUMBER; ++i) {
 		m_chunkToDraw[i] = nullptr;
 	}
+	m_chunkToSort = new ChunkSortData[VBO_NUMBER];
 
 	m_needRegen = true;
 
@@ -68,6 +78,7 @@ m_chunkBuffers{ nullptr }, m_oglBuffers{ nullptr }, m_FirstUpdate{ true }{
     m_chunksCenter[0] = {0, 0, 0};
     m_chunksCenter[1] = {0, 0, 0};
     m_mapIndex = 0;
+	m_lastChunk = nullptr;
 }
 
 ChunkManager::~ChunkManager() {
@@ -76,13 +87,14 @@ ChunkManager::~ChunkManager() {
         Chunk* chunk = m_chunks + i;
         if (chunk->generated && chunk->differsFromDisk) {
             Voxel* voxel_data = chunk->data;
-            SaveChunkToDisk(voxel_data, Coords{chunk->i, chunk->j, chunk->k }, chunk->onlyAir, mWorldSeed);
+			m_oIOManager.saveChunk(Coords{ chunk->i, chunk->j, chunk->k }, voxel_data);
 		}
 	}
 
 	delete[] m_chunkBuffers;
 	delete[] m_tempVertexData;
 	delete[] m_chunkToDraw;
+	delete[] m_chunkToSort;
 
 	delete m_ChunkGenerator;
     delete m_LightManager;
@@ -202,6 +214,7 @@ void ChunkManager::destroy(GameWindow* /*gl*/) {
 
 void ChunkManager::update(GameWindow* gl) {
 	m_chunkToDrawCount = 0;
+	Camera& oCamera = gl->getCamera();
 	if (m_isInit) {
 
 		glm::vec3 camPos = gl->getCamera().getPosition();
@@ -262,6 +275,7 @@ void ChunkManager::update(GameWindow* gl) {
             m_chunksCenter[nextMapIndex] = chunkHere;
             m_mapIndex = nextMapIndex;
         }
+		int iChunkToSort = 0;
         int remesh_count = 0;
         for (int i = 0; i < CHUNK_NUMBER; ++i) {
             Chunk* chunk = m_chunks + i;
@@ -284,46 +298,53 @@ void ChunkManager::update(GameWindow* gl) {
                 if (totalCount > 0) {
                     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
                     // On alloue un buffer plus grand si besoin
-                    if (totalCount > (buffer->opaqueCount + buffer->waterCount))
-                        glBufferData(GL_ARRAY_BUFFER, totalCount * sizeof(GLuint), 0, GL_DYNAMIC_DRAW);
-
-                    void *dataMap = glMapBufferRange(GL_ARRAY_BUFFER, 0, totalCount*sizeof(GLuint), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-                    if (dataMap != nullptr){
-                        memcpy(dataMap, m_tempVertexData, totalCount*sizeof(GLuint));
-                        chunk->ready = false;
-                        chunk->visible = true;
-                        buffer->opaqueCount = buffer->toUpOpaqueCount;
-                        buffer->waterCount = buffer->toUpWaterCount;
-                        buffer->draw = true;
-                        chunk->ready = false;
-                        chunk->visible = true;
-
-                        remesh = false;
-                    }
-                    glUnmapBuffer(GL_ARRAY_BUFFER);
+					if (totalCount > (buffer->opaqueCount + buffer->waterCount)) {
+						glBufferData(GL_ARRAY_BUFFER, totalCount * sizeof(GLuint), m_tempVertexData, GL_STATIC_DRAW);
+					} else {
+						void *dataMap = glMapBufferRange(GL_ARRAY_BUFFER, 0, totalCount*sizeof(GLuint), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+						if (dataMap != nullptr) 
+							memcpy(dataMap, m_tempVertexData, totalCount*sizeof(GLuint));
+						glUnmapBuffer(GL_ARRAY_BUFFER);
+					}
+					chunk->ready = true;
+					chunk->visible = true;
+					buffer->opaqueCount = buffer->toUpOpaqueCount;
+					buffer->waterCount = buffer->toUpWaterCount;
+					buffer->draw = true;
+					remesh = false;
                     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                     m_vboToUpload = -1;
                 } else {
                     buffer->draw = true;
-                    chunk->ready = false;
+                    chunk->ready = true;
                     chunk->visible = true;
                 }
             }
 
+            if (chunk->ready && chunk->generated && chunk->visible && !chunk->onlyAir) {
+				bool bInFrustum = oCamera.boxInFrustum(chunk->i*CHUNK_SIZE*CHUNK_SCALE, chunk->j*CHUNK_SIZE*CHUNK_SCALE, chunk->k*CHUNK_SIZE*CHUNK_SCALE, CHUNK_SIZE*CHUNK_SCALE);
+				if (bInFrustum)
+				{
+					int dx = (int)camX - chunk->i*CHUNK_SIZE*CHUNK_SCALE;
+					int dy = (int)camY - chunk->j*CHUNK_SIZE*CHUNK_SCALE;
+					int dz = (int)camZ - chunk->k*CHUNK_SIZE*CHUNK_SCALE;
+					chunk->distanceFromCamera = dx * dx + dy * dy + dz * dz;
 
-            if (chunk->visible && !chunk->onlyAir) {
-                m_chunkToDraw[m_chunkToDrawCount++] = chunk;
-                int dx = (int)camX - chunk->i*CHUNK_SIZE*CHUNK_SCALE;
-				int dy = (int)camY - chunk->j*CHUNK_SIZE*CHUNK_SCALE;
-				int dz = (int)camZ - chunk->k*CHUNK_SIZE*CHUNK_SCALE;
-                chunk->distanceFromCamera = dx * dx + dy * dy + dz * dz;
+					m_chunkToSort[iChunkToSort].iDistance = chunk->distanceFromCamera;
+					m_chunkToSort[iChunkToSort].iChunkIndex = i;
+					++iChunkToSort;
+				}
             }
         }
 
-		std::sort(m_chunkToDraw, m_chunkToDraw + m_chunkToDrawCount, [this](Chunk* i, Chunk* j)->bool{
-			return i->distanceFromCamera < j->distanceFromCamera;
+		std::sort(m_chunkToSort, m_chunkToSort + iChunkToSort, [](const ChunkSortData& i, const ChunkSortData& j)->bool {
+			return i.iDistance < j.iDistance;
 		});
+
+		for (int i = 0; i < iChunkToSort; ++i) {
+			m_chunkToDraw[m_chunkToDrawCount++] = m_chunks + m_chunkToSort[i].iChunkIndex;
+		}
 		
 		m_FirstUpdate = false;
 	}
@@ -358,8 +379,7 @@ void ChunkManager::draw(GameWindow* gl) {
 
 		glm::mat4x4 mat = gl->getCamera().getViewProjMatrix();
         glm::mat4x4 scale = glm::scale( glm::mat4x4(), glm::vec3((float)CHUNK_SCALE, (float)CHUNK_SCALE, (float)CHUNK_SCALE) );
-        glUniformMatrix4fv(m_matrixUniform, 1, GL_FALSE, glm::value_ptr(mat * scale));
-        //m_program->setUniformValue(m_matrixUniform, mat * scale);
+        m_program->setUniformValue(m_matrixUniform, mat * scale);
 		m_atlas->bind(0);
 
 		for (int i = m_chunkToDrawCount - 1; i >= 0; --i) {
@@ -371,29 +391,22 @@ void ChunkManager::draw(GameWindow* gl) {
                 glUniform3fv(m_chunkPosUniform, 1, glm::value_ptr(glm::vec3((float)(chunk->i * CHUNK_SIZE),
                                                                                 (float)(chunk->j * CHUNK_SIZE),
                                                                                 (float)(chunk->k * CHUNK_SIZE))));
-                //m_program->setUniformValue(m_chunkPosUniform, glm::vec3(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
-				//m_program->setUniformValue(m_lightMapUniform, 1);
 				glDrawArrays(GL_TRIANGLES, 0, buffer->opaqueCount);
-				buffer->vao->release();
 			}
 		}
 		glDisable(GL_CULL_FACE);
 		m_waterProgram->bind();
-        glUniformMatrix4fv(m_waterMatrixUniform, 1, GL_FALSE, glm::value_ptr(mat * scale));
-        //m_waterProgram->setUniformValue(m_waterMatrixUniform, mat * scale);
+        m_waterProgram->setUniformValue(m_waterMatrixUniform, mat * scale);
         m_waterProgram->setUniformValue(m_waterTimerUniform, (float)m_animationTime.elapsed());
 		for (int i = m_chunkToDrawCount - 1; i >= 0; --i) {
 			Chunk* chunk = m_chunkToDraw[i];
 			Buffer* buffer = m_oglBuffers + chunk->vboIndex;
             if (chunk->generated && buffer->draw && buffer->waterCount > 0) {
 				buffer->vao->bind();
-
                 glUniform3fv(m_waterChunkPosUniform, 1, glm::value_ptr(glm::vec3((float)(chunk->i * CHUNK_SIZE),
                                                                                     (float)(chunk->j * CHUNK_SIZE),
                                                                                     (float)(chunk->k * CHUNK_SIZE))));
-                //m_waterProgram->setUniformValue(m_waterChunkPosUniform, glm::vec3(chunk->i * CHUNK_SIZE, chunk->j * CHUNK_SIZE, chunk->k * CHUNK_SIZE));
 				glDrawArrays(GL_TRIANGLES, buffer->opaqueCount, buffer->waterCount);
-				buffer->vao->release();
 			}
 		}
 		glEnable(GL_CULL_FACE);
@@ -472,16 +485,15 @@ void ChunkManager::run() {
                 if (data != nullptr){
 
                     bool skipGeneration = false;
-                    if (ChunkExistsOnDisk(Coords{ newChunk->i, newChunk->j, newChunk->k }, mWorldSeed)){
-                        skipGeneration = LoadChunkFromDisk(data, Coords{ newChunk->i, newChunk->j, newChunk->k }, &(newChunk->onlyAir), mWorldSeed);
+                    if (m_oIOManager.chunkExist(Coords{ newChunk->i, newChunk->j, newChunk->k })) {
+						m_oIOManager.loadChunk(Coords{ newChunk->i, newChunk->j, newChunk->k }, data);
                         newChunk->differsFromDisk = !skipGeneration;
                     }
 
                     std::set<Coords> modifiedChunks;
-
-                    if(!skipGeneration){
-                        newChunk->onlyAir = m_ChunkGenerator->generateChunk(data, newChunk->i, newChunk->j, newChunk->k, modifiedChunks);
-                        SaveChunkToDisk(data, Coords{ newChunk->i, newChunk->j, newChunk->k }, newChunk->onlyAir, mWorldSeed);
+                    if(!skipGeneration) {
+						newChunk->onlyAir = m_ChunkGenerator->generateChunk(data, newChunk->i, newChunk->j, newChunk->k, modifiedChunks);
+						m_oIOManager.saveChunk(Coords{ newChunk->i, newChunk->j, newChunk->k }, data);
                         newChunk->differsFromDisk = false;
                     }
 
@@ -493,7 +505,7 @@ void ChunkManager::run() {
                             if (c->generated) {
                                 m_LightManager->updateLighting(c);
                                 Voxel* voxel_data = c->data;
-                                SaveChunkToDisk(voxel_data, Coords{ c->i, c->j, c->k }, c->onlyAir, mWorldSeed);
+								m_oIOManager.saveChunk(Coords{ c->i, c->j, c->k }, voxel_data);
                                 c->isDirty = true;
                                 c->differsFromDisk = false;
                             }

@@ -45,7 +45,7 @@ public:
      * @brief Met à jour la caméra.
      * @param dt La durée écoulée depuis la dernière mise à jour.
      */
-    void update(GameWindow* gl, int dt);
+    void update(GameWindow* gl, float dt);
     /**
      * @brief Fonction de mise à jour après le calcule de la physique.
      */

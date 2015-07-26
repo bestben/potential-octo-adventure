@@ -113,50 +113,50 @@ extern "C" {
  */
 #if defined(__APPLE_CC__)
  #if defined(GLFW_INCLUDE_GLCOREARB)
-  #include <opengl/gl3.h>
+  #include <OpenGL/gl3.h>
   #if defined(GLFW_INCLUDE_GLEXT)
-   #include <opengl/gl3ext.h>
+   #include <OpenGL/gl3ext.h>
   #endif
  #elif !defined(GLFW_INCLUDE_NONE)
   #if !defined(GLFW_INCLUDE_GLEXT)
    #define GL_GLEXT_LEGACY
   #endif
-  #include <opengl/gl.h>
+  #include <OpenGL/gl.h>
  #endif
  #if defined(GLFW_INCLUDE_GLU)
-  #include <opengl/glu.h>
+  #include <OpenGL/glu.h>
  #endif
 #else
  #if defined(GLFW_INCLUDE_GLCOREARB)
-  #include <gl/glcorearb.h>
+  #include <GL/glcorearb.h>
  #elif defined(GLFW_INCLUDE_ES1)
-  #include <gles/gl.h>
+  #include <GLES/gl.h>
   #if defined(GLFW_INCLUDE_GLEXT)
-   #include <gles/glext.h>
+   #include <GLES/glext.h>
   #endif
  #elif defined(GLFW_INCLUDE_ES2)
-  #include <gles2/gl2.h>
+  #include <GLES2/gl2.h>
   #if defined(GLFW_INCLUDE_GLEXT)
-   #include <gles2/gl2ext.h>
+   #include <GLES2/gl2ext.h>
   #endif
  #elif defined(GLFW_INCLUDE_ES3)
-  #include <gles3/gl3.h>
+  #include <GLES3/gl3.h>
   #if defined(GLFW_INCLUDE_GLEXT)
-   #include <gles3/gl2ext.h>
+   #include <GLES3/gl2ext.h>
   #endif
  #elif defined(GLFW_INCLUDE_ES31)
-  #include <gles3/gl31.h>
+  #include <GLES3/gl31.h>
   #if defined(GLFW_INCLUDE_GLEXT)
-   #include <gles3/gl2ext.h>
+   #include <GLES3/gl2ext.h>
   #endif
  #elif !defined(GLFW_INCLUDE_NONE)
-  #include <gl/gl.h>
+  #include <GL/gl.h>
   #if defined(GLFW_INCLUDE_GLEXT)
-   #include <gl/glext.h>
+   #include <GL/glext.h>
   #endif
  #endif
  #if defined(GLFW_INCLUDE_GLU)
-  #include <gl/glu.h>
+  #include <GL/glu.h>
  #endif
 #endif
 
@@ -211,7 +211,7 @@ extern "C" {
  *  API changes.
  *  @ingroup init
  */
-#define GLFW_VERSION_REVISION       1
+#define GLFW_VERSION_REVISION       2
 /*! @} */
 
 /*! @name Key and button actions
@@ -531,7 +531,7 @@ extern "C" {
  *
  *  @par
  *  Some pre-installed Windows graphics drivers do not support OpenGL.  AMD only
- *  supports OpenGL ES via EGL, while Nvidia and Intel only supports it via
+ *  supports OpenGL ES via EGL, while Nvidia and Intel only support it via
  *  a WGL or GLX extension.  OS X does not provide OpenGL ES at all.  The Mesa
  *  EGL, OpenGL and OpenGL ES libraries do not interface with the Nvidia binary
  *  driver.
@@ -1240,7 +1240,7 @@ GLFWAPI GLFWmonitor** glfwGetMonitors(int* count);
 /*! @brief Returns the primary monitor.
  *
  *  This function returns the primary monitor.  This is usually the monitor
- *  where elements like the Windows task bar or the OS X menu bar is located.
+ *  where elements like the Windows task bar or the OS X menu bar are located.
  *
  *  @return The primary monitor, or `NULL` if an [error](@ref error_handling)
  *  occurred.
@@ -1551,8 +1551,8 @@ GLFWAPI void glfwWindowHint(int target, int hint);
  *  requested, as not all parameters and hints are
  *  [hard constraints](@ref window_hints_hard).  This includes the size of the
  *  window, especially for full screen windows.  To query the actual attributes
- *  of the created window, framebuffer and context, use queries like @ref
- *  glfwGetWindowAttrib and @ref glfwGetWindowSize.
+ *  of the created window, framebuffer and context, see @ref
+ *  glfwGetWindowAttrib, @ref glfwGetWindowSize and @ref glfwGetFramebufferSize.
  *
  *  To create a full screen window, you need to specify the monitor the window
  *  will cover.  If no monitor is specified, windowed mode will be used.  Unless
@@ -1622,7 +1622,9 @@ GLFWAPI void glfwWindowHint(int target, int hint);
  *  `NSHighResolutionCapable` key is enabled in the application bundle's
  *  `Info.plist`.  For more information, see
  *  [High Resolution Guidelines for OS X](https://developer.apple.com/library/mac/documentation/GraphicsAnimation/Conceptual/HighResolutionOSX/Explained/Explained.html)
- *  in the Mac Developer Library.
+ *  in the Mac Developer Library.  The GLFW test and example programs use
+ *  a custom `Info.plist` template for this, which can be found as
+ *  `CMake/MacOSXBundleInfo.plist.in` in the source tree.
  *
  *  @remarks __X11:__ There is no mechanism for setting the window icon yet.
  *
@@ -1717,6 +1719,9 @@ GLFWAPI void glfwSetWindowShouldClose(GLFWwindow* window, int value);
  *
  *  @param[in] window The window whose title to change.
  *  @param[in] title The UTF-8 encoded window title.
+ *
+ *  @remarks __OS X:__ The window title will not be updated until the next time
+ *  you process events.
  *
  *  @par Thread Safety
  *  This function may only be called from the main thread.
@@ -2034,6 +2039,14 @@ GLFWAPI GLFWmonitor* glfwGetWindowMonitor(GLFWwindow* window);
  *  return.
  *  @return The value of the attribute, or zero if an
  *  [error](@ref error_handling) occurred.
+ *
+ *  @remarks Framebuffer related hints are not window attributes.  See @ref
+ *  window_attribs_fb for more information.
+ *
+ *  @remarks Zero is a valid value for many window and context related
+ *  attributes so you cannot use a return value of zero as an indication of
+ *  errors.  However, this function should not fail as long as it is passed
+ *  valid arguments and the library has been [initialized](@ref intro_init).
  *
  *  @par Thread Safety
  *  This function may only be called from the main thread.

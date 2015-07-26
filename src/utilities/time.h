@@ -7,7 +7,7 @@ public:
     Time();
     ~Time();
 
-    int 	elapsed() const;
+    float 	elapsed() const; // in milliseconds
     void 	restart();
     void 	start();
 

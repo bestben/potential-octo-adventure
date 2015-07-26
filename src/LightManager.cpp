@@ -23,7 +23,6 @@ LightManager::~LightManager()
 
 
 void LightManager::placeVoxel(Coords pos, VoxelType type, std::set<Coords> &modifiedChunks) {
-
 	Voxel n = getEmptyVoxel();
 	n.type = type;
 	
@@ -39,7 +38,7 @@ void LightManager::placeVoxel(Coords pos, VoxelType type, std::set<Coords> &modi
 	uint8 oldlight = v.getLight();
 	
 
-	unlightNeighbors(pos, oldlight, lightSources, modifiedChunks);
+	//unlightNeighbors(pos, oldlight, lightSources, modifiedChunks);
 	n._light = 0;
 
 
@@ -50,7 +49,7 @@ void LightManager::placeVoxel(Coords pos, VoxelType type, std::set<Coords> &modi
 	mChunkManager->setVoxel(pos, n.type, n._light);
 	modifiedChunks.insert(GetChunkPosFromVoxelPos(pos));
 
-	if (isOpaque(v) && underSun) {
+	/*if (isOpaque(v) && underSun) {
 
 		uint16 y = pos.j - 1;
 
@@ -83,8 +82,7 @@ void LightManager::placeVoxel(Coords pos, VoxelType type, std::set<Coords> &modi
 	}
 
     lightSources.insert(pos);
-	spreadLight(lightSources, modifiedChunks);
-
+	spreadLight(lightSources, modifiedChunks);*/
 }
 
 void LightManager::removeVoxel(Coords pos, std::set<Coords>& modifiedChunks) {
@@ -102,15 +100,15 @@ void LightManager::removeVoxel(Coords pos, std::set<Coords>& modifiedChunks) {
 	bool underSun = (above.type != VoxelType::IGNORE_TYPE && above.getLight() == SUN_LIGHT);
 
 	
-	unlightNeighbors(pos, v.getLight(), lightSources, modifiedChunks);
+	//unlightNeighbors(pos, v.getLight(), lightSources, modifiedChunks);
 	
 	mChunkManager->setVoxel(pos, n.type, 0);
 
 
-	spreadLight(lightSources, modifiedChunks);
+	//spreadLight(lightSources, modifiedChunks);
 
 	modifiedChunks.insert(GetChunkPosFromVoxelPos(pos));
-
+	/*
 	if (underSun) {
 
 		uint16 bottom = propagateSunLight(pos, modifiedChunks);
@@ -125,7 +123,7 @@ void LightManager::removeVoxel(Coords pos, std::set<Coords>& modifiedChunks) {
 				break;
 
 			//lightSources.insert(newPos);
-			lightNeighbors(newPos, modifiedChunks);
+			//lightNeighbors(newPos, modifiedChunks);
 
 		}
 
@@ -133,7 +131,7 @@ void LightManager::removeVoxel(Coords pos, std::set<Coords>& modifiedChunks) {
 	else {
 		// Inutile
 		// mChunkManager->setVoxel(pos, n.type, 0);
-	}
+	}*/
 
 	uint8 maxLight = 0;
 	Coords maxLightPos = {};
@@ -156,14 +154,14 @@ void LightManager::removeVoxel(Coords pos, std::set<Coords>& modifiedChunks) {
 	}
 
 	if (found) {
-		lightNeighbors(maxLightPos, modifiedChunks);
+		//lightNeighbors(maxLightPos, modifiedChunks);
 	}
-
+	
 
 }
 
-void LightManager::updateLighting(Chunk* chunk) {
-    std::unordered_map<Coords, uint8> removelightFrom;
+void LightManager::updateLighting(Chunk* /*chunk*/) {
+    /*std::unordered_map<Coords, uint8> removelightFrom;
 
     std::set<Coords> lightSources;
     std::set<Coords> modifiedChunks;
@@ -228,7 +226,7 @@ void LightManager::updateLighting(Chunk* chunk) {
 		}
 	}
 
-
+	*/
 }
 
 bool LightManager::propagateSunLight(Chunk* chunk, std::set<Coords>& lightSources, std::set<Coords>& modifiedChunks) {
