@@ -9,72 +9,208 @@
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Unity|Win32">
+      <Configuration>Unity</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\biomes\BiomeMap.cpp" />
-    <ClCompile Include="..\src\biomes\ChunkGenerator.cpp" />
-    <ClCompile Include="..\src\camera.cpp" />
-    <ClCompile Include="..\src\chunk.cpp" />
-    <ClCompile Include="..\src\ChunkIOManager.cpp" />
-    <ClCompile Include="..\src\chunkmanager.cpp" />
-    <ClCompile Include="..\src\gamewindow.cpp" />
-    <ClCompile Include="..\src\glad\glad.c" />
-    <ClCompile Include="..\src\libnoise\latlon.cpp" />
-    <ClCompile Include="..\src\libnoise\model\cylinder.cpp" />
-    <ClCompile Include="..\src\libnoise\model\line.cpp" />
-    <ClCompile Include="..\src\libnoise\model\plane.cpp" />
-    <ClCompile Include="..\src\libnoise\model\sphere.cpp" />
-    <ClCompile Include="..\src\libnoise\module\abs.cpp" />
-    <ClCompile Include="..\src\libnoise\module\add.cpp" />
-    <ClCompile Include="..\src\libnoise\module\billow.cpp" />
-    <ClCompile Include="..\src\libnoise\module\blend.cpp" />
-    <ClCompile Include="..\src\libnoise\module\cache.cpp" />
-    <ClCompile Include="..\src\libnoise\module\checkerboard.cpp" />
-    <ClCompile Include="..\src\libnoise\module\clamp.cpp" />
-    <ClCompile Include="..\src\libnoise\module\const.cpp" />
-    <ClCompile Include="..\src\libnoise\module\curve.cpp" />
-    <ClCompile Include="..\src\libnoise\module\cylinders.cpp" />
-    <ClCompile Include="..\src\libnoise\module\displace.cpp" />
-    <ClCompile Include="..\src\libnoise\module\exponent.cpp" />
-    <ClCompile Include="..\src\libnoise\module\invert.cpp" />
-    <ClCompile Include="..\src\libnoise\module\max.cpp" />
-    <ClCompile Include="..\src\libnoise\module\min.cpp" />
-    <ClCompile Include="..\src\libnoise\module\modulebase.cpp" />
-    <ClCompile Include="..\src\libnoise\module\multiply.cpp" />
-    <ClCompile Include="..\src\libnoise\module\perlin.cpp" />
-    <ClCompile Include="..\src\libnoise\module\power.cpp" />
-    <ClCompile Include="..\src\libnoise\module\ridgedmulti.cpp" />
-    <ClCompile Include="..\src\libnoise\module\rotatepoint.cpp" />
-    <ClCompile Include="..\src\libnoise\module\scalebias.cpp" />
-    <ClCompile Include="..\src\libnoise\module\scalepoint.cpp" />
-    <ClCompile Include="..\src\libnoise\module\select.cpp" />
-    <ClCompile Include="..\src\libnoise\module\spheres.cpp" />
-    <ClCompile Include="..\src\libnoise\module\terrace.cpp" />
-    <ClCompile Include="..\src\libnoise\module\translatepoint.cpp" />
-    <ClCompile Include="..\src\libnoise\module\turbulence.cpp" />
-    <ClCompile Include="..\src\libnoise\module\voronoi.cpp" />
-    <ClCompile Include="..\src\libnoise\noisegen.cpp" />
-    <ClCompile Include="..\src\LightManager.cpp" />
-    <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\meshgenerator.cpp" />
-    <ClCompile Include="..\src\npc\creeper.cpp" />
-    <ClCompile Include="..\src\npc\npc.cpp" />
-    <ClCompile Include="..\src\npc\npcmanager.cpp" />
-    <ClCompile Include="..\src\npc\pathfinding.cpp" />
-    <ClCompile Include="..\src\particlesystem.cpp" />
-    <ClCompile Include="..\src\physic\physicmanager.cpp" />
-    <ClCompile Include="..\src\player.cpp" />
-    <ClCompile Include="..\src\postprocess\framebuffer.cpp" />
-    <ClCompile Include="..\src\postprocess\postprocess.cpp" />
-    <ClCompile Include="..\src\save.cpp" />
-    <ClCompile Include="..\src\utilities\openglbuffer.cpp" />
-    <ClCompile Include="..\src\utilities\openglprogramshader.cpp" />
-    <ClCompile Include="..\src\utilities\opengltexture.cpp" />
-    <ClCompile Include="..\src\utilities\openglvertexarrayobject.cpp" />
-    <ClCompile Include="..\src\utilities\time.cpp" />
-    <ClCompile Include="..\src\utilities\vsDebugLib.cpp" />
-    <ClCompile Include="..\src\voxelbuffer.cpp" />
-    <ClCompile Include="..\src\wireframebox.cpp" />
+    <ClCompile Include="..\src\biomes\BiomeMap.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\biomes\ChunkGenerator.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\camera.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\chunk.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\ChunkIOManager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\chunkmanager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\gamewindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\glad\glad.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\latlon.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\model\cylinder.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\model\line.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\model\plane.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\model\sphere.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\abs.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\add.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\billow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\blend.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\cache.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\checkerboard.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\clamp.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\const.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\curve.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\cylinders.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\displace.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\exponent.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\invert.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\max.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\min.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\modulebase.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\multiply.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\perlin.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\power.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\ridgedmulti.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\rotatepoint.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\scalebias.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\scalepoint.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\select.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\spheres.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\terrace.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\translatepoint.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\turbulence.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\module\voronoi.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\libnoise\noisegen.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\LightManager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\meshgenerator.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\npc\creeper.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\npc\npc.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\npc\npcmanager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\npc\pathfinding.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\particlesystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\physic\physicmanager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\player.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\postprocess\framebuffer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\postprocess\postprocess.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\save.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\unityBuild.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\utilities\openglbuffer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\utilities\openglprogramshader.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\utilities\opengltexture.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\utilities\openglvertexarrayobject.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\utilities\time.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\utilities\vsDebugLib.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\voxelbuffer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\wireframebox.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\biomes\BiomeMap.h" />
@@ -350,6 +486,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -359,11 +502,17 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -387,6 +536,33 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>MI_DEBUG;GLFW_DLL;GLFW_INCLUDE_NONE;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\Benoit\Desktop\potential-octo-adventure\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExceptionHandling>false</ExceptionHandling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <SDLCheck>false</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <StringPooling>true</StringPooling>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Users\Benoit\Desktop\potential-octo-adventure\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>FreeImage.lib;FreeImagePlus.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
