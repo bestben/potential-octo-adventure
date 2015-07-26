@@ -40,3 +40,6 @@ Makefile*
 /Win32/*.sdf
 /Win32/*.user
 /Win32/*.filters
+/tools/UnityBuild/UnityBuild/bin
+/tools/UnityBuild/UnityBuild/obj
+/tools/UnityBuild/UnityBuild/Properties
