@@ -13,7 +13,7 @@
 #include "glm/gtc/type_ptr.hpp"
 
 #define GRAPHIC_BUFFER_SIZE 1024 * 1024 * 128
-#define MAX_REMESH_PER_UPDATE 4
+#define MAX_REMESH_PER_UPDATE 10
 
 struct ChunkSortData
 {
@@ -126,6 +126,7 @@ void ChunkManager::initialize( GameWindow* /*gl*/ )
 		MI_ASSERT( false );
 		abort();
 	}
+	m_iChunkPosAttr = m_xProgram->attributeLocation( "chunkPosition" );
 	m_iPosAttr = m_xProgram->attributeLocation( "position" );
 	m_iMatrixUniform = m_xProgram->uniformLocation( "viewProj" );
 	m_iChunkPosUniform = m_xProgram->uniformLocation( "chunkPosition" );
@@ -179,6 +180,7 @@ void ChunkManager::initialize( GameWindow* /*gl*/ )
 	}
 
 	glGenBuffers( 1, &m_iVbo );
+	glGenBuffers( 1, &m_iChunkPositionVbo );
 	m_pVao = new OpenGLVertexArrayObject();
 	m_pVao->create();
 	m_pVao->bind();
@@ -186,7 +188,14 @@ void ChunkManager::initialize( GameWindow* /*gl*/ )
 	glEnableVertexAttribArray( m_iPosAttr );
 	glVertexAttribIPointer( m_iPosAttr, 1, GL_UNSIGNED_INT, 0, 0 );
 	glBufferStorage( GL_ARRAY_BUFFER, GRAPHIC_BUFFER_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT );
+
+	glBindBuffer( GL_ARRAY_BUFFER, m_iChunkPositionVbo );
+	glEnableVertexAttribArray( m_iChunkPosAttr );
+	glVertexAttribPointer( m_iChunkPosAttr, 3, GL_FLOAT, GL_FALSE, 0, NULL );
+	glVertexAttribDivisor( m_iChunkPosAttr, 6 );
 	m_pVao->release();
+
+	glGenBuffers( 1, &m_iCommandBuffer );
 
 	m_bIsInit = true;
 
@@ -203,6 +212,8 @@ void ChunkManager::destroy( GameWindow* /*gl*/ )
 	m_pVao->destroy();
 	delete m_pVao;
 	glDeleteBuffers( 1, &m_iVbo );
+	glDeleteBuffers( 1, &m_iChunkPositionVbo );
+	glDeleteBuffers( 1, &m_iCommandBuffer );
 
 	// On nettoie les ressources opengl
 	for( int i = 0; i < VBO_NUMBER; ++i )
@@ -424,9 +435,17 @@ Coords ChunkManager::getChunkCoords( int index, Coords center )
 	return { i, j, k };
 }
 
+struct DrawArraysIndirectCommand
+{
+	int  iCount;
+	int  iInstanceCount;
+	int  iFirst;
+	int  iBaseInstance;
+};
+
 void ChunkManager::draw( GameWindow* gl )
 {
-	if( m_bIsInit )
+	if( m_bIsInit && m_iChunkToDrawCount > 0 )
 	{
 		m_xProgram->bind();
 
@@ -438,7 +457,8 @@ void ChunkManager::draw( GameWindow* gl )
 		glm::vec3 camPos = gl->getCamera().getPosition();
 		Coords chunkHere = GetChunkPosFromVoxelPos( GetVoxelPosFromWorldPos( camPos ) );
 
-		m_pVao->bind();
+		std::vector<DrawArraysIndirectCommand> oCommands( m_iChunkToDrawCount * 6 );
+		std::vector<glm::vec3> oChunkPositions( m_iChunkToDrawCount );
 		for( int i = 0; i < m_iChunkToDrawCount; ++i )
 		{
 			Chunk* chunk = m_pChunkToDraw[ i ];
@@ -446,30 +466,56 @@ void ChunkManager::draw( GameWindow* gl )
 
 			if( chunk->generated && buffer->draw && buffer->opaqueCount > 0 && buffer->iBufferOffset >= 0 )
 			{
-				glUniform3fv( m_iChunkPosUniform, 1, glm::value_ptr( glm::vec3( ( float ) ( chunk->i * CHUNK_SIZE ),
-																			   ( float ) ( chunk->j * CHUNK_SIZE ),
-																			   ( float ) ( chunk->k * CHUNK_SIZE ) ) ) );
+				oChunkPositions[ i ] = glm::vec3( ( float ) ( chunk->i * CHUNK_SIZE ),
+												  ( float ) ( chunk->j * CHUNK_SIZE ),
+												  ( float ) ( chunk->k * CHUNK_SIZE ) );
 				if( chunkHere.i >= chunk->i )
-					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_X_POS ], 
-								  buffer->iSlicesSize[ Buffer::E_X_POS ] );
+					oCommands[ i * 6 + 0 ] = { buffer->iSlicesSize[ Buffer::E_X_POS ], 1, (int)(buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_X_POS ]), i };
+				else
+					oCommands[ i * 6 + 0 ] = { 0, 0, 0, 0 };
+
 				if( chunkHere.i <= chunk->i )
-					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_X_NEG ],
-								  buffer->iSlicesSize[ Buffer::E_X_NEG ] );
+					oCommands[ i * 6 + 1 ] = { buffer->iSlicesSize[ Buffer::E_X_NEG ], 1, (int)(buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_X_NEG ]), i };
+				else
+					oCommands[ i * 6 + 1 ] = { 0, 0, 0, 0 };
+
 				if( chunkHere.j >= chunk->j )
-					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Y_POS ],
-								  buffer->iSlicesSize[ Buffer::E_Y_POS ] );
+					oCommands[ i * 6 + 2 ] = { buffer->iSlicesSize[ Buffer::E_Y_POS ], 1, ( int ) ( buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Y_POS ]), i };
+				else
+					oCommands[ i * 6 + 2 ] = { 0, 0, 0, 0 };
+
 				if( chunkHere.j <= chunk->j )
-					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Y_NEG ],
-								  buffer->iSlicesSize[ Buffer::E_Y_NEG ] );
+					oCommands[ i * 6 + 3 ] = { buffer->iSlicesSize[ Buffer::E_Y_NEG ], 1, ( int ) ( buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Y_NEG ]), i };
+				else
+					oCommands[ i * 6 + 3 ] = { 0, 0, 0, 0 };
+
 				if( chunkHere.k >= chunk->k )
-					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Z_POS ],
-								  buffer->iSlicesSize[ Buffer::E_Z_POS ] );
+					oCommands[ i * 6 + 4 ] = { buffer->iSlicesSize[ Buffer::E_Z_POS ], 1, ( int ) ( buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Z_POS ]), i };
+				else
+					oCommands[ i * 6 + 4 ] = { 0, 0, 0, 0 };
+
 				if( chunkHere.k <= chunk->k )
-					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Z_NEG ],
-								  buffer->iSlicesSize[ Buffer::E_Z_NEG ] );
-				//glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ), buffer->opaqueCount );
+					oCommands[ i * 6 + 5 ] = { buffer->iSlicesSize[ Buffer::E_Z_NEG ], 1, ( int ) ( buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Z_NEG ]), i };
+				else
+					oCommands[ i * 6 + 5 ] = { 0, 0, 0, 0 };
+			}
+			else
+			{
+				for( int iSlice = 0; iSlice < 6; ++iSlice )
+				{
+					oCommands[ i * 6 + iSlice ].iCount = 0;
+					oCommands[ i * 6 + iSlice ].iFirst = 0;
+					oCommands[ i * 6 + iSlice ].iBaseInstance = 0;
+					oCommands[ i * 6 + iSlice ].iInstanceCount = 0;
+				}
 			}
 		}
+		glBindBuffer( GL_ARRAY_BUFFER, m_iChunkPositionVbo );
+		glBufferData( GL_ARRAY_BUFFER, oChunkPositions.size() * sizeof( glm::vec3 ), &oChunkPositions[ 0 ], GL_DYNAMIC_DRAW );
+		glBindBuffer( GL_DRAW_INDIRECT_BUFFER, m_iCommandBuffer );
+		glBufferData( GL_DRAW_INDIRECT_BUFFER, oCommands.size() * sizeof( DrawArraysIndirectCommand ), &oCommands[ 0 ], GL_DYNAMIC_DRAW );
+		m_pVao->bind();
+		glMultiDrawArraysIndirect( GL_TRIANGLES, 0, oCommands.size(), 0 );
 		glDisable( GL_CULL_FACE );
 		m_xWaterProgram->bind();
 		m_xWaterProgram->setUniformValue( m_iWaterMatrixUniform, mat * scale );

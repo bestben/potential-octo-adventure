@@ -1,8 +1,8 @@
 #version 330
 
 layout(location = 0) in uint position;
+layout(location = 1) in vec3 chunkPosition;
 
-uniform vec3 chunkPosition;
 uniform mat4 viewProj;
 
 out vec3 ex_pos;

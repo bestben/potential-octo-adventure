@@ -150,6 +150,7 @@
     <ClCompile Include="..\src\main.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\src\Memory\BuddyAllocator.cpp" />
     <ClCompile Include="..\src\meshgenerator.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Unity|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -365,6 +366,7 @@
     <ClInclude Include="..\src\libnoise\noisegen.h" />
     <ClInclude Include="..\src\libnoise\vectortable.h" />
     <ClInclude Include="..\src\LightManager.h" />
+    <ClInclude Include="..\src\Memory\BuddyAllocator.h" />
     <ClInclude Include="..\src\meshgenerator.h" />
     <ClInclude Include="..\src\npc\creeper.h" />
     <ClInclude Include="..\src\npc\npc.h" />

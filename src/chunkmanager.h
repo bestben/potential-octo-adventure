@@ -107,8 +107,11 @@ private:
 
 	OpenGLVertexArrayObject*				m_pVao;
 	GLuint									m_iVbo;
+	GLuint									m_iChunkPositionVbo;
+	GLuint									m_iCommandBuffer;
 
 	int										m_iPosAttr;
+	int										m_iChunkPosAttr;
 	int										m_iMatrixUniform;
 	int										m_iChunkPosUniform;
 	int										m_iLightMapUniform;
