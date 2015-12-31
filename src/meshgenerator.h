@@ -38,11 +38,13 @@ private:
      */
 	GLuint getVertex(int x, int y, int z, int normalIndex, TextureID tex, uint8 light);
 
-    Voxel* m_mask;
-	uint8* m_light;
-    bool* m_offsetNormal;
+    Voxel*			m_mask;
+	uint8*			m_light;
+    bool*			m_offsetNormal;
     // Grille stokant les voxels d'eau entre la première et la seconde phase
-    Voxel* m_waterPassGrid;
+    Voxel*			m_waterPassGrid;
 
-	ChunkManager* m_ChunkManager;
+	GLuint*			m_pSliceBuffer[2];
+
+	ChunkManager*	m_ChunkManager;
 };

@@ -34,7 +34,6 @@ ChunkManager::ChunkManager( int worldSeed )
 	, m_bFirstUpdate { true }
 	, m_oIOManager { worldSeed }
 {
-	m_iWorldSeed = worldSeed;
 	m_pLightManager = new LightManager( this );
 	m_pMeshGenerator = new MeshGenerator( this );
 	m_pChunkGenerator = new ChunkGenerator( this, worldSeed );
@@ -244,11 +243,12 @@ void ChunkManager::update( GameWindow* gl )
 
 			memset( m_pChunksMapping[ nextMapIndex ], 0, sizeof( Chunk* ) * CHUNK_NUMBER );
 			m_oNextFreeBuffer.clear();
+			// We reproject every chunk into the new mapping
 			for( int i = 0; i < CHUNK_NUMBER; ++i )
 			{
 				Chunk* chunk = m_pChunks + i;
 
-				// Les chunks hors de la vue
+				// Chunk is too far => free it
 				if( ( std::abs( chunk->i - chunkHere.i ) > VIEW_SIZE ) ||
 					( std::abs( chunk->k - chunkHere.k ) > VIEW_SIZE ) )
 				{
@@ -274,6 +274,7 @@ void ChunkManager::update( GameWindow* gl )
 				}
 				else
 				{
+					// reproject
 					int newIndex = getArrayIndex( chunk->i, chunk->j, chunk->k, chunkHere );
 					m_pChunksMapping[ nextMapIndex ][ newIndex ] = chunk;
 				}
@@ -386,9 +387,7 @@ void ChunkManager::update( GameWindow* gl )
 			}
 		}
 
-		std::sort( m_pChunkToSort, m_pChunkToSort + iChunkToSort, []( const ChunkSortData& i, const ChunkSortData& j )->bool {
-			return i.iDistance < j.iDistance;
-		} );
+		std::sort( m_pChunkToSort, m_pChunkToSort + iChunkToSort, chunkSortFunction );
 
 		for( int i = 0; i < iChunkToSort; ++i )
 		{
@@ -436,8 +435,11 @@ void ChunkManager::draw( GameWindow* gl )
 		m_xProgram->setUniformValue( m_iMatrixUniform, mat * scale );
 		m_xAtlas->bind( 0 );
 
+		glm::vec3 camPos = gl->getCamera().getPosition();
+		Coords chunkHere = GetChunkPosFromVoxelPos( GetVoxelPosFromWorldPos( camPos ) );
+
 		m_pVao->bind();
-		for( int i = m_iChunkToDrawCount - 1; i >= 0; --i )
+		for( int i = 0; i < m_iChunkToDrawCount; ++i )
 		{
 			Chunk* chunk = m_pChunkToDraw[ i ];
 			Buffer* buffer = m_pOglBuffers + chunk->vboIndex;
@@ -447,7 +449,25 @@ void ChunkManager::draw( GameWindow* gl )
 				glUniform3fv( m_iChunkPosUniform, 1, glm::value_ptr( glm::vec3( ( float ) ( chunk->i * CHUNK_SIZE ),
 																			   ( float ) ( chunk->j * CHUNK_SIZE ),
 																			   ( float ) ( chunk->k * CHUNK_SIZE ) ) ) );
-				glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ), buffer->opaqueCount );
+				if( chunkHere.i >= chunk->i )
+					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_X_POS ], 
+								  buffer->iSlicesSize[ Buffer::E_X_POS ] );
+				if( chunkHere.i <= chunk->i )
+					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_X_NEG ],
+								  buffer->iSlicesSize[ Buffer::E_X_NEG ] );
+				if( chunkHere.j >= chunk->j )
+					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Y_POS ],
+								  buffer->iSlicesSize[ Buffer::E_Y_POS ] );
+				if( chunkHere.j <= chunk->j )
+					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Y_NEG ],
+								  buffer->iSlicesSize[ Buffer::E_Y_NEG ] );
+				if( chunkHere.k >= chunk->k )
+					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Z_POS ],
+								  buffer->iSlicesSize[ Buffer::E_Z_POS ] );
+				if( chunkHere.k <= chunk->k )
+					glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ) + buffer->iSlicesStart[ Buffer::E_Z_NEG ],
+								  buffer->iSlicesSize[ Buffer::E_Z_NEG ] );
+				//glDrawArrays( GL_TRIANGLES, buffer->iBufferOffset / sizeof( GLuint ), buffer->opaqueCount );
 			}
 		}
 		glDisable( GL_CULL_FACE );
@@ -598,7 +618,7 @@ void ChunkManager::run()
 		}
 
 		// Eviter de faire fondre le cpu dans des boucles vides ;)
-		//QThread::msleep(5);
+		std::this_thread::sleep_for( std::chrono::milliseconds( 5 ) );
 	}
 }
 

@@ -27,14 +27,24 @@ class ChunkGenerator;
 
 struct Buffer
 {
+	enum Slice
+	{
+		E_X_POS = 0,
+		E_X_NEG = 1,
+		E_Y_POS = 2,
+		E_Y_NEG = 3,
+		E_Z_POS = 4,
+		E_Z_NEG = 5,
+	};
 	unsigned int		opaqueCount;
 	unsigned int		waterCount;
 	unsigned int		toUpOpaqueCount;
 	unsigned int		toUpWaterCount;
 	int					iBufferOffset; // Offset in the global buffer
 	int					iAllocatedSize;
+	int					iSlicesStart[ 6 ];
+	int					iSlicesSize[ 6 ];
 	bool				draw;
-	char				filling[ 7 ];
 };
 struct ChunkSortData;
 
@@ -84,8 +94,6 @@ private:
 	Coords					getChunkCoords( int index, Coords center );
 
 	std::thread								m_oThread;
-
-	int										m_iWorldSeed;
 	bool									m_bIsInit;
 
 	BuddyAllocator							m_oBuddyAllocator;

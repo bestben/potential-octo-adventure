@@ -6,240 +6,311 @@
 
 #define JOIN_FACES
 
-MeshGenerator::MeshGenerator(ChunkManager* manager) : m_ChunkManager{manager}
+MeshGenerator::MeshGenerator( ChunkManager* manager ) : m_ChunkManager { manager }
 {
-    m_mask = new Voxel[CHUNK_SIZE * CHUNK_SIZE];
-	m_light = new uint8[CHUNK_SIZE * CHUNK_SIZE];
+	m_mask = new Voxel[ CHUNK_SIZE * CHUNK_SIZE ];
+	m_light = new uint8[ CHUNK_SIZE * CHUNK_SIZE ];
 
-    m_waterPassGrid = new Voxel[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE];
-    m_offsetNormal = new bool[CHUNK_SIZE * CHUNK_SIZE];
+	m_waterPassGrid = new Voxel[ CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE ];
+	m_offsetNormal = new bool[ CHUNK_SIZE * CHUNK_SIZE ];
+
+	m_pSliceBuffer[ 0 ] = new GLuint[ CHUNK_SIZE * CHUNK_SIZE * 4 ];
+	m_pSliceBuffer[ 1 ] = new GLuint[ CHUNK_SIZE * CHUNK_SIZE * 4 ];
 }
 
-MeshGenerator::~MeshGenerator() {
+MeshGenerator::~MeshGenerator()
+{
 	delete[] m_light;
-    delete[] m_mask;
-    delete[] m_offsetNormal;
-    delete[] m_waterPassGrid;
+	delete[] m_mask;
+	delete[] m_offsetNormal;
+	delete[] m_waterPassGrid;
+	delete[] m_pSliceBuffer[ 0 ];
+	delete[] m_pSliceBuffer[ 1 ];
 }
 
-int MeshGenerator::generate(Voxel* data, Coords chunkPos, Buffer* buffer, GLuint* vertices, bool waterPass) {
-    int vertexCount = 0;
-    bool hasWater = false;
-    if (!waterPass) {
-        memset(m_waterPassGrid, 0, CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
-    }
+int MeshGenerator::generate( Voxel* data, Coords chunkPos, Buffer* buffer, GLuint* vertices, bool waterPass )
+{
+	int vertexCount = 0;
+	bool hasWater = false;
+	if( !waterPass )
+	{
+		memset( m_waterPassGrid, 0, CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * sizeof( Voxel ) );
+	}
 	Voxel emptyVoxel = getEmptyVoxel();
 	emptyVoxel._light = 2;
 
 
 	Coords offset = chunkPos * CHUNK_SIZE;
-    int start = 0;
-    int end = 3;
-    if (waterPass) {
-        start = 1;
-        end = 2;
-    }
+	int start = 0;
+	int end = 3;
+	if( waterPass )
+	{
+		start = 1;
+		end = 2;
+	}
 
-    for (int axis = start; axis < end; ++axis) {
-        const int u = (axis + 1) % 3;
-        const int v = (axis + 2) % 3;
+	for( int axis = start; axis < end; ++axis )
+	{
+		const int u = ( axis + 1 ) % 3;
+		const int v = ( axis + 2 ) % 3;
 
-        int x[3] = {0}, q[3] = {0};
-        memset(m_mask, 0, CHUNK_SIZE * CHUNK_SIZE * sizeof(Voxel));
-		memset(m_light, 0, CHUNK_SIZE * CHUNK_SIZE * sizeof(uint8));
-        memset(m_offsetNormal, true, CHUNK_SIZE * CHUNK_SIZE * sizeof(bool));
+		int x[ 3 ] = { 0 }, q[ 3 ] = { 0 };
+		memset( m_mask, 0, CHUNK_SIZE * CHUNK_SIZE * sizeof( Voxel ) );
+		memset( m_light, 0, CHUNK_SIZE * CHUNK_SIZE * sizeof( uint8 ) );
+		memset( m_offsetNormal, true, CHUNK_SIZE * CHUNK_SIZE * sizeof( bool ) );
+		int iSlice1Count = 0;
+		int iSlice2Count = 0;
 
-        // Calcule du mask
-        q[axis] = 1;
-        for (x[axis] = -1; x[axis] < CHUNK_SIZE;) {
-            int counter = 0;
-            for (x[v] = 0; x[v] < CHUNK_SIZE; ++x[v]) {
-                for (x[u] = 0; x[u] < CHUNK_SIZE; ++x[u], ++counter)
-                {
+		// Calcule du mask
+		q[ axis ] = 1;
+		for( x[ axis ] = -1; x[ axis ] < CHUNK_SIZE;)
+		{
+			int counter = 0;
+			for( x[ v ] = 0; x[ v ] < CHUNK_SIZE; ++x[ v ] )
+			{
+				for( x[ u ] = 0; x[ u ] < CHUNK_SIZE; ++x[ u ], ++counter )
+				{
 					Voxel a, b;
 
-					if (0 <= x[axis])
-						a = getVoxel(data, x[0], x[1], x[2]);
-					else {
-						a = m_ChunkManager->getVoxel(offset + Coords{ x[0], x[1], x[2] });
+					if( 0 <= x[ axis ] )
+						a = getVoxel( data, x[ 0 ], x[ 1 ], x[ 2 ] );
+					else
+					{
+						a = m_ChunkManager->getVoxel( offset + Coords { x[ 0 ], x[ 1 ], x[ 2 ] } );
 						a.type = VoxelType::AIR;
 					}
-					if (x[axis] < CHUNK_SIZE - 1) {
-						b = getVoxel(data, x[0] + q[0], x[1] + q[1], x[2] + q[2]);
+					if( x[ axis ] < CHUNK_SIZE - 1 )
+					{
+						b = getVoxel( data, x[ 0 ] + q[ 0 ], x[ 1 ] + q[ 1 ], x[ 2 ] + q[ 2 ] );
 					}
-					else {
-						b = m_ChunkManager->getVoxel(offset + Coords{ x[0] + q[0], x[1] + q[1], x[2] + q[2] });
+					else
+					{
+						b = m_ChunkManager->getVoxel( offset + Coords { x[ 0 ] + q[ 0 ], x[ 1 ] + q[ 1 ], x[ 2 ] + q[ 2 ] } );
 						b.type = VoxelType::AIR;
 					}
 
-						
 
-					if (a.type == VoxelType::IGNORE_TYPE)
+
+					if( a.type == VoxelType::IGNORE_TYPE )
 						a = emptyVoxel;
-					if (b.type == VoxelType::IGNORE_TYPE)
+					if( b.type == VoxelType::IGNORE_TYPE )
 						b = emptyVoxel;
 
-                    if (!waterPass) {
-						if (a.type == VoxelType::WATER) {
-                            setVoxel(m_waterPassGrid, x[0], x[1], x[2], a);
+					if( !waterPass )
+					{
+						if( a.type == VoxelType::WATER )
+						{
+							setVoxel( m_waterPassGrid, x[ 0 ], x[ 1 ], x[ 2 ], a );
 							a.type = VoxelType::AIR;
-                            hasWater = true;
-						} else {
+							hasWater = true;
+						}
+						else
+						{
 							Voxel vox = a;
 							vox.type = VoxelType::AIR;
-							setVoxel(m_waterPassGrid, x[0], x[1], x[2], vox);
+							setVoxel( m_waterPassGrid, x[ 0 ], x[ 1 ], x[ 2 ], vox );
 						}
-						if (b.type == VoxelType::WATER) {
-                            setVoxel(m_waterPassGrid, x[0] + q[0], x[1] + q[1], x[2] + q[2], b);
+						if( b.type == VoxelType::WATER )
+						{
+							setVoxel( m_waterPassGrid, x[ 0 ] + q[ 0 ], x[ 1 ] + q[ 1 ], x[ 2 ] + q[ 2 ], b );
 							b.type = VoxelType::AIR;
-                            hasWater = true;
-						} else {
+							hasWater = true;
+						}
+						else
+						{
 							Voxel vox = a;
 							vox.type = VoxelType::AIR;
-							setVoxel(m_waterPassGrid, x[0] + q[0], x[1] + q[1], x[2] + q[2], vox);
+							setVoxel( m_waterPassGrid, x[ 0 ] + q[ 0 ], x[ 1 ] + q[ 1 ], x[ 2 ] + q[ 2 ], vox );
 						}
-                    }
+					}
 
-                    const bool ba = a.type != VoxelType::AIR;
-                    if (ba == (b.type != VoxelType::AIR)) {
-						m_mask[counter] = emptyVoxel;
-						m_light[counter] = a._light > b._light ? a._light : b._light;
-                    } else if (ba) {
-						m_mask[counter] = a;
-						m_light[counter] = b._light;
-                        m_offsetNormal[counter] = true;
-                    } else{
-						m_mask[counter] = b;
-						m_light[counter] = a._light;
-                        m_offsetNormal[counter] = false;
-                    }
-                }
-            }
-            ++x[axis];
+					const bool ba = a.type != VoxelType::AIR;
+					if( ba == ( b.type != VoxelType::AIR ) )
+					{
+						m_mask[ counter ] = emptyVoxel;
+						m_light[ counter ] = a._light > b._light ? a._light : b._light;
+					}
+					else if( ba )
+					{
+						m_mask[ counter ] = a;
+						m_light[ counter ] = b._light;
+						m_offsetNormal[ counter ] = true;
+					}
+					else
+					{
+						m_mask[ counter ] = b;
+						m_light[ counter ] = a._light;
+						m_offsetNormal[ counter ] = false;
+					}
+				}
+			}
+			++x[ axis ];
 
-            int width = 0, height = 0;
-            counter = 0;
-            for (int j = 0; j < CHUNK_SIZE; ++j) {
-                for (int i = 0; i < CHUNK_SIZE;) {
-                    Voxel c = m_mask[counter];
-                    if (c.type != VoxelType::AIR) {
+			int width = 0, height = 0;
+			counter = 0;
+			for( int j = 0; j < CHUNK_SIZE; ++j )
+			{
+				for( int i = 0; i < CHUNK_SIZE;)
+				{
+					Voxel c = m_mask[ counter ];
+					if( c.type != VoxelType::AIR )
+					{
 #ifdef JOIN_FACES
-						uint8 light = m_light[counter];
+						uint8 light = m_light[ counter ];
 						// Calcule de la largeur
-						for (width = 1; (c.type == m_mask[counter + width].type) && (light == m_light[counter + width]) && (m_offsetNormal[counter] == m_offsetNormal[counter + width]) &&
-                             i + width < CHUNK_SIZE; ++width) {
-                        }
+						for( width = 1; ( c.type == m_mask[ counter + width ].type ) && ( light == m_light[ counter + width ] ) && ( m_offsetNormal[ counter ] == m_offsetNormal[ counter + width ] ) &&
+							 i + width < CHUNK_SIZE; ++width )
+						{
+						}
 
-                        // Calcule de la hauteur
-                        bool done = false;
-                        for (height = 1; j + height < CHUNK_SIZE; ++height) {
-                            for (int k = 0; k < width; ++k)
-								if (!(c.type == m_mask[counter + k + height * CHUNK_SIZE].type && (light == m_light[counter + k + height * CHUNK_SIZE]) && (m_offsetNormal[counter] == m_offsetNormal[counter + k + height * CHUNK_SIZE]))) {
-                                    done = true;
-                                    break;
-                                }
-                            if (done)
-                                break;
-                        }
+						// Calcule de la hauteur
+						bool done = false;
+						for( height = 1; j + height < CHUNK_SIZE; ++height )
+						{
+							for( int k = 0; k < width; ++k )
+								if( !( c.type == m_mask[ counter + k + height * CHUNK_SIZE ].type && ( light == m_light[ counter + k + height * CHUNK_SIZE ] ) && ( m_offsetNormal[ counter ] == m_offsetNormal[ counter + k + height * CHUNK_SIZE ] ) ) )
+								{
+									done = true;
+									break;
+								}
+							if( done )
+								break;
+						}
 #endif
 
-                        // Ajout d'une face
-                        x[u] = i;
-                        x[v] = j;
+						// Ajout d'une face
+						x[ u ] = i;
+						x[ v ] = j;
 
-                        int du[3] = {0}, dv[3] = {0};
+						int du[ 3 ] = { 0 }, dv[ 3 ] = { 0 };
 
-                        int nIndex = axis * 2;
-                        if (m_offsetNormal[counter]) {
+						int nIndex = axis * 2;
+						GLuint* pTempBuffer;
+						int iVertexCount = 0;
+						if( m_offsetNormal[ counter ] )
+						{
 #ifdef JOIN_FACES
-							dv[v] = height;
-							du[u] = width;
+							dv[ v ] = height;
+							du[ u ] = width;
 #else
-							dv[v] = 1;
-							du[u] = 1;
+							dv[ v ] = 1;
+							du[ u ] = 1;
 #endif
-                            nIndex++;
-                        } else {
+							nIndex++;
+							pTempBuffer = m_pSliceBuffer[ 0 ];
+							iVertexCount = iSlice1Count;
+							iSlice1Count += 6;
+						}
+						else
+						{
 #ifdef JOIN_FACES
-							du[v] = height;
-							dv[u] = width;
+							du[ v ] = height;
+							dv[ u ] = width;
 #else
-							du[v] = 1;
-							dv[u] = 1;
+							du[ v ] = 1;
+							dv[ u ] = 1;
 #endif
-                            if (waterPass) {
-                                break;
-                            }
-                        }
-						
+							if( waterPass )
+							{
+								break;
+							}
+							pTempBuffer = m_pSliceBuffer[ 1 ];
+							iVertexCount = iSlice2Count;
+							iSlice2Count += 6;
+						}
 
-                        VoxelTextureMap textureMap = getTextureMap(c.type);
+
+						VoxelTextureMap textureMap = getTextureMap( c.type );
 						TextureID t = TextureID::ERROR_TEXTURE;
 
-							 if (nIndex == 0) t = textureMap.right;
-						else if (nIndex == 1) t = textureMap.left;
-						else if (nIndex == 2) t = textureMap.bottom;
-						else if (nIndex == 3) t = textureMap.top;
-						else if (nIndex == 4) t = textureMap.front;
-						else if (nIndex == 5) t = textureMap.back;						
+						if( nIndex == 0 ) t = textureMap.right;
+						else if( nIndex == 1 ) t = textureMap.left;
+						else if( nIndex == 2 ) t = textureMap.bottom;
+						else if( nIndex == 3 ) t = textureMap.top;
+						else if( nIndex == 4 ) t = textureMap.front;
+						else if( nIndex == 5 ) t = textureMap.back;
 
-						
-
-						vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, t, light);
-						vertices[vertexCount++] = getVertex(x[0] + dv[0], x[1] + dv[1], x[2] + dv[2], nIndex, t, light);
-						vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, t, light);
-						vertices[vertexCount++] = getVertex(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1], x[2] + du[2] + dv[2], nIndex, t, light);
-						vertices[vertexCount++] = getVertex(x[0] + du[0], x[1] + du[1], x[2] + du[2], nIndex, t, light);
-						vertices[vertexCount++] = getVertex(x[0], x[1], x[2], nIndex, t, light);
+						pTempBuffer[ iVertexCount + 0 ] = getVertex( x[ 0 ], x[ 1 ], x[ 2 ], nIndex, t, light );
+						pTempBuffer[ iVertexCount + 1 ] = getVertex( x[ 0 ] + dv[ 0 ], x[ 1 ] + dv[ 1 ], x[ 2 ] + dv[ 2 ], nIndex, t, light );
+						pTempBuffer[ iVertexCount + 2 ] = getVertex( x[ 0 ] + du[ 0 ] + dv[ 0 ], x[ 1 ] + du[ 1 ] + dv[ 1 ], x[ 2 ] + du[ 2 ] + dv[ 2 ], nIndex, t, light );
+						pTempBuffer[ iVertexCount + 3 ] = getVertex( x[ 0 ] + du[ 0 ] + dv[ 0 ], x[ 1 ] + du[ 1 ] + dv[ 1 ], x[ 2 ] + du[ 2 ] + dv[ 2 ], nIndex, t, light );
+						pTempBuffer[ iVertexCount + 4 ] = getVertex( x[ 0 ] + du[ 0 ], x[ 1 ] + du[ 1 ], x[ 2 ] + du[ 2 ], nIndex, t, light );
+						pTempBuffer[ iVertexCount + 5 ] = getVertex( x[ 0 ], x[ 1 ], x[ 2 ], nIndex, t, light );
 #ifdef JOIN_FACES
-                        for (int b = 0; b < width; ++b)
-                            for (int a = 0; a < height; ++a)
-                                m_mask[counter + b + a * CHUNK_SIZE] = emptyVoxel;
-						
-                        i += width; counter += width;
+						for( int b = 0; b < width; ++b )
+							for( int a = 0; a < height; ++a )
+								m_mask[ counter + b + a * CHUNK_SIZE ] = emptyVoxel;
+
+						i += width; counter += width;
 #else
-						m_mask[counter].type = VoxelType::AIR;
+						m_mask[ counter ].type = VoxelType::AIR;
 						i++;
 						counter++;
 #endif
-                    } else {
-                        ++i;
-                        ++counter;
-                    }
-                }
-            }
-        }
-    }
-    if (!waterPass) {
+					}
+					else
+					{
+						++i;
+						++counter;
+					}
+				}
+			}
+		}
+		memcpy( vertices + vertexCount, m_pSliceBuffer[ 0 ], iSlice1Count * sizeof( int ) );
+		if( !waterPass )
+		{
+			buffer->iSlicesStart[ axis * 2 ] = vertexCount;
+			buffer->iSlicesSize[ axis * 2 ] = iSlice1Count;
+		}
+		vertexCount += iSlice1Count;
+		memcpy( vertices + vertexCount, m_pSliceBuffer[ 1 ], iSlice2Count * sizeof( int ) );
+		if( !waterPass )
+		{
+			buffer->iSlicesStart[ axis * 2 + 1 ] = vertexCount;
+			buffer->iSlicesSize[ axis * 2 + 1 ] = iSlice2Count;
+		}
+		vertexCount += iSlice2Count;
+	}
+	if( !waterPass )
+	{
 		buffer->toUpOpaqueCount = vertexCount;
-    } else {
+	}
+	else
+	{
 		buffer->toUpWaterCount = vertexCount;
-    }
-    if ((!waterPass) && (hasWater)) {
-		vertexCount += generate(m_waterPassGrid, chunkPos, buffer, vertices + vertexCount, true);
-    } else if (!waterPass) {
+	}
+	if( ( !waterPass ) && ( hasWater ) )
+	{
+		vertexCount += generate( m_waterPassGrid, chunkPos, buffer, vertices + vertexCount, true );
+	}
+	else if( !waterPass )
+	{
 		buffer->toUpWaterCount = 0;
-    }
-    return vertexCount;
+	}
+	return vertexCount;
 }
 
-Voxel MeshGenerator::getVoxel(Voxel* data, int i, int j, int k) {
-    return data[i + CHUNK_SIZE * (j + CHUNK_SIZE * k)];
+Voxel MeshGenerator::getVoxel( Voxel* data, int i, int j, int k )
+{
+	return data[ i + CHUNK_SIZE * ( j + CHUNK_SIZE * k ) ];
 }
 
-void MeshGenerator::setVoxel(Voxel* data, int i, int j, int k, Voxel voxel) {
-    if ((i >= 0) && (j >= 0) && (k >= 0) &&
-        (i < CHUNK_SIZE) && (j < CHUNK_SIZE) && (k < CHUNK_SIZE)) {
-        data[i + CHUNK_SIZE * (j + CHUNK_SIZE * k)] = voxel;
-    }
+void MeshGenerator::setVoxel( Voxel* data, int i, int j, int k, Voxel voxel )
+{
+	if( ( i >= 0 ) && ( j >= 0 ) && ( k >= 0 ) &&
+		( i < CHUNK_SIZE ) && ( j < CHUNK_SIZE ) && ( k < CHUNK_SIZE ) )
+	{
+		data[ i + CHUNK_SIZE * ( j + CHUNK_SIZE * k ) ] = voxel;
+	}
 }
 
-GLuint MeshGenerator::getVertex(int x, int y, int z, int normalIndex, TextureID tex, uint8 light) {
+GLuint MeshGenerator::getVertex( int x, int y, int z, int normalIndex, TextureID tex, uint8 light )
+{
 	/* Bit map 32bits
 	0-15 Coords (3*5bits)
 	16-23 Texture (8bits)
 	24-26 Normal (3 bits)
 	28-31 Light (5bits)
 	*/
-	return (light << 26) | (normalIndex << 23) | ((uint8)tex << 15) | (x << 10) | (y << 5) | (z);
+	return ( light << 26 ) | ( normalIndex << 23 ) | ( ( uint8 ) tex << 15 ) | ( x << 10 ) | ( y << 5 ) | ( z );
 }
